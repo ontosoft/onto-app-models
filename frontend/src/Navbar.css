@@ -1,0 +1,47 @@
+.navbar {
+    display: block;
+    border-color: #fff;
+    background-color: hsl(207, 15%, 85%);
+}
+
+.header {
+   /* object-fit: contain;*/
+    /*width: 100%;*/
+    display: flex;
+    justify-content: space-between;
+    height: 3vh;
+    background-color: hsl(245, 14%, 85%);
+    align-items: baseline;
+    border-bottom: 1px solid #e9ecef;
+} 
+
+.navbar span {
+    color: #565656;
+}
+
+.logo {
+    height: 100%; 
+    width: 100%;
+    float: left;
+    max-width: min-content;
+    padding-left: 5px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-float infinite 4s ease-in-out;
+  }
+}
+
+
+@keyframes App-logo-float {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}

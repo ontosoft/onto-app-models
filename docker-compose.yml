@@ -1,0 +1,20 @@
+version: "3.9"
+services:
+  backend-onto:
+    container_name: ontomodel-backend
+    build: 
+        context: ./backend
+    image: ontomodel-backend
+    ports:
+        - '8089:8089'
+    restart: always
+
+  frontend-onto:
+    container_name: ontomodel-react-front
+    build: ./frontend 
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/react-onto-frontend
+    depends_on:
+        - "backend-onto"

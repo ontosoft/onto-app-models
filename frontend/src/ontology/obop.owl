@@ -1,0 +1,708 @@
+<?xml version="1.0"?>
+<rdf:RDF xmlns="http://purl.org/net/obop/"
+     xml:base="http://purl.org/net/obop/"
+     xmlns:dc="http://purl.org/dc/elements/1.1/"
+     xmlns:fo="https://www.bbc.co.uk/ontologies/fo"
+     xmlns:gr="http://purl.org/goodrelations/v1#"
+     xmlns:vs="http://www.w3.org/2003/06/sw-vocab-status/ns#"
+     xmlns:owl="http://www.w3.org/2002/07/owl#"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:xml="http://www.w3.org/XML/1998/namespace"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+     xmlns:foaf="http://xmlns.com/foaf/0.1/"
+     xmlns:obop="http://purl.org/net/obop/"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+     xmlns:dcterms="http://purl.org/dc/terms/"
+     xmlns:dctypes="http://purl.org/dc/dcmitype/"
+     xmlns:ontologies="https://www.bbc.co.uk/ontologies/">
+    <owl:Ontology rdf:about="http://purl.org/net/obop">
+        <owl:versionIRI rdf:resource="http://purl.org/net/obop/v01"/>
+        <dc:creator xml:lang="en">Petko Rutesic</dc:creator>
+        <dc:rights xml:lang="en">The OBOP ontology is available under the Creative Commons Attribution 3.0 Unported license; see http://creativecommons.org/licenses/by/3.0/. In a nutshell, you are free to copy, distribute and transmit the work; to remix/adapt the work (e.g. to import the ontology and create specializations of its elements), as long as you attribute the work in the manner specified by the author or licensor (but not in any way that suggests that they endorse you or your use of the work). Proper Attribution: Simply include the statement &quot;This work is based on the OBOP ontology, link back to http://purl.org/net/obop</dc:rights>
+        <dc:subject xml:lang="en">Ontology, Linked Data, RDF, Semantic Web</dc:subject>
+        <dc:title xml:lang="en">The OBOP vocabulary for ontology-based interface description and knowledge graph population</dc:title>
+        <rdfs:comment xml:lang="en">The OBOP ontology provides a vocabulary for annotating models to describe graphical user interfaces used to populate ontology instances. Instances of this ontology are combined with other domain ontologies to generate graphical user interfaces to populate ontology instances (knowledge graphs).
+
+Note: The base URI of OBOP is http://purl.org/obop/. Please make sure you are only using element identifiers in this namespace, e.g. http://purl.org/obop/Block .</rdfs:comment>
+        <rdfs:label xml:lang="en">Ontology for Ontology-based Ontology Population</rdfs:label>
+        <owl:versionInfo xml:lang="en">V 0.1, Release 2021-01-01</owl:versionInfo>
+        <foaf:homepage rdf:resource="http://purl.org/net/obop/"/>
+    </owl:Ontology>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Annotation properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://purl.org/dc/elements/1.1/contributor -->
+
+    <owl:AnnotationProperty rdf:about="http://purl.org/dc/elements/1.1/contributor"/>
+    
+
+
+    <!-- http://purl.org/dc/elements/1.1/creator -->
+
+    <owl:AnnotationProperty rdf:about="http://purl.org/dc/elements/1.1/creator"/>
+    
+
+
+    <!-- http://purl.org/dc/elements/1.1/rights -->
+
+    <owl:AnnotationProperty rdf:about="http://purl.org/dc/elements/1.1/rights"/>
+    
+
+
+    <!-- http://purl.org/dc/elements/1.1/subject -->
+
+    <owl:AnnotationProperty rdf:about="http://purl.org/dc/elements/1.1/subject"/>
+    
+
+
+    <!-- http://purl.org/dc/elements/1.1/title -->
+
+    <owl:AnnotationProperty rdf:about="http://purl.org/dc/elements/1.1/title"/>
+    
+
+
+    <!-- http://purl.org/dc/terms/license -->
+
+    <owl:AnnotationProperty rdf:about="http://purl.org/dc/terms/license"/>
+    
+
+
+    <!-- http://purl.org/dc/terms/title -->
+
+    <owl:AnnotationProperty rdf:about="http://purl.org/dc/terms/title"/>
+    
+
+
+    <!-- http://purl.org/goodrelations/v1#legalName -->
+
+    <owl:AnnotationProperty rdf:about="http://purl.org/goodrelations/v1#legalName"/>
+    
+
+
+    <!-- http://purl.org/goodrelations/v1#name -->
+
+    <owl:AnnotationProperty rdf:about="http://purl.org/goodrelations/v1#name"/>
+    
+
+
+    <!-- http://purl.org/goodrelations/v1#offers -->
+
+    <owl:AnnotationProperty rdf:about="http://purl.org/goodrelations/v1#offers"/>
+    
+
+
+    <!-- http://www.w3.org/2003/06/sw-vocab-status/ns#term_status -->
+
+    <owl:AnnotationProperty rdf:about="http://www.w3.org/2003/06/sw-vocab-status/ns#term_status"/>
+    
+
+
+    <!-- http://xmlns.com/foaf/0.1/homepage -->
+
+    <owl:AnnotationProperty rdf:about="http://xmlns.com/foaf/0.1/homepage"/>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Datatypes
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://www.w3.org/2001/XMLSchema#nonnegativeinteger -->
+
+    <rdfs:Datatype rdf:about="http://www.w3.org/2001/XMLSchema#nonnegativeinteger"/>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Object Properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://purl.org/net/obop/activatesAction -->
+
+    <owl:ObjectProperty rdf:about="http://purl.org/net/obop/activatesAction">
+        <rdfs:domain rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:range rdf:resource="http://purl.org/net/obop/Action"/>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">activates action</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://purl.org/net/obop/activatesBranching -->
+
+    <owl:ObjectProperty rdf:about="http://purl.org/net/obop/activatesBranching">
+        <rdfs:range rdf:resource="http://purl.org/net/obop/Branching"/>
+        <rdfs:comment xml:lang="en">An interface element activates a branching statement which is used to deside what option should be chosen.</rdfs:comment>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://purl.org/net/obop/belongsTo -->
+
+    <owl:ObjectProperty rdf:about="http://purl.org/net/obop/belongsTo">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+        <rdfs:domain rdf:resource="http://purl.org/net/obop/VisualElement"/>
+        <rdfs:comment xml:lang="en-gb">The belongsTo property relates a visual element to an interface container it belongs to.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">belongs to</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://purl.org/net/obop/belongsToCollection -->
+
+    <owl:ObjectProperty rdf:about="http://purl.org/net/obop/belongsToCollection">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+        <rdfs:domain rdf:resource="http://purl.org/net/obop/CollectionItem"/>
+        <rdfs:range rdf:resource="http://purl.org/net/obop/Collection"/>
+        <rdfs:comment xml:lang="en">A belongsToCollection is an object property that relates a collection item and collection that collection item belongs to.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">belongsToCollection</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://purl.org/net/obop/containsDatatype -->
+
+    <owl:ObjectProperty rdf:about="http://purl.org/net/obop/containsDatatype">
+        <rdfs:comment xml:lang="en-gb">The containsDatatype relates a field to a DataProperty which should be inserted into the field. In this way, the domain ontology is related to the graphical user interface</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">contains datatype</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://purl.org/net/obop/generatedAccordingToModel -->
+
+    <owl:ObjectProperty rdf:about="http://purl.org/net/obop/generatedAccordingToModel">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+        <rdfs:domain rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">generated from the model</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://purl.org/net/obop/hasBranching -->
+
+    <owl:ObjectProperty rdf:about="http://purl.org/net/obop/hasBranching">
+        <rdfs:domain rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:range rdf:resource="http://purl.org/net/obop/Branching"/>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">has branch</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://purl.org/net/obop/hasCondition -->
+
+    <owl:ObjectProperty rdf:about="http://purl.org/net/obop/hasCondition">
+        <rdfs:domain rdf:resource="http://purl.org/net/obop/Branching"/>
+        <rdfs:range rdf:resource="http://purl.org/net/obop/Condition"/>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">has condition</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://purl.org/net/obop/hasConnection -->
+
+    <owl:ObjectProperty rdf:about="http://purl.org/net/obop/hasConnection">
+        <rdfs:domain rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:range rdf:resource="http://purl.org/net/obop/Connection"/>
+        <rdfs:comment xml:lang="en">The hasConnection relates an Action element to a Connection element that will be established between two instances in runtime.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">has connection</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://purl.org/net/obop/hasDestination -->
+
+    <owl:ObjectProperty rdf:about="http://purl.org/net/obop/hasDestination">
+        <rdfs:domain rdf:resource="http://purl.org/net/obop/Connection"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:comment xml:lang="en">The hasDestination property relates a Connection element to an individual which is a destination of an ObjectProperty.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">has destination</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://purl.org/net/obop/hasFieldValues -->
+
+    <owl:ObjectProperty rdf:about="http://purl.org/net/obop/hasFieldValues">
+        <rdfs:domain rdf:resource="http://purl.org/net/obop/ListField"/>
+        <rdfs:comment xml:lang="en">The property contains values that can be chosen in graphical control elements such as drop down lists or multiple choice lists.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">has field values</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://purl.org/net/obop/hasLoop -->
+
+    <owl:ObjectProperty rdf:about="http://purl.org/net/obop/hasLoop">
+        <rdfs:range rdf:resource="http://purl.org/net/obop/Loop"/>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">has loop</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://purl.org/net/obop/hasSequence -->
+
+    <owl:ObjectProperty rdf:about="http://purl.org/net/obop/hasSequence">
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">has sequence</rdfs:label>
+        <vs:term_status>testing</vs:term_status>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://purl.org/net/obop/hasSource -->
+
+    <owl:ObjectProperty rdf:about="http://purl.org/net/obop/hasSource">
+        <rdfs:domain rdf:resource="http://purl.org/net/obop/Connection"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:comment xml:lang="en">This property relates a Connection element to an individual representing the source of an ObjectProperty. That would be the object of the ObjectProperty created during runtime.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">has source</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://purl.org/net/obop/isFalse -->
+
+    <owl:ObjectProperty rdf:about="http://purl.org/net/obop/isFalse">
+        <rdfs:domain rdf:resource="http://purl.org/net/obop/Condition"/>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">false</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://purl.org/net/obop/isRelatedToTargetOntologyInstance -->
+
+    <owl:ObjectProperty rdf:about="http://purl.org/net/obop/isRelatedToTargetOntologyInstance">
+        <rdfs:domain rdf:resource="http://purl.org/net/obop/VisualElement"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:comment xml:lang="en-gb">This object property relates a Visual element to a concrete individual of the corresponding target ontology.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">related to named individual</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://purl.org/net/obop/isTrue -->
+
+    <owl:ObjectProperty rdf:about="http://purl.org/net/obop/isTrue">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+        <rdfs:domain rdf:resource="http://purl.org/net/obop/Condition"/>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">true</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://purl.org/net/obop/modelBelongsTo -->
+
+    <owl:ObjectProperty rdf:about="http://purl.org/net/obop/modelBelongsTo">
+        <rdfs:domain rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:range rdf:resource="http://purl.org/net/obop/InterfaceContainer"/>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">model belongs to interface container</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://purl.org/net/obop/specifiedBy -->
+
+    <owl:ObjectProperty rdf:about="http://purl.org/net/obop/specifiedBy"/>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Data properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://purl.org/net/obop/belongsToModel -->
+
+    <owl:DatatypeProperty rdf:about="http://purl.org/net/obop/belongsToModel">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+        <rdfs:comment xml:lang="en">The property specifies that a given element (e.g., a named individual) belongs to the model part (implant that consists of named individuals belonging to the domain ontologies).</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">belongs to model</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://purl.org/net/obop/finalValue -->
+
+    <owl:DatatypeProperty rdf:about="http://purl.org/net/obop/finalValue">
+        <rdfs:domain rdf:resource="http://purl.org/net/obop/Loop"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+        <rdfs:comment xml:lang="en">This property is used to specify the last (final value) in a loop.</rdfs:comment>
+        <rdfs:label rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">has final value</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://purl.org/net/obop/hasLabel -->
+
+    <owl:DatatypeProperty rdf:about="http://purl.org/net/obop/hasLabel">
+        <rdfs:domain rdf:resource="http://purl.org/net/obop/VisualElement"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:isDefinedBy xml:lang="en">This property specifies the label of a visual element that has to stand next to that element. This could be a label next to the input field on a HTML form.</rdfs:isDefinedBy>
+        <rdfs:label xml:lang="en">has label</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://purl.org/net/obop/hasPositionNumber -->
+
+    <owl:DatatypeProperty rdf:about="http://purl.org/net/obop/hasPositionNumber">
+        <rdfs:domain rdf:resource="http://purl.org/net/obop/Field"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#nonNegativeInteger"/>
+        <rdfs:comment xml:lang="en">This property specifies the position of an element on a HTML form. 
+This is an integer number that represents the ordinary position among all other elements in the corresponding form looking from the upper left corner.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">has position</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://purl.org/net/obop/hasValue -->
+
+    <owl:DatatypeProperty rdf:about="http://purl.org/net/obop/hasValue">
+        <rdfs:domain rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
+        <rdfs:comment xml:lang="en-gb">The hasValue data property relates an instance to a data assigned to that instance. One example is a Condition class.</rdfs:comment>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://purl.org/net/obop/initialValue -->
+
+    <owl:DatatypeProperty rdf:about="http://purl.org/net/obop/initialValue">
+        <rdfs:domain rdf:resource="http://purl.org/net/obop/Loop"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#int"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://purl.org/net/obop/isDefault -->
+
+    <owl:DatatypeProperty rdf:about="http://purl.org/net/obop/isDefault">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+        <rdfs:comment xml:lang="en">The Default data property specifes whether the corresponding property is the default property. For instance a default value of a drop down list.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">is default</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://purl.org/net/obop/modelDescription -->
+
+    <owl:DatatypeProperty rdf:about="http://purl.org/net/obop/modelDescription">
+        <rdfs:domain rdf:resource="http://purl.org/net/obop/Model"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
+        <rdfs:comment xml:lang="en">This object property specifies what is the purpose of this model. If the model is used for an conversational agent then this explanation could be used to describe to the user what is the goal of this model.
+According to this description the user can choose a suitable model.</rdfs:comment>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://purl.org/net/obop/modelNumber -->
+
+    <owl:DatatypeProperty rdf:about="http://purl.org/net/obop/modelNumber">
+        <rdfs:comment xml:lang="en">The property assignes a number to the model part specifying the version of the current interface. 
+This can be used to track the version of the interface used to populate the knowledge graph.</rdfs:comment>
+        <rdfs:label xml:lang="en">has model number</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://purl.org/net/obop/specifiesEndOfIRI -->
+
+    <owl:DatatypeProperty rdf:about="http://purl.org/net/obop/specifiesEndOfIRI">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:domain rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#boolean"/>
+        <rdfs:comment xml:lang="en">The specifiesEndOfIRI data property value &quot;true&quot; tells us that the string entered by the corresponding element will be used to form end of the IRI in the instance that will be generated.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">specifiesIRI</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Classes
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://purl.org/net/obop/Action -->
+
+    <owl:Class rdf:about="http://purl.org/net/obop/Action">
+        <rdfs:comment xml:lang="en">An action represents an activity on the form. It could be a simple saving of data on the form and switching control flow to the next HTML form.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">Action</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://purl.org/net/obop/Block -->
+
+    <owl:Class rdf:about="http://purl.org/net/obop/Block">
+        <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/InterfaceContainer"/>
+        <rdfs:label rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">Block</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://purl.org/net/obop/Branching -->
+
+    <owl:Class rdf:about="http://purl.org/net/obop/Branching">
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">Branching</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://purl.org/net/obop/Button -->
+
+    <owl:Class rdf:about="http://purl.org/net/obop/Button">
+        <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/VisualElement"/>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">Button</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://purl.org/net/obop/Collection -->
+
+    <owl:Class rdf:about="http://purl.org/net/obop/Collection">
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">Collection</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://purl.org/net/obop/CollectionItem -->
+
+    <owl:Class rdf:about="http://purl.org/net/obop/CollectionItem">
+        <rdfs:comment xml:lang="en">A collection item could be a complex element that consists of a name that is visible to the user (or is writen in chatbots) and a value which could be a named individual.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">CollectionItem</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://purl.org/net/obop/Condition -->
+
+    <owl:Class rdf:about="http://purl.org/net/obop/Condition">
+        <rdfs:label rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">Condition</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://purl.org/net/obop/Connection -->
+
+    <owl:Class rdf:about="http://purl.org/net/obop/Connection">
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">Connection</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://purl.org/net/obop/ConversationBlock -->
+
+    <owl:Class rdf:about="http://purl.org/net/obop/ConversationBlock">
+        <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/InterfaceContainer"/>
+        <rdfs:comment xml:lang="en">A conversation block represents a collection of data entered in a single turn using a conversational agent. It servers as a modeling component for a part of the chatbot dialog which is analogous to HTML forms in web applications.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label>ConversationBlock</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://purl.org/net/obop/Field -->
+
+    <owl:Class rdf:about="http://purl.org/net/obop/Field">
+        <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/VisualElement"/>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:isDefinedBy xml:lang="en">Field</rdfs:isDefinedBy>
+    </owl:Class>
+    
+
+
+    <!-- http://purl.org/net/obop/InterfaceContainer -->
+
+    <owl:Class rdf:about="http://purl.org/net/obop/InterfaceContainer">
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">Interface Container</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://purl.org/net/obop/Label -->
+
+    <owl:Class rdf:about="http://purl.org/net/obop/Label">
+        <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/VisualElement"/>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:isDefinedBy xml:lang="en">Label</rdfs:isDefinedBy>
+    </owl:Class>
+    
+
+
+    <!-- http://purl.org/net/obop/ListField -->
+
+    <owl:Class rdf:about="http://purl.org/net/obop/ListField">
+        <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/Field"/>
+    </owl:Class>
+    
+
+
+    <!-- http://purl.org/net/obop/ListValue -->
+
+    <owl:Class rdf:about="http://purl.org/net/obop/ListValue">
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">List value</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://purl.org/net/obop/Loop -->
+
+    <owl:Class rdf:about="http://purl.org/net/obop/Loop">
+        <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/InterfaceContainer"/>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">Loop</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://purl.org/net/obop/LoopCondition -->
+
+    <owl:Class rdf:about="http://purl.org/net/obop/LoopCondition">
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">Loop condition</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://purl.org/net/obop/Model -->
+
+    <owl:Class rdf:about="http://purl.org/net/obop/Model">
+        <rdfs:comment>The model describes the interface model for population of domain ontologies. A model can be specification of web interface, chatbot, etc.</rdfs:comment>
+    </owl:Class>
+    
+
+
+    <!-- http://purl.org/net/obop/Question -->
+
+    <owl:Class rdf:about="http://purl.org/net/obop/Question"/>
+    
+
+
+    <!-- http://purl.org/net/obop/SingleValueRequest -->
+
+    <owl:Class rdf:about="http://purl.org/net/obop/SingleValueRequest">
+        <rdfs:comment xml:lang="en">A single value request corresponds to a question to insert a value in a chatbot.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+    </owl:Class>
+    
+
+
+    <!-- http://purl.org/net/obop/Subgraph -->
+
+    <owl:Class rdf:about="http://purl.org/net/obop/Subgraph">
+        <rdfs:comment xml:lang="en">A part of the model that consists of more nodes and edges.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">Subgraph</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://purl.org/net/obop/VisualElement -->
+
+    <owl:Class rdf:about="http://purl.org/net/obop/VisualElement">
+        <owl:equivalentClass>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://purl.org/net/obop/Field"/>
+                    <rdf:Description rdf:about="http://purl.org/net/obop/InterfaceContainer"/>
+                    <rdf:Description rdf:about="http://purl.org/net/obop/Loop"/>
+                </owl:unionOf>
+            </owl:Class>
+        </owl:equivalentClass>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">VisualElement</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Annotations
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    <rdf:Description rdf:about="http://dms.org/obop/address">
+        <dc:title></dc:title>
+    </rdf:Description>
+</rdf:RDF>
+
+
+
+<!-- Generated by the OWL API (version 4.5.25.2023-02-15T19:15:49Z) https://github.com/owlcs/owlapi -->
+
