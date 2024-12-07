@@ -1,12 +1,13 @@
 import logging
 from pickle import dump
 from rdflib import Graph, RDF, Literal, BNode, URIRef, Namespace
-from owlprocessor.forms import Form
-from owlprocessor.form_elements import OBOPElement, FormProperty, ActionPointer
-from owlprocessor.uimodel import Action, UIInternalModel
+from .forms import Form
+from .form_elements import OBOPElement, FormProperty, ActionPointer
+from .app_model import Action, AppInternalModel
 from rdflib.namespace import  SH, OWL
 
 OBOP = Namespace("http://purl.org/net/obop/")
+logger = logging.getLogger("ui")
 
 import uuid
 # from InterfaceOntologyTypes import *
@@ -21,7 +22,7 @@ class UIModelFactory:
 
     def rdf_graf_to_uimodel(self, rdfGraph):
         self.rdfGraph = rdfGraph
-        self.internalModel = UIInternalModel()
+        self.internalModel = AppInternalModel()
         self.readAllForms()
         self.readActions()
         #self.setUpFirstForm()
@@ -34,7 +35,7 @@ class UIModelFactory:
         for block in self.rdfGraph.subjects(RDF.type, OBOP.Block):
             logging.info("Block ----")
             logging.info(f"Block: {block}")
-            dump(block, open("./uimodels/block.txt", "wb"))
+            dump(block, open("./app_models/block.txt", "wb"))
             # Read form position because it represents the order of the form 
             #  in the UI. Iti is also a functional property of the form and can be used to sort the forms.
             # value of the position

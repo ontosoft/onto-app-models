@@ -6,9 +6,13 @@ import { TemplateDataSourceActions } from "../owlprocessor/TemplateDataSource";
 import { Template } from "../owlprocessor/Template";
 import { Formula } from "rdflib";
 import { CurrentForm } from "../owlprocessor/CurrentForm";
+import CurrentLayout from "../owlprocessor/CurrentLayout";
+import { layoutCreating } from "../owlprocessor/LayoutRendering";
+import { activateMainApplicationPane } from "./appStateSlice";
+import AppExchangeResponse from "../owlprocessor/AppExchangeResponse";
 
 type GeneralAction = PayloadAction<{}>;
-type StoreAction = PayloadAction<{}>;
+type ResponseAction = PayloadAction<AppExchangeResponse>;
 type DeleteAction = PayloadAction<{}>;
 type FormAction = PayloadAction<string>;
 // type ConnectionAction = PayloadAction<{modelAcction, dataType}>;
@@ -24,8 +28,10 @@ export interface ModelState {
   UIRunningInstance: RunningInstance,
   outputGraph: Formula,
   //status of the RDF reading
-  asyncStatus: "loading" | "complete"
-}
+  asyncStatus: "loading" | "complete",
+  currentLayout: CurrentLayout,
+  layoutRefreshNecessary: boolean 
+ }
 
 const initialState: ModelState = {
   idCounter:1,
@@ -34,16 +40,12 @@ const initialState: ModelState = {
   currentForm: new CurrentForm(),
   UIRunningInstance: {} as RunningInstance,
   outputGraph: {} as Formula,
-  asyncStatus: 'complete'
+  asyncStatus: 'complete',
+  currentLayout: {} as CurrentLayout,
+  layoutRefreshNecessary: false
 };
 
-const dataSourceActions = new TemplateDataSourceActions()
-
-export const loadRDFModelAsync = createAsyncThunk('model/loadRDFModel', 
-  async (fileName:string) => {
-  const response = await dataSourceActions.getData(fileName);
-  return response;
-})
+const dataSourceActions = new TemplateDataSourceActions();
 
 const modelSlice = createSlice({
     name: "model",
@@ -71,22 +73,18 @@ const modelSlice = createSlice({
         },
         generalAction: (state, action: GeneralAction) =>{
           //const currentAction = state.templateTriples.actions.find(a => a.uuid === action.payload)
-          owlTemplate.handleConnection(action, action.payload)
+          owlTemplate.handleConnection(action, action.payload);
+        },
+
+        processReceivedMessage : function (state, action: ResponseAction) {
+          state.currentLayout = layoutCreating(action.payload);
+          state.layoutRefreshNecessary = true;
         }
-    },
-    extraReducers: (builder) =>{
-      //Extra reducers for asynchronous loading
-      builder.addCase(loadRDFModelAsync.pending, (state) => {
-          state.asyncStatus = 'loading';
-        })
-        .addCase(loadRDFModelAsync.fulfilled, (state,action) => {
-          state.asyncStatus = 'complete';
-          state.rdfGraph = action.payload;
-        }); 
+    
     }
 });
 
 
-export const { transformGraphToInnerTemplate, prepareFormData, generalAction } = modelSlice.actions;
+export const { transformGraphToInnerTemplate, prepareFormData, generalAction, processReceivedMessage } = modelSlice.actions;
 
 export default modelSlice.reducer;

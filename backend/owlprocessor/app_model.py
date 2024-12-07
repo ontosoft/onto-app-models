@@ -1,4 +1,4 @@
-class UIInternalModel:
+class AppInternalModel:
     def __init__(self):
         self.modelGraph = None
         self.startingFormBlock = None

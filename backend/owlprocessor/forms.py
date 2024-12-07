@@ -1,5 +1,7 @@
 from json import JSONEncoder
 import json
+import logging
+logger = logging.getLogger("ontoui_app")
 
 class Form:
     def __init__(self, node, position = 0):
@@ -62,9 +64,10 @@ class FormEncoder(JSONEncoder):
                 for  element in o.elements:
                     form.update({"elements" : element.__dict__})
                 for target_class in o.target_classes:
-                    form.update({"target_classes" : 
-                                json.dump(target_class,default=lambda o: o.__dict__)})
+                    pass
+                    # form.update({"target_classes" : 
+                    #             json.dump(target_class,default=lambda k: k.__dict__)})
         except Exception as e:
-            print(e)
+            logger.debug(e)
         else:
             return form

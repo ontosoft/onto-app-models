@@ -1,11 +1,18 @@
-export class Form {
-    _node = null;
-    _position = null;
-    _elements = [];
-    _model = null;
+import { FormElement } from "./FormElement";
 
-    constructor (newNode){
+export class Form {
+    _node : string;
+    _position : number = -1;
+    _elements : FormElement[] = [];
+    _model : string | undefined;
+
+
+    constructor (newNode: string){
         this._node = newNode;
+    }
+
+    addNewElement = (e: FormElement)  => {
+        this._elements.push(e);
     }
     get node() {
         return this._node;

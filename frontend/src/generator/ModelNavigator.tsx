@@ -1,10 +1,7 @@
 import React, { useState, ChangeEvent } from "react";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
-import { loadRDFModelAsync } from "../data/modelSlice";
-import {
-  transformGraphToInnerTemplate, prepareFormData,
+import { transformGraphToInnerTemplate, prepareFormData,
 } from "../data/modelSlice";
-import { startRunningTemplate } from "../data/appStateSlice";
 import { initiateInnerModelsListLoading } from "../data/serverModelSlice";
 import { serialize, Formula } from "rdflib";
 import { OUTPUT_KG } from "../owlprocessor/InterfaceOntologyTypes";
@@ -14,8 +11,6 @@ const fileName = "../models/restaurant-model-ttl.ttl";
 // Choose a model to load
 export const ModelNavigator: React.FC = () => {
   const dispatch = useAppDispatch();
-  const loadRDFGraph = () => dispatch(loadRDFModelAsync(fileName));
-  // Input graph model is read from the inner store in the front end
   const inputModelGraph = useAppSelector((store) => store.model.rdfGraph);
   const outputKnowledgeGraph = useAppSelector(
     (store) => store.model.outputGraph
@@ -27,7 +22,7 @@ export const ModelNavigator: React.FC = () => {
     dispatch(transformGraphToInnerTemplate());
     //Preparing the first form in application
     dispatch(prepareFormData("-1"));
-    dispatch(startRunningTemplate());
+//    dispatch(initiateRunningOnServer());
     console.log("Current form:");
     console.log(currentForm);
   };
@@ -85,7 +80,7 @@ export const ModelNavigator: React.FC = () => {
     dispatch(transformGraphToInnerTemplate());
     //Preparing the first form in application
     dispatch(prepareFormData("-1"));
-    dispatch(startRunningTemplate());
+ //   dispatch(initiateRunningOnServer());
     console.log("Current form:");
     console.log(currentForm);
   };
@@ -126,11 +121,6 @@ export const ModelNavigator: React.FC = () => {
       <div className="row">
         <button className="btn btn-primary m-2" onClick={loadListOfMOdels}>
           List server models
-        </button>
-      </div>
-      <div className="row">
-        <button className="btn btn-primary m-2" onClick={loadRDFGraph}>
-          Load model
         </button>
       </div>
       <div className="row">

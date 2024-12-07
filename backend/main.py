@@ -6,7 +6,7 @@ from routers.onto_app_router import router as model_router
 
 # Configure basic logging
 logging.basicConfig(level=logging.DEBUG,
-                 format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+                 format='%(asctime)s - %(name)s - %(levelname)-2s [%(filename)s:%(lineno)d]  - %(message)s')
 
  
 # Definition of origins
@@ -33,7 +33,7 @@ app.add_middleware(
 app.include_router(model_router)
 
 if __name__ == "__main__":
-    logger.debug('Debug ========= ciao ========= ')
+    logger.debug('Uvicorn ========= ciao ========= ')
     app_logger.info('Info ========= ciao ========= ')
     app_logger.debug('Debug ========= ciao ========= ')
     uvicorn.run( "main:app",port=8089, host='0.0.0.0', reload=True, log_level='debug')

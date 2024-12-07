@@ -8,15 +8,17 @@ ontoui_logger = logging.getLogger("ontoui_app")
 
 OBOP = Namespace("http://purl.org/net/obop/")
 
-def read_model_files_from_directory(directory: str = 'uimodels'):
+def read_model_files_from_directory(models_directory: str = 'app_models'):
     """
-    Reads the current list of inner model files (*.ttl files) in the folder 'uimodels' into
+    Reads the current list of inner model files (*.ttl files) in the folder 'app_models' into
     json format. 
     """
     models_info = []  
-    for filename in os.listdir(directory):
+    directory_path = os.getcwd() + '/' + models_directory  
+    ontoui_logger.debug('Directory: %s', directory_path) 
+    for filename in os.listdir(directory_path):
         if filename.endswith('.ttl'):
-            filepath = os.path.join(directory, filename)
+            filepath = os.path.join(directory_path, filename)
             # Check if the file is a file and not a directory
             if os.path.isfile(filepath):
                 ontoui_logger.debug('File: %s', filename)

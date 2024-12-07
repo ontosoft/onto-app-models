@@ -16,7 +16,7 @@ export const store = configureStore({
     })
 });
 
-// Do we need applyMiddleware here in configStore?
+//TODO: Do we need applyMiddleware here in configStore?
 
 export type AppDispatch = typeof store.dispatch;
 export type RootState = ReturnType<typeof store.getState>;
