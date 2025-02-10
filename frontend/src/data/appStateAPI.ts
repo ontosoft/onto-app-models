@@ -1,4 +1,5 @@
-import  AppExchangeResponse from "../owlprocessor/AppExchangeResponse";
+import AppExchangeResponse  from "../owlprocessor/AppExchangeResponse";
+
 /**
  * Run tha applicaiton model on the server.
  * @returns A Promise that resolves to the response data.
@@ -54,6 +55,7 @@ export async function appExchangeGetAPI() : Promise<any> {
     if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
     }
-    const data:AppExchangeResponse = await response.json();
+    const jsonResponse = await response.json();
+    const data: AppExchangeResponse =  JSON.parse(jsonResponse) as AppExchangeResponse;
     return data; 
 }

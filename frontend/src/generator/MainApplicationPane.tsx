@@ -6,6 +6,7 @@ import { FormToValidate } from "../forms/FormToValidate";
 import { BrowserRouter as Router } from "react-router-dom";
 import { useAppSelector, useAppDispatch } from "../app/hooks";
 import { runInnerAppModelOnServer, initiateAppExchange } from "../data/appStateSlice";
+import { Layout } from "../owlprocessor/LayoutRendering";
 
 const MainApplicatonPane: React.FC = () => {
   const [generatedResponse, setGeneratedResponse] = useState<any>();
@@ -15,11 +16,12 @@ const MainApplicatonPane: React.FC = () => {
   const appExchangeStatus = useAppSelector(
     (state) => state.stateData.appExchangeGetStatus
   );
+  const layout = useAppSelector((state) => state.model.currentLayout);
 
   const dispatch = useAppDispatch();
 
-  const printConsole = () => {
-    console.log(generatedResponse);
+  const printGeneratedViewOnConsole = () => {
+    console.log(layout);
   };
   useEffect(() => {
     if (appRunningOnServer !== "succeeded") {
@@ -30,28 +32,12 @@ const MainApplicatonPane: React.FC = () => {
     else if (appRunningOnServer === "succeeded") {
      console.log("The application is running on the server"); 
     }
+    printGeneratedViewOnConsole();
   }, [appRunningOnServer]);
 
   return (
     <Router>
-      <div className="container-fluid">
-        <div className="row">
-          <div className="col bg-dark text-white">
-            <div className="navbar-brand">Restaurant</div>
-          </div>
-        </div>
-        <div className="row">
-          <div className="col m-2">
-            <FormToValidate submitText="Submit" cancelText="Cancel" />
-          </div>
-          <div>
-            <pre>
-              {generatedResponse && printConsole()}
-              <JsonView src={generatedResponse} />
-            </pre>
-          </div>
-        </div>
-      </div>
+      {layout}
     </Router>
   );
 };

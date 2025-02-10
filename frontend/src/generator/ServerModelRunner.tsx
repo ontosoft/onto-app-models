@@ -11,8 +11,8 @@ import { getJSDocTemplateTag } from "typescript";
  * ServerModelRunner Component
  *
  * This component is responsible for showing what application model
- * is loaded on the server and it provides a button to run
- * the model on the server (function runModelOnServer)
+ * is loaded on the server and it provides a button to run it on 
+ * the server (function runModelOnServer)
  *
  */
 

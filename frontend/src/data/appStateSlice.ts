@@ -103,14 +103,19 @@ export const appExchangeGet = createAsyncThunk('appstate/appExchangeGetData',
         }
         else {
             /**
-             * Here we have the explanation of the application exchange logic
-             * After the application exchange data are receivea, the data are processed in the modelSlice and if the layout refresh is necessary, the main application pane is activated.
+             * The application exchange logic
+             * After the application exchange data are received, the data 
+             * are processed in the modelSlice and if the layout refresh is 
+             * necessary, the main application pane is activated.
              * 
              * The main application pane is activated in the appStateSlice by the action activateMainApplicationPana
              */
             const response:AppExchangeResponse = await appExchangeGetAPI();
             thunkApi.dispatch(processReceivedMessage(response));
-            if (state.model.layoutRefreshNecessary) {
+            let state1:RootState = thunkApi.getState() as RootState;
+            console.log("Do we need to refresh the layout?", state1.model.layoutRefreshNecessary);
+ 
+            if (state1.model.layoutRefreshNecessary) {
                 thunkApi.dispatch(activateMainApplicationPane());
             }
         }

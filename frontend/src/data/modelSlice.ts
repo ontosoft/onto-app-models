@@ -6,10 +6,10 @@ import { TemplateDataSourceActions } from "../owlprocessor/TemplateDataSource";
 import { Template } from "../owlprocessor/Template";
 import { Formula } from "rdflib";
 import { CurrentForm } from "../owlprocessor/CurrentForm";
-import CurrentLayout from "../owlprocessor/CurrentLayout";
-import { layoutCreating } from "../owlprocessor/LayoutRendering";
+import {Layout}  from "../owlprocessor/LayoutRendering";
 import { activateMainApplicationPane } from "./appStateSlice";
 import AppExchangeResponse from "../owlprocessor/AppExchangeResponse";
+import React from "react";
 
 type GeneralAction = PayloadAction<{}>;
 type ResponseAction = PayloadAction<AppExchangeResponse>;
@@ -29,7 +29,7 @@ export interface ModelState {
   outputGraph: Formula,
   //status of the RDF reading
   asyncStatus: "loading" | "complete",
-  currentLayout: CurrentLayout,
+  currentLayout: JSX.Element | null,
   layoutRefreshNecessary: boolean 
  }
 
@@ -41,7 +41,7 @@ const initialState: ModelState = {
   UIRunningInstance: {} as RunningInstance,
   outputGraph: {} as Formula,
   asyncStatus: 'complete',
-  currentLayout: {} as CurrentLayout,
+  currentLayout: {} as JSX.Element,
   layoutRefreshNecessary: false
 };
 
@@ -77,7 +77,7 @@ const modelSlice = createSlice({
         },
 
         processReceivedMessage : function (state, action: ResponseAction) {
-          state.currentLayout = layoutCreating(action.payload);
+          state.currentLayout = Layout(action.payload) ;
           state.layoutRefreshNecessary = true;
         }
     

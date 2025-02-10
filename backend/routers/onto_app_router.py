@@ -55,10 +55,10 @@ async def run_application():
         # (localAppInteractionModelInstance is not created)
         app.runApplication()
         return {"message_type": "information",
-                "message": "The application is running."}
+                "message_content": "The application is running."}
     elif app is None:
         return {"message_type": "information",
-                 "message" : "No model loaded. Load an application model first."}
+                 "message_content" : "No model loaded. Load an application model first."}
 
 @router.post("/app_exchange_post", response_description="Process the data sent from the frontend") 
 async def process_data_sent_from_frontend(request: Request):

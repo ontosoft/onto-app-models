@@ -28,7 +28,7 @@ class AppInteractionModel:
     def generateLayout(self):
         """
         Generates the next layout in the control flow of the application
-        A layout is, for example, an HTML form block that contains a 
+        A layout is, for example, a description of an HTML form block that contains a 
         list of actions that can be performed on the form.
         """
         if self.app_state.current_form_index == -1:
@@ -40,7 +40,14 @@ class AppInteractionModel:
             return "No more forms"
         form_object = self.uimodel.forms[self.app_state.current_form_index]
         json_form = json.dumps(form_object, cls = FormEncoder)
-        return json_form
+        message = { 
+            "message_type": "form",
+            "layout_type": "form",
+            "message_content": json_form }
+        self.app_state.is_waiting_for_form_data = True 
+        logger.debug("Message to the frontend has the content:\n" + json.dumps(message))
+ 
+        return json.dumps(message)
 
 
 

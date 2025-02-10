@@ -5,7 +5,7 @@ import { useAppSelector , useAppDispatch} from "../app/hooks";
 
 /**
  * GeneratorViewport component renders different UI components 
- * in the process of searchin for a applicaton model, loading 
+ * in the process of searching for an applicaton model, loading 
  * the model and then it displays GeneratorViewport component 
  * which is the main working area of the chosen executing application.
  *
@@ -22,18 +22,17 @@ import { useAppSelector , useAppDispatch} from "../app/hooks";
  * - When finally the application is started `initiatedRunning` is true, it displays the `MainApplicatonPane` component as the place of the application interaction.
  *
  */
-export const GeneratorViewport = () => {
+export const GeneratorViewport : React.FC = () => {
 
   const appRunningOnServer = useAppSelector((state) => state.stateData.runningOnServer);
-  const appExchangeGetStatus = useAppSelector((state) => state.stateData.exchangeGetStatus);
+  const appExchangeGetStatus = useAppSelector((state) => state.stateData.appExchangeGetStatus);
   const previewListOfInnerModels = useAppSelector(
     (state) => state.serverInnerModels.initiedModelListLoading
   );
   const initiedSelectedInnerModelLoading = useAppSelector( 
     (state) => state.serverInnerModels.initiedSelectedInnerModelLoading
   )
-  const formFields = useAppSelector((state) => state.model.currentForm);
-  const showMainApplicationPane = useAppSelector((state) => state.stateData.showMainApplicationPane);
+ const showMainApplicationPane = useAppSelector((state) => state.stateData.showMainApplicationPane);
 
   return (
     <div className="col-10" id="display">
@@ -43,7 +42,8 @@ export const GeneratorViewport = () => {
            *   the frontend has activated the main application panel  
            * 
            */ 
-          return <MainApplicatonPane formModel={formFields} />;
+          console.log("Main application panel is displayed");
+          return <MainApplicatonPane  />;
         } else if (previewListOfInnerModels) {
           return <ServerModelSelector />;
         } else if (initiedSelectedInnerModelLoading) {
