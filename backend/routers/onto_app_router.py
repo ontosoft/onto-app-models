@@ -3,13 +3,13 @@ from pathlib import Path
 from owlprocessor.app import App
 from utilities.model_directory_functions import read_model_files_from_directory
 import logging
-import json
-import jsonpickle
 
 logger = logging.getLogger('ontoui_app')
 router = APIRouter()
-app:App =  None 
 
+app:App = App()
+
+#TODO App havy logic with dependency injection in FastAPI 
 i = 0
 
 @router.post("/upload_rdf_file", response_description="Upload new model file")
@@ -20,7 +20,7 @@ async def upload_model_file(file: UploadFile = File(...)):
     filecontent = await file.read()
     try:
         local_model = App()
-        local_model.readGraph(filecontent)
+        local_model.read_graph(filecontent)
         local_model.loadUIModel()
     except Exception as e:
         return {"The file is not a valid UI model": str(e)}
@@ -41,19 +41,20 @@ async def run_application():
 
     """
     global i
-    i += 1 
     global app
+    i += 1 
+
     logger.debug(f"This is the {i} th time the function is run.")
-    if app is not None and app.isInnerAppModelLoaded and app.localAppInteractionModelInstance is not None:
-        logger.info(f"Process generator exists { app.localAppInteractionModelInstance}")
+    if app is not None and app.is_inner_app_static_model_loaded and app.app_interaction_model_instance is not None:
+        logger.info(f"Process generator exists { app.app_interaction_model_instance}")
         return {"message": "The applicaton was already run before.",
-                "model": app.localAppInteractionModelInstance}
+                "model": app.app_interaction_model_instance}
         #jsonpickle.encode(
-    elif app is not None and app.isInnerAppModelLoaded and app.localAppInteractionModelInstance is None:
-        # The inner model reporesentation corresponding to the RDF graph
+    elif app is not None and app.is_inner_app_static_model_loaded and app.app_interaction_model_instance is None:
+        # The inner model static reporesentation corresponding to the RDF graph
         # was already loaded. However, the application is still not running because
-        # (localAppInteractionModelInstance is not created)
-        app.runApplication()
+        # (AppInteractionModelInstance is not created)
+        app.run_application()
         return {"message_type": "information",
                 "message_content": "The application is running."}
     elif app is None:
@@ -80,7 +81,7 @@ async def read_current_app_data_from_model():
     processing the data sent from the frontend and both methods are used to 
     make data exchange between the frontend and the backend.
     """
-    return app.readNewModelLayout()
+    return app.read_new_model_layout()
  
     
 @router.get("/read_inner_server_models", response_description="Get current list of inner UI models on the server") 
@@ -101,16 +102,13 @@ async def load_inner_server_model(filename: str):
         This file is stored in the 'app_models' folder as RDF file
     """
     global app
-    if app is not None and app.isInnerAppModelLoaded:
-        logger.debug(f"The app model \"{app.modelName} \" was already loaded.") 
-        return {"message": f"The model {app.modelName} is loaded . The applicaton was already run before. Do you want to load a new model?"}
+    if app is not None and app.is_inner_app_static_model_loaded:
+        logger.debug(f"The app model \"{app.model_name} \" was already loaded.") 
+        return {"message": f"The model {app.model_name} is loaded . The applicaton was already run before. Do you want to load a new model?"}
     else:
         logger.debug(f"The app model \"{filename} \" is about to be loaded.") 
-        modelsLocation = Path("./app_models")
-        modelsLocation.mkdir(parents=True, exist_ok=True)
-        filePath = modelsLocation.joinpath(filename)
-        app = App()
-        app.readGraph(filePath)
-        app.loadInnerAppModel()
-        return {"message": f"The model is loaded {app.modelName}. "}
+        app = App(config="development")
+        app.read_graph(filename)
+        app.load_inner_app_model()
+        return {"message": f"The model is loaded {app.model_name}. "}
      

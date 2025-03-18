@@ -1,9 +1,20 @@
-class AppInternalModel:
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from .app_interaction_model import AppInteractionModel
+
+class AppInternalStaticModel:
+    """_summary_
+    Internal representation of the model graph which is originally 
+    a knowledge graph. The AppInternalModel gives a object as a 
+    model representation.
+    """
     def __init__(self):
-        self.modelGraph = None
+        self.model_graph = None
         self.startingFormBlock = None
-        self.formBlocks = []
+        self.form_blocks = []
         self.actions = []
+   
 
     @property
     def firstForm(self):
@@ -15,11 +26,11 @@ class AppInternalModel:
 
     @property
     def forms(self):
-        return self.formBlocks
+        return self.form_blocks
 
     @forms.setter
     def forms(self, forms):
-        self.formBlocks = forms
+        self.form_blocks = forms
 
 
 class Action:

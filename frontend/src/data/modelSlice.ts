@@ -29,7 +29,7 @@ export interface ModelState {
   outputGraph: Formula,
   //status of the RDF reading
   asyncStatus: "loading" | "complete",
-  currentLayout: JSX.Element | null,
+  currentLayout: React.ReactNode,
   layoutRefreshNecessary: boolean 
  }
 

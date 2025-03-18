@@ -1,8 +1,20 @@
+from typing import TYPE_CHECKING
+from json import JSONEncoder
+import logging
+from rdflib import  Namespace
+OBOP = Namespace("http://purl.org/net/obop/")
+
+logger = logging.getLogger("ontoui_app")
+if TYPE_CHECKING:
+    from .forms import Form
+
 class FormElement:
-    def __init__(self, type, position = 0):
+    def __init__(self,form , model_node, type, position = 0 ):
+        self.model_node = model_node
         self.type = type
         self.position :int = position
         self.action_pointers = []
+        self.form:Form = form
 
     def add_action_pointer(self, action_pointer):
         self.action_pointers.append(action_pointer)
@@ -13,30 +25,72 @@ class FormElement:
     def __repr__(self):
         return f"FormElement: {self.type}"
 
+    def crete_jsonform_schema_property(self, app_state):
+        new_property_name : str
+        field_type : str = "string"
+        # TODO Naming the property as a label for OBOPElements."
+        # This should be considered once again. Label could be part 
+        # of the basic form element not only OBOPElement
+        if str(self.type) == str(OBOP.Field):
+            field_type = "string"
+        if isinstance(self, OBOPElement) and self.label !="":
+            new_property_name = self.label
+            app_state.current_json_form_name_mapping.values[str(self.model_node)] = self.label
+
+        return {
+            new_property_name: {
+                "type": field_type,
+                "position": int(self.position),
+        #        "action_pointers": self.action_pointers
+            }
+        }
+
+    def create_jsonform_ui_schema_element(self):
+        return {
+            "type": 'Control',
+            "scope": '#/properties/' + str(self.model_node),
+
+        }
+ 
+
+
+
+class FormElementEncoder(JSONEncoder):
+    def default(self, o):
+        form_element = {}
+        try:
+            if isinstance(o, FormElement):
+                form_element = {
+                    "type": o.type,
+                    "model_node": o.model_node,
+                    "position": o.position,
+                    "action_pointers": o.action_pointers
+                }
+        except Exception as e:
+            logger.error(f"Error in FormElementEncoder: {e}")
+        return form_element
+
 
 class FormProperty(FormElement):
     def __init__(
         self,
-        type,
-        position,
-        shape_instance=None,
-        path=None,
-        value=None,
-        property_path=None,
+        form,
+        model_node,
+        property_path,
+        property_order,
         property_name=None,
         property_data_type=None,
         property_description=None,
         property_min_count=None,
+        related_element = None
     ):
-        super().__init__(type, position)
-        self.shape_instance = shape_instance
-        self.name = path
-        self.value = value
-        self.property_path = property_path
+        super().__init__(form, model_node, property_path, property_order)
         self.property_name = property_name
         self.property_data_type = property_data_type
         self.property_description = property_description
         self.property_min_count = property_min_count
+        self.related_element = related_element # The OBOP related element
+        # which additionaly describes this schacl property
 
         def __str__(self):
             return f"FormProperty: {self.property_name}"
@@ -50,9 +104,9 @@ class FormProperty(FormElement):
 """
 
 class OBOPElement(FormElement):
-    def __init__(self, type, position, node, action_initiator=None):
-        super().__init__(type, position)
-        self.node = node
+    def __init__(self, parent_form, model_node, type, position, label = None, action_initiator=None):
+        super().__init__(parent_form, model_node, type, position)
+        self.label = label
         self._action_pointers = []
 
     @property

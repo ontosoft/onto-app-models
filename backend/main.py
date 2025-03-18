@@ -33,7 +33,5 @@ app.add_middleware(
 app.include_router(model_router)
 
 if __name__ == "__main__":
-    logger.debug('Uvicorn ========= ciao ========= ')
     app_logger.info('Info ========= ciao ========= ')
-    app_logger.debug('Debug ========= ciao ========= ')
-    uvicorn.run( "main:app",port=8089, host='0.0.0.0', reload=True, log_level='debug')
+    uvicorn.run( "main:app",port=8089, host='0.0.0.0', reload=False, log_level='debug')

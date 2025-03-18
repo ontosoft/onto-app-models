@@ -23,22 +23,18 @@ const MainApplicatonPane: React.FC = () => {
   const printGeneratedViewOnConsole = () => {
     console.log(layout);
   };
-  useEffect(() => {
-    if (appRunningOnServer !== "succeeded") {
-      console.log("The application is not running on the server"); 
-    }else if (appExchangeStatus !== "succeeded"){
-      console.log("The application has still not made any data exchange with the server");
-    }
-    else if (appRunningOnServer === "succeeded") {
-     console.log("The application is running on the server"); 
-    }
-    printGeneratedViewOnConsole();
-  }, [appRunningOnServer]);
+  // useEffect(() => {
+  //   if (appRunningOnServer !== "succeeded") {
+  //     console.log("The application is not running on the server"); 
+  //   }else if (appExchangeStatus !== "succeeded"){
+  //     console.log("The application has still not made any data exchange with the server");
+  //   }
+  //   else if (appRunningOnServer === "succeeded") {
+  //    console.log("The application is running on the server"); 
+  //   }
+  //   printGeneratedViewOnConsole();
+  // }, [appRunningOnServer]);
 
-  return (
-    <Router>
-      {layout}
-    </Router>
-  );
+  return <div>{layout}</div>;
 };
 export default MainApplicatonPane;
