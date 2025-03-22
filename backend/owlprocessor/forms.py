@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import TYPE_CHECKING
 from json import JSONEncoder
 import json
@@ -7,6 +8,7 @@ from typing import TypeAlias
 
 if TYPE_CHECKING:
     from .app_model import AppInternalStaticModel
+    from .app_interaction_model import ApplicationState
 
 logger = logging.getLogger("ontoui_app")
 
@@ -65,7 +67,7 @@ class Form:
     def add_target_class(self, target_class):
         self._target_classes.add(target_class)
 
-    def create_json_form_schemas(self, app_state) -> JSONForm:
+    def create_json_form_schemas(self, app_state : ApplicationState) -> JSONForm:
         jform : JSONForm = {
             "node": str(self._node),
             "schema": {
@@ -96,10 +98,9 @@ class Form:
         if self._elements.__len__() != 0:
             for element in self.elements:
                 jform["schema"]["properties"].update(
-                    element.crete_jsonform_schema_property(app_state))
+                    element.create_jsonform_schema_property(app_state))
                 jform["uischema"]["elements"].append(
                     element.create_jsonform_ui_schema_element(app_state))
-                element.create_jsonform_ui_schema_element()
         return jform
 
 class FormEncoder(JSONEncoder):

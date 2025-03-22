@@ -1,7 +1,6 @@
 from .forms import Form
 from .app_model import AppInternalStaticModel as AppStaticModel
-from .communication import FrontEndData
-import json
+from .communication import AppExchangeFrontEndData,  AppExchangeGetOutput
 import logging
 import jsonpickle
 from collections.abc import Mapping
@@ -17,7 +16,7 @@ class AppInteractionModel:
         self.inner_app_static_model:AppStaticModel = uimodel
         self.app_state: ApplicationState = ApplicationState()
 
-    def processReceivedClientData(self, frontend_state : FrontEndData):
+    def processReceivedClientData(self, frontend_state : AppExchangeFrontEndData):
         """
         Processes the data received from the frontend.
         """
@@ -27,7 +26,7 @@ class AppInteractionModel:
         self.app_state.setAppExchangeWaitingToSendData()
         return True
  
-    def generate_layout(self):
+    def generate_layout(self)-> AppExchangeGetOutput:
         """
         Generates the next layout in the control flow of the application
         A layout is, for example, a description of an HTML form block that contains a 
@@ -43,12 +42,12 @@ class AppInteractionModel:
         form_object : Form = self.inner_app_static_model.forms[self.app_state.current_form_index]
         json_form = form_object.create_json_form_schemas(self.app_state) 
         logger.debug(f" Created form is {jsonpickle.encode(json_form, indent=2)}")
-        message = { 
-            "message_type": "form",
-            "layout_type": "form",
-            "message_content": json_form }
+        output_message = AppExchangeGetOutput(
+            message_type = "form",
+            layout_type = "form",
+            message_content = json_form)
         self.app_state.is_waiting_for_form_data = True 
-        return json.dumps(message)
+        return output_message
 
 
 

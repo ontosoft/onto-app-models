@@ -2,14 +2,14 @@ from rdflib import Graph
 from .app_interaction_model import AppInteractionModel
 from .app_model_factory import UIModelFactory
 from .app_model import AppInternalStaticModel
-from .communication import FrontEndData
+from .communication import AppExchangeFrontEndData, AppExchangeGetOutput
 from pathlib import Path
 import jsonpickle
 import logging
 
 logger = logging.getLogger('ontoui_app')
 
-class App():
+class AppEngine():
     """
     Represents the entry point for the backend model.
 
@@ -86,16 +86,23 @@ class App():
             #logger.debug(json.dumps(self.processGenerator.__dict__))
             logger.debug(jsonpickle.encode(self.app_interaction_model_instance))
 
-    def read_new_model_layout(self):
+    def read_new_model_layout(self)-> AppExchangeGetOutput:
         """
         Reads the new model layout from the running interaction model instance 
         """
         if self.inner_app_static_model is None:
-            return {"message":"An application model is not loaded."}
+
+            return AppExchangeGetOutput(
+                message_type ="error",
+                layout_type="",
+                message_content = {"message" : "An application model is not loaded."})
         elif self.app_interaction_model_instance is None: 
-            return {"message":"An application is not running."}
+            return AppExchangeGetOutput(
+                message_type ="notification",
+                layout_type="",
+                message_content = {"message" : "An application model is not loaded. Load the corresponding model."})
         else:
-            newModelLayout = self.app_interaction_model_instance.generate_layout()
+            newModelLayout : AppExchangeGetOutput = self.app_interaction_model_instance.generate_layout()
         return newModelLayout
 
     def processReceivedClientData(self, frontend_state: any):
@@ -109,8 +116,8 @@ class App():
         elif self.app_interaction_model_instance is None: 
             return {"message":"An application is not running."}
         else:
-            # Parse the JSON data into a FrontEndData object
-            received_data = FrontEndData(**frontend_state)
+            # Parse the JSON data into a AppExchangeFrontEndData object
+            received_data = AppExchangeFrontEndData(**frontend_state)
             processing_result = self.app_interaction_model_instance.processReceivedClientData(received_data)
         return processing_result
   

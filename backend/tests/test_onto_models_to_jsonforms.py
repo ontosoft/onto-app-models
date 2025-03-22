@@ -3,11 +3,13 @@ from pythonjsonlogger import jsonlogger
 from pprint import pprint
 from rdflib import Graph
 from main import app
-from owlprocessor.app import App
+from owlprocessor.app_engine import AppEngine
+from owlprocessor.communication import AppExchangeGetOutput
 import jsonpickle
 import logging
 import os
 import pytest
+from deepdiff import DeepDiff
 # Change the current working directory to the parent directory
 os.chdir(os.path.dirname(os.getcwd()))
 
@@ -72,24 +74,28 @@ def test_read_textual_field_model(caplog):
     caplog.set_level(logging.DEBUG, logger="ontoui_app")
     logger.debug("1. Load the model ")
 
-    app: App = None
-    app = App( config = "test")
+    app: AppEngine = None
+    app = AppEngine( config = "test")
     app.model_graph = Graph()
     app.model_graph.parse(data = rdf_model)
     app.load_inner_app_model()
-    assert app.innerAppModel is not None
-    assert app.innerAppModel.forms is not None
-    assert len(app.innerAppModel.forms) > 0
-    logger.debug(f"Form: {jsonpickle.encode(app.innerAppModel.forms[0], indent=2)}")
-    logger.debug("Output")
+    assert app.inner_app_static_model is not None
+    assert app.inner_app_static_model.forms is not None
+    assert len(app.inner_app_static_model.forms) > 0
+    logger.debug(f"Form: {jsonpickle.encode(app.inner_app_static_model.forms[0], indent=2)}")
     app.run_application()
     response = app.app_interaction_model_instance.generate_layout()
-    wanted_result ={
-            "node": "http://example.org/logicinterface/testing/field_1" ,
+    logger.debug("Output dictionary") 
+    logger.debug(jsonpickle.encode(response,  indent =2))
+    wanted_result = AppExchangeGetOutput(
+        message_type = "form",
+        layout_type = "form",
+        message_content = {
+            "node": "http://example.org/logicinterface/testing/block_1" ,
             "schema": {
                 "type": "object",
                 "properties": {
-                     "http://example.org/logicinterface/testing/field_1": {
+                     "Label name": {
                     "type": "string",
                     "position": 1
                     }
@@ -98,9 +104,14 @@ def test_read_textual_field_model(caplog):
             "uischema": {
                 "type": 'VerticalLayout',
                 "elements": [
-                    
+                   {
+                       "type": "Control", 
+                       "scope": "#/properties/Label name" 
+                   }
                 ]
             }
         }
+    )
+    logger.debug("The difference is:") 
+    logger.debug(DeepDiff(response, wanted_result))
     assert response == wanted_result  
-    assert app.innerAppModel is not None

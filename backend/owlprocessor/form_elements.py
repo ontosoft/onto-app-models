@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import TYPE_CHECKING
 from json import JSONEncoder
 import logging
@@ -7,6 +8,7 @@ OBOP = Namespace("http://purl.org/net/obop/")
 logger = logging.getLogger("ontoui_app")
 if TYPE_CHECKING:
     from .forms import Form
+    from .app_interaction_model import ApplicationState
 
 class FormElement:
     def __init__(self,form , model_node, type, position = 0 ):
@@ -25,7 +27,7 @@ class FormElement:
     def __repr__(self):
         return f"FormElement: {self.type}"
 
-    def crete_jsonform_schema_property(self, app_state):
+    def create_jsonform_schema_property(self, app_state:ApplicationState):
         new_property_name : str
         field_type : str = "string"
         # TODO Naming the property as a label for OBOPElements."
@@ -34,8 +36,8 @@ class FormElement:
         if str(self.type) == str(OBOP.Field):
             field_type = "string"
         if isinstance(self, OBOPElement) and self.label !="":
-            new_property_name = self.label
-            app_state.current_json_form_name_mapping.values[str(self.model_node)] = self.label
+            new_property_name = str(self.label)
+            app_state.current_json_form_name_mapping[str(self.model_node)] = str(self.label)
 
         return {
             new_property_name: {
@@ -45,10 +47,13 @@ class FormElement:
             }
         }
 
-    def create_jsonform_ui_schema_element(self):
+    def create_jsonform_ui_schema_element(self, app_state:ApplicationState):
+        encoded_name: str = None
+        if str(self.model_node) in app_state.current_json_form_name_mapping:        
+            encoded_name = app_state.current_json_form_name_mapping[str(self.model_node)] 
         return {
             "type": 'Control',
-            "scope": '#/properties/' + str(self.model_node),
+            "scope": '#/properties/' + encoded_name,
 
         }
  

@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient 
 from main import app
-from owlprocessor.app import App
+from owlprocessor.app_engine import AppEngine
 import jsonpickle
 import logging
 
@@ -49,8 +49,8 @@ class LoadingTest:
         """
         logger.debug("1. Load the model from the RDF file test_combine_properties.ttl ")
 
-        app1: App = None
-        app1 = App( config = "test")
+        app1: AppEngine = None
+        app1 = AppEngine( config = "test")
         app1.read_graph("test_combine_properties.ttl")
         app1.load_inner_app_model()
         assert app1.innerAppModel is not None

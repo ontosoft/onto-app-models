@@ -1,13 +1,14 @@
 from fastapi import APIRouter, UploadFile, File, Request
 from pathlib import Path
-from owlprocessor.app import App
+from owlprocessor.app_engine import AppEngine
 from utilities.model_directory_functions import read_model_files_from_directory
+from owlprocessor.communication import AppExchangeGetOutput
 import logging
 
 logger = logging.getLogger('ontoui_app')
 router = APIRouter()
 
-app:App = App()
+app:AppEngine = AppEngine()
 
 #TODO App havy logic with dependency injection in FastAPI 
 i = 0
@@ -19,7 +20,7 @@ async def upload_model_file(file: UploadFile = File(...)):
     """
     filecontent = await file.read()
     try:
-        local_model = App()
+        local_model = AppEngine()
         local_model.read_graph(filecontent)
         local_model.loadUIModel()
     except Exception as e:
@@ -74,7 +75,7 @@ async def process_data_sent_from_frontend(request: Request):
     return app.processReceivedClientData(frontend_state)
 
 @router.get("/app_exchange_get", response_description="Get current UI page") 
-async def read_current_app_data_from_model():
+async def read_current_app_data_from_model() -> AppExchangeGetOutput:
     """
     Reading the data from the the interactive model (e.g. UI page) and 
     returns it in the json format to the frontend. This method is called after 
@@ -107,7 +108,7 @@ async def load_inner_server_model(filename: str):
         return {"message": f"The model {app.model_name} is loaded . The applicaton was already run before. Do you want to load a new model?"}
     else:
         logger.debug(f"The app model \"{filename} \" is about to be loaded.") 
-        app = App(config="development")
+        app = AppEngine(config="development")
         app.read_graph(filename)
         app.load_inner_app_model()
         return {"message": f"The model is loaded {app.model_name}. "}

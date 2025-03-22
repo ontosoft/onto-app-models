@@ -56,6 +56,6 @@ export async function appExchangeGetAPI() : Promise<any> {
         throw new Error(`HTTP error! status: ${response.status}`);
     }
     const jsonResponse = await response.json();
-    const data: AppExchangeResponse =  JSON.parse(jsonResponse) as AppExchangeResponse;
+    const data: AppExchangeResponse =  jsonResponse as AppExchangeResponse;
     return data; 
 }

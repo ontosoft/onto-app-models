@@ -61,10 +61,10 @@ function Panel({
 
 const FormComponent: React.FC<Props> = (props: Props) => {
   //const node = props.form.node;
-  const schema1 = props.form.schema;
-  const schema = {
+  const schema = props.form.schema;
+  const schema1 = {
     "properties": {
-      "kame": {
+      "Label name": {
         "type": "string",
         "position":1
       }
@@ -72,18 +72,18 @@ const FormComponent: React.FC<Props> = (props: Props) => {
   };
 
   console.log("The schema is", schema1);
-  const uischema1 = props.form.uischema;
-  const uischema = {
+  const uischema = props.form.uischema;
+  console.log(uischema)
+  const uischema1 = {
     "type": "VerticalLayout",
     "elements": [
         {
         "type": "Control",
-        "scope": "#/properties/kame"
+        "scope": "#/properties/Label name"
     }]
   };
-  //console.log("The uischema generaten from the server", uischema);
-  console.log("The uischema dynamic", uischema1);
 
+  console.log("The uischema dynamic", uischema1);
   const [data, setData] = useState(initialData);
 
   // useEffect(() => {
