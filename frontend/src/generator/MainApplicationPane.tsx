@@ -11,7 +11,7 @@ import { Layout } from "../owlprocessor/LayoutRendering";
 const MainApplicatonPane: React.FC = () => {
   const [generatedResponse, setGeneratedResponse] = useState<any>();
   const appRunningOnServer = useAppSelector(
-    (state) => state.stateData.runningOnServer
+    (state) => state.stateData.startAppOnServer
   );
   const appExchangeStatus = useAppSelector(
     (state) => state.stateData.appExchangeGetStatus

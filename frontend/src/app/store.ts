@@ -1,8 +1,10 @@
-import { configureStore, ThunkAction, Action } from '@reduxjs/toolkit';
+import { configureStore, ThunkAction, Action, createListenerMiddleware  } from '@reduxjs/toolkit';
 import modelReducer from '../data/modelSlice';
 import appStateReducer from '../data/appStateSlice';
 import serverModel from '../data/serverModelSlice';
+import { effect } from 'zod';
 
+export const listenerMiddleware = createListenerMiddleware();
 
 export const store = configureStore({
   reducer: {
@@ -13,8 +15,10 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: false,
-    })
+    }).prepend(listenerMiddleware.middleware)
 });
+
+
 
 //TODO: Do we need applyMiddleware here in configStore?
 
@@ -26,3 +30,5 @@ export type AppThunk<ReturnType = void> = ThunkAction<
   unknown,
   Action<string>
 >;
+
+

@@ -1,40 +1,58 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { stat } from "fs";
+import { createSlice, createAsyncThunk, PayloadAction, } from "@reduxjs/toolkit";
+import { fetchListOfServerModels } from "./serverModelLoadingAPI";
+import { AppModelData } from "../app/communication";
+import { listenerMiddleware } from "../app/store";
+
 /*
-   selectServerModelSlice has a function to chose among those 
-   inner models (stored on the server) which has to be executed by the app generator
+   selectServerModelSlice has a function to choose among those 
+   inner models (stored on the server) which has to be executed
+   by the app generator, to load those models and other activities 
+   with models 
 */
 
+
+
 export interface ServerModelState {
-    initiedModelListLoading: boolean;
+    previewModelList: boolean;
+    loadingModelListStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
+    listOfServerModels: AppModelData[],
     initiedSelectedInnerModelLoading: boolean;
     innerUIModelLoadingStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
     selectedServerModel: string | null;
     innerUIModelLoadingError: string | null;
-} 
+}
 
-const initialState :ServerModelState = {
-    initiedModelListLoading : false,
+const initialState: ServerModelState = {
+    previewModelList: false,
+    loadingModelListStatus: "idle",
+    listOfServerModels: [],
     initiedSelectedInnerModelLoading: false,
     innerUIModelLoadingStatus: 'idle',
     selectedServerModel: null,
     innerUIModelLoadingError: null
 }
 
-export const loadInnerUIModel = createAsyncThunk('model/loadModel',  async (filename: string | undefined | null) => { 
-   /** Load the chosen UI model on the server and retrun the 
-    * messige that the model is loaded
-    */
-   try{
-       const url = new URL("http://localhost:8089/load_inner_uimodel_from_server?");
-       url.searchParams.append('filename', filename as string);
-       const response = await fetch(url.toString(), {
-           method: "GET",
-           headers: {
-               "Content-Type": "application/json",
-           }
-       });
-       return response.json();
+export const readingListOfServerModels = createAsyncThunk('model/readListOfModels',
+    async () => {
+        const response = await fetchListOfServerModels();
+        return response;
+    }
+);
+
+export const loadInnerUIModel = createAsyncThunk('model/loadModel', async (filename: string | undefined | null) => {
+    /** Load the chosen UI model on the server and retrun the 
+     * messige that the model is loaded
+     */
+    try {
+        const url = new URL("http://localhost:8089/load_inner_uimodel_from_server?");
+        url.searchParams.append('filename', filename as string);
+        const response = await fetch(url.toString(), {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            }
+        });
+        return response.json();
     }
     catch (error) {
         console.error("Failed to load inner server UI model", error);
@@ -48,19 +66,33 @@ export const selectedServerModelSlice = createSlice({
         selectModel: (state, action) => {
             state.selectedServerModel = action.payload;
         },
-        initiateInnerModelsListLoading: (state) => {
-            console.log("Initiating inner models list loading");
-            state.initiedModelListLoading = true;
+        initiatePreviewModelList: (state) => {
+            console.log("Initiating loading a list of models on the server");
+            state.previewModelList = true;
+        },
+        closePreviewModelList: (state) => {
+            state.previewModelList = false;
+        },
+        resetLoadingModelListStatus: (state) => {
+            state.loadingModelListStatus = "idle"
         },
         initiateSelectedInnerModelLoading: (state, action: { payload: string | undefined | null }) => {
             state.initiedSelectedInnerModelLoading = true;
             state.selectedServerModel = action.payload ?? null;
-        },
-        innerModelListLoadingDone: (state) => {
-            state.initiedModelListLoading = false;
-        }
+        }   
     },
     extraReducers(builder) {
+        builder.addCase(readingListOfServerModels.pending, (state) => {
+            state.loadingModelListStatus = 'loading';
+        });
+        builder.addCase(readingListOfServerModels.fulfilled, (state, action: PayloadAction<AppModelData[]> ) => {
+            state.loadingModelListStatus = 'succeeded';
+            state.listOfServerModels = action.payload;
+        });
+        builder.addCase(readingListOfServerModels.rejected, (state, action) => {
+            state.loadingModelListStatus = 'failed';
+        });
+
         builder.addCase(loadInnerUIModel.pending, (state) => {
             state.innerUIModelLoadingStatus = 'loading';
         });
@@ -75,9 +107,19 @@ export const selectedServerModelSlice = createSlice({
     }
 });
 
-export const { selectModel, initiateInnerModelsListLoading,
-    initiateSelectedInnerModelLoading,  
-    innerModelListLoadingDone
- } = selectedServerModelSlice.actions;
+// This listener could have been used instead of useEffects in 
+// in the 
+// listenerMiddleware.startListening.withTypes<RootState, AppDispatch>()({
+//   predicate: (_action, currentState, previousState) => {
+//     return currentState.pokemon.search !== previousState.pokomen.search;
+//   },
+//   effect: async (_action, listenerApi)
+// })
+
+
+export const { selectModel, initiatePreviewModelList,
+    initiateSelectedInnerModelLoading,
+    closePreviewModelList, resetLoadingModelListStatus
+} = selectedServerModelSlice.actions;
 
 export default selectedServerModelSlice.reducer;

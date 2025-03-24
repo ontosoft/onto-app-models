@@ -10,3 +10,10 @@ export const AppExchangeBackendGetSchema = z.object({
 export type AppExchangeBackendGet = z.infer<typeof AppExchangeBackendGetSchema>
 
 //TODO This validation can be considered
+
+export interface AppModelData {
+    filename: string; 
+    model: string; 
+    description: string; 
+    filepath: string 
+  }

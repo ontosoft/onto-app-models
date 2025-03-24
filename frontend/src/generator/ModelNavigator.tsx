@@ -1,19 +1,27 @@
 import React, { useState, ChangeEvent } from "react";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
-import { transformGraphToInnerTemplate, prepareFormData,
+import {
+  transformGraphToInnerTemplate,
+  prepareFormData,
 } from "../data/modelSlice";
-import { initiateInnerModelsListLoading } from "../data/serverModelSlice";
+import { initiatePreviewModelList, readingListOfServerModels } from "../data/serverModelSlice";
+import { previewAppTerminationPane } from "../data/appStateSlice";
 import { serialize, Formula } from "rdflib";
 import { OUTPUT_KG } from "../owlprocessor/InterfaceOntologyTypes";
-//This file is loaded from the public directory
-const fileName = "../models/restaurant-model-ttl.ttl";
 
 // Choose a model to load
 export const ModelNavigator: React.FC = () => {
   const dispatch = useAppDispatch();
+  //TODO inputModelGraph here from the earlier version
   const inputModelGraph = useAppSelector((store) => store.model.rdfGraph);
+  const appRunningOnServer = useAppSelector(
+    (state) => state.stateData.runningOnServer
+  );
   const outputKnowledgeGraph = useAppSelector(
     (store) => store.model.outputGraph
+  );
+  const isShownTerminationPane = useAppSelector(
+    (store) => store.stateData.showAppTerminationPane
   );
   const currentForm = useAppSelector((store) => store.model.currentForm);
 
@@ -22,20 +30,29 @@ export const ModelNavigator: React.FC = () => {
     dispatch(transformGraphToInnerTemplate());
     //Preparing the first form in application
     dispatch(prepareFormData("-1"));
-//    dispatch(initiateRunningOnServer());
+    //    dispatch(initiateRunningOnServer());
     console.log("Current form:");
     console.log(currentForm);
   };
 
   const initiatedLoad = useAppSelector(
-    (state) => state.serverInnerModels.initiedModelListLoading
+    (state) => state.serverInnerModels.previewModelList
   );
 
   const loadListOfMOdels = () => {
-    console.log("Initiating inner models list loading")
-    dispatch(initiateInnerModelsListLoading())
-    console.log(initiatedLoad)
-  }  
+    console.log("Initiating inner models list loading");
+    if (appRunningOnServer ) {
+      console.log(
+        "The current running application has to be terminated in order to proceed."
+      );
+      if (!isShownTerminationPane)
+        dispatch(previewAppTerminationPane());
+    } else {
+      dispatch(readingListOfServerModels()).then(
+        () => dispatch(initiatePreviewModelList())
+      );
+    }
+  };
 
   // Selecting an RDF file to upload
   const [selectedRDFFile, setSelectedFile] = useState<File | null>(null);
@@ -74,13 +91,12 @@ export const ModelNavigator: React.FC = () => {
     });
   };
 
-
   const runServerModel = () => {
     //Initiation of RDF graph transformation to inner representation
     dispatch(transformGraphToInnerTemplate());
     //Preparing the first form in application
     dispatch(prepareFormData("-1"));
- //   dispatch(initiateRunningOnServer());
+    //   dispatch(initiateRunningOnServer());
     console.log("Current form:");
     console.log(currentForm);
   };

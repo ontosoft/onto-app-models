@@ -28,7 +28,7 @@ const ServerModelRunner: React.FC = () => {
     { filename: string; model: string; description: string }[]
   >([]);
   const appRunningOnServer = useAppSelector(
-    (state) => state.stateData.runningOnServer
+    (state) => state.stateData.startAppOnServer
   );
   const [counter, setCounter] = useState(0);
 

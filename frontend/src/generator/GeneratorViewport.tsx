@@ -1,7 +1,8 @@
 import MainApplicatonPane from "./MainApplicationPane";
 import ServerModelSelector from "./ServerModelSelector";
 import ServerModelRunner from "./ServerModelRunner";
-import { useAppSelector , useAppDispatch} from "../app/hooks";
+import { useAppSelector } from "../app/hooks";
+import { ShutDownAppModal } from "./ShutDownAppModal";
 
 /**
  * GeneratorViewport component renders different UI components 
@@ -23,28 +24,33 @@ import { useAppSelector , useAppDispatch} from "../app/hooks";
  *
  */
 export const GeneratorViewport : React.FC = () => {
-
   const appRunningOnServer = useAppSelector((state) => state.stateData.runningOnServer);
+  const previewAppTerminationPane  = useAppSelector((state) => state.stateData.showAppTerminationPane)
   const appExchangeGetStatus = useAppSelector((state) => state.stateData.appExchangeGetStatus);
-  const previewListOfInnerModels = useAppSelector(
-    (state) => state.serverInnerModels.initiedModelListLoading
+  const previewListOfServerModels = useAppSelector(
+    (state) => state.serverInnerModels.previewModelList
   );
   const initiedSelectedInnerModelLoading = useAppSelector( 
     (state) => state.serverInnerModels.initiedSelectedInnerModelLoading
   )
  const showMainApplicationPane = useAppSelector((state) => state.stateData.showMainApplicationPane);
 
+
   return (
     <div className="col-10" id="display">
       {(() => {
-        if (appExchangeGetStatus === "succeeded" && showMainApplicationPane ) {
+        if (previewAppTerminationPane) {
+          return <ShutDownAppModal/>;
+        }
+        else if (appExchangeGetStatus === "succeeded" &&
+           showMainApplicationPane && appRunningOnServer ) {
           /**  Displays main application panel if the form model running and 
            *   the frontend has activated the main application panel  
            * 
            */ 
           console.log("Main application panel is displayed");
           return <MainApplicatonPane  />;
-        } else if (previewListOfInnerModels) {
+        } else if (previewListOfServerModels) {
           return <ServerModelSelector />;
         } else if (initiedSelectedInnerModelLoading) {
           /**

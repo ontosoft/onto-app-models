@@ -1,8 +1,10 @@
 import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
-import { fetchRunModelOnServer, initiateAppExchangeAPI, appExchangeGetAPI } from "./appStateAPI";
+import { fetchRunModelOnServer, initiateAppExchangeAPI,
+     appExchangeGetAPI, fetchTerminateAppOnServer } from "./appStateAPI";
 import  AppExchangeResponse from "../owlprocessor/AppExchangeResponse";
 import { processReceivedMessage } from "./modelSlice";
 import { RootState } from "../app/store";
+import { stat } from "fs";
 
 
 type EditAction = PayloadAction<{ id: number, datatype: {}, value: {} }>;
@@ -12,16 +14,15 @@ type EditAction = PayloadAction<{ id: number, datatype: {}, value: {} }>;
  * on the frontend side.   
  */
 interface AppState {
- //   initiedRunning: boolean;
-    //TODO: It should be considered whether initiatedRunning running is 
-    // needed or not, because it is enough to check the runningOnServer
-    /** 
-     * runningOnServer succeeded tells us if the modelled app is 
-     * running on server, and if it is, the app can be exchanged with
+    runningOnServer: boolean;
+     /*
+     * running on the server. If it has value true, then the front end can exchange 
+     * messages with the running app on the server
     */ 
-    runningOnServer: 'idle' | 'loading' | 'succeeded' | 'failed';
+
+    startAppOnServer: 'idle' | 'loading' | 'succeeded' | 'failed';
     /**
-     * appExchangePost and appExchangeGet are indicators  an exchange with
+     * appExchangePost and appExchangeGet are indicatorso of the exchange with
      * the app on the server has been successfully completed. 
      * This exchange always sends (posts) data to the server and gets a response back. 
      * The processing of the gathered data takes place in the serverModelSlice
@@ -29,11 +30,15 @@ interface AppState {
 
     appExchangePostStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
     appExchangeGetStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
+    appTerminationOnServer: 'idle' | 'loading' | 'succeeded' | 'failed';
+
+
     /**
      * Data returned from the server during the app exchange has to be
-     * localy processed and displayed in the UI. This flag indicates 
+     * localy processed and displayed in the UI. This flag
+     * dataLocalyPocessed indicates 
      * this local processing. Every time the appExchange is started 
-     * thies flag is set to false, and when the appExchange is finished
+     * this flag is set to false, and when the appExchange is finished
      * successfully, this flag is set to true.
      */
     dataLocalyProcessed: boolean;
@@ -41,23 +46,30 @@ interface AppState {
     selectedId: number;
     waitingForServerData: boolean;
     selectedType: {};
-    showMainApplicationPane: boolean;
     /**
-     *  The showMainApplicationPane flag is used to show indicate
-     * if the main application pane is shown or not.
+     * The MainApplicationPane presents the app UI and
+     *  this showMainApplicationPane flag is used to indicate
+     * whether the main application pane is shown or not.
      */
+    showMainApplicationPane: boolean;
+    /* The user wants to initiate terminating the current application on the server*/
+    showAppTerminationPane:boolean
+
 }
 const initialState: AppState = {
-//    initiedRunning: false,
-    runningOnServer: 'idle',
+    runningOnServer: false,
+    startAppOnServer: 'idle',
     appExchangePostStatus: 'idle',
     appExchangeGetStatus: 'idle',
+    appTerminationOnServer: 'idle',
+
     dataLocalyProcessed: true,
     editing: false,
     waitingForServerData: false,
     selectedId: -1,
     selectedType: {},
-    showMainApplicationPane: false
+    showMainApplicationPane: false,
+    showAppTerminationPane:false
 }
 
 /** It runs an already loaded UI model on the server and returns the 
@@ -69,14 +81,25 @@ export const runInnerAppModelOnServer = createAsyncThunk('appstate/runModelOnSer
         return response;
     }
 );
+/** This function invokes an API to terminate a running application 
+* on the server and returns the application status 
+*/
+export const terminateAppOnServer = createAsyncThunk('appstate/terminateAppOnServer',
+    async () => {
+        const response = await fetchTerminateAppOnServer();
+        return response;
+    }
+);
+
+
 /**
  * This function initiates the exchange with the server
  */
 export const initiateAppExchange = createAsyncThunk('appstate/initiateAppExchange',
     async (_, thunkApi) => {
         let state:RootState = thunkApi.getState() as RootState;
-        console.log("The app state (read form inside the Thunk) is", state.stateData.runningOnServer);
-        if (state.stateData.runningOnServer !== 'succeeded') {
+        console.log("The app state (read form inside the Thunk) is", state.stateData.startAppOnServer);
+        if (state.stateData.startAppOnServer !== 'succeeded') {
             return { status: "failed",
                 message: "The model is still not running on the server."
              };
@@ -131,6 +154,13 @@ export const appStateSlice = createSlice({
 /*        initiateRunningOnServer: (state) => {
             state.initiedRunning = true;
         },*/
+        previewAppTerminationPane: (state) => {
+            state.showAppTerminationPane= true;
+        },
+        closeAppTerminationPane: (state) => {
+            state.showAppTerminationPane=false;
+            state.appTerminationOnServer = 'idle'
+        },
         startEditingItem: (state, action: EditAction) => {
             state.selectedType = action.payload.datatype;
             state.editing = true;
@@ -141,8 +171,8 @@ export const appStateSlice = createSlice({
         endEditingItem: (state) => {
             state.editing = false;
         },
+
         startLocalProcessingServerData: (state) => {
-            
         },
         activateMainApplicationPane: (state) => {
             state.showMainApplicationPane = true;
@@ -152,15 +182,32 @@ export const appStateSlice = createSlice({
     extraReducers: (builder) => {
         builder
             .addCase(runInnerAppModelOnServer.pending, (state) => {
-                state.runningOnServer = 'loading';
+                state.startAppOnServer = 'loading';
                 state.dataLocalyProcessed = false;
             })
             .addCase(runInnerAppModelOnServer.fulfilled, (state, action) => {
-                state.runningOnServer = 'succeeded';
+                state.startAppOnServer = 'succeeded';
+                state.runningOnServer = true;
             })
             .addCase(runInnerAppModelOnServer.rejected, (state) => {
-                state.runningOnServer = 'failed';
+                state.startAppOnServer = 'failed';
             })
+            .addCase(terminateAppOnServer.pending, (state) => {
+                state.appTerminationOnServer = 'loading';
+            })
+            .addCase(terminateAppOnServer.fulfilled, (state, action) => {
+                state.appTerminationOnServer = 'succeeded';
+                //reset all status flags and data
+                state.runningOnServer = false;
+                state.startAppOnServer = 'idle';
+                state.appExchangePostStatus = 'idle';
+                state.appExchangeGetStatus = 'idle';
+                state.appTerminationOnServer = 'idle';
+            })
+            .addCase(terminateAppOnServer.rejected, (state) => {
+                state.appTerminationOnServer = 'failed';
+            })
+
             .addCase(initiateAppExchange.pending, (state) => {
                 state.appExchangeGetStatus = 'loading';
             })
@@ -185,5 +232,7 @@ export const appStateSlice = createSlice({
 });
 
 export const { startEditingItem, startCreatingItem, endEditingItem,
-    activateMainApplicationPane} = appStateSlice.actions;
+    activateMainApplicationPane, previewAppTerminationPane ,
+    closeAppTerminationPane}
+     = appStateSlice.actions;
 export default appStateSlice.reducer;

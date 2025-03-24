@@ -4,6 +4,7 @@ from json import JSONEncoder
 import logging
 from rdflib import  Namespace
 OBOP = Namespace("http://purl.org/net/obop/")
+from rdflib.namespace import SH
 
 logger = logging.getLogger("ontoui_app")
 if TYPE_CHECKING:
@@ -28,16 +29,25 @@ class FormElement:
         return f"FormElement: {self.type}"
 
     def create_jsonform_schema_property(self, app_state:ApplicationState):
-        new_property_name : str
+        new_property_name : str = None
         field_type : str = "string"
         # TODO Naming the property as a label for OBOPElements."
         # This should be considered once again. Label could be part 
         # of the basic form element not only OBOPElement
         if str(self.type) == str(OBOP.Field):
-            field_type = "string"
+            field_type = "string" 
         if isinstance(self, OBOPElement) and self.label !="":
             new_property_name = str(self.label)
             app_state.current_json_form_name_mapping[str(self.model_node)] = str(self.label)
+        # then it is a SHACL property
+        elif isinstance(self, SHACLFormProperty) and  \
+            self.property_data_type !="": 
+            # TODO The type checking should be besser organized
+            # not just string
+            field_type = "string" 
+            new_property_name = str(self.property_name)
+            app_state.current_json_form_name_mapping[str(self.model_node)] = str(self.property_name)
+
 
         return {
             new_property_name: {
@@ -76,7 +86,7 @@ class FormElementEncoder(JSONEncoder):
         return form_element
 
 
-class FormProperty(FormElement):
+class SHACLFormProperty(FormElement):
     def __init__(
         self,
         form,

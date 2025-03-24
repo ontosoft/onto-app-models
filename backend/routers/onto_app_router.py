@@ -62,6 +62,24 @@ async def run_application():
         return {"message_type": "information",
                  "message_content" : "No model loaded. Load an application model first."}
 
+
+
+@router.get("/stop_application", response_description="Shut down the running application")
+async def stop_application():
+    """
+    This function stops the application if it is already running.
+
+    """
+    global app
+
+    if app is not None: 
+        logger.info(f"Stopping the application")
+        del app
+        app = None
+        return {"message_type": "information",
+                 "message_content" : "No model is loaded. The application was shut down."}
+
+
 @router.post("/app_exchange_post", response_description="Process the data sent from the frontend") 
 async def process_data_sent_from_frontend(request: Request):
     """

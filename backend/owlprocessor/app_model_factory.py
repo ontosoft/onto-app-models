@@ -1,7 +1,7 @@
 import logging
 from rdflib import Graph, RDF, Literal, BNode, URIRef, Namespace
 from .forms import Form
-from .form_elements import OBOPElement, FormProperty, ActionPointer
+from .form_elements import OBOPElement, SHACLFormProperty, ActionPointer
 from .app_model import Action
 from rdflib.namespace import SH, OWL
 import jsonpickle
@@ -86,11 +86,12 @@ class UIModelFactory:
         for element in other_obop_elements:
             self.readOtherOBOPElement(element, form)
 
+
+
+    def readShaclProperty(self, shacl_property_instance, form):
         """ 
             This method reads a part of the model which corresponds to a given SHACL property.
         """
-
-    def readShaclProperty(self, shacl_property_instance, form):
         logger.debug(f"Reading SHACL property: {shacl_property_instance}") 
         property_path = self.rdfGraph.value(shacl_property_instance, SH.path)
         property_name = self.rdfGraph.value(shacl_property_instance, SH.name)
@@ -107,7 +108,7 @@ class UIModelFactory:
         related_element = str(self.rdfGraph.value(shacl_property_instance, OBOP.specifiedBy))
         logger.debug(f"Related element: {related_element}")
 
-        form_property = FormProperty(
+        form_property = SHACLFormProperty(
             self.internal_app_static_model,
             shacl_property_instance,
             property_path,
@@ -196,7 +197,7 @@ class UIModelFactory:
         """
         for form in self.internal_app_static_model.forms:
             for shacl_property in form.elements:
-                if isinstance(shacl_property, FormProperty) and shacl_property.related_element is not None:
+                if isinstance(shacl_property, SHACLFormProperty) and shacl_property.related_element is not None:
                     for obop_element in form.elements:
                         if isinstance(obop_element, OBOPElement):
                             if str(obop_element.model_node) == shacl_property.related_element:

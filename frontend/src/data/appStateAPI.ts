@@ -18,6 +18,26 @@ export async function fetchRunModelOnServer(): Promise<any> {
         return response.json();
     });
 } 
+
+/**
+ * Run tha applicaiton model on the server.
+ * @returns A Promise that resolves to the response data.
+ */
+export async function fetchTerminateAppOnServer(): Promise<any> {
+    const fetchTerminating = fetch("http://localhost:8089/stop_application", {
+       method: "GET",
+       headers: {
+           "Content-Type": "application/json",
+       }
+    });
+    return fetchTerminating.then((response) => {
+        if (!response.ok) {
+            throw new Error("Failed to fetch running model on the server");
+        }
+        return response.json();
+    });
+} 
+
 /**
  * This function initiates the exchange of the application model on the server side.  
  * @returns 

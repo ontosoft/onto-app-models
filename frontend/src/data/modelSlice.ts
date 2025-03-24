@@ -7,7 +7,6 @@ import { Template } from "../owlprocessor/Template";
 import { Formula } from "rdflib";
 import { CurrentForm } from "../owlprocessor/CurrentForm";
 import {Layout}  from "../owlprocessor/LayoutRendering";
-import { activateMainApplicationPane } from "./appStateSlice";
 import AppExchangeResponse from "../owlprocessor/AppExchangeResponse";
 import React from "react";
 
@@ -19,7 +18,12 @@ type FormAction = PayloadAction<string>;
 const owlTemplate = new TemplateFactory();
 const owlProcessor = new ActionProcessor ();
 
+
 export interface ModelState {
+  /* This model class is deprecated. It is for keeping track of
+     the application state when the application is completely
+     running on the front end side.
+  */ 
   
   idCounter: number;
   rdfGraph: any;
