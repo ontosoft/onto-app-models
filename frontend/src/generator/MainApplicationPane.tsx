@@ -1,29 +1,15 @@
-import React, { useEffect, useState } from "react";
-import JsonView from "react18-json-view";
+import React, { useState } from "react";
 import "react18-json-view/src/style.css";
-import { unwrapResult } from "@reduxjs/toolkit";
-import { FormToValidate } from "../forms/FormToValidate";
-import { BrowserRouter as Router } from "react-router-dom";
 import { useAppSelector, useAppDispatch } from "../app/hooks";
-import { runInnerAppModelOnServer, initiateAppExchange } from "../data/appStateSlice";
-import { Layout } from "../owlprocessor/LayoutRendering";
 
 const MainApplicatonPane: React.FC = () => {
   const [generatedResponse, setGeneratedResponse] = useState<any>();
   const appRunningOnServer = useAppSelector(
     (state) => state.stateData.startAppOnServer
   );
-  const appExchangeStatus = useAppSelector(
-    (state) => state.stateData.appExchangeGetStatus
-  );
-  const layout = useAppSelector((state) => state.model.currentLayout);
+ const layout = useAppSelector((state) => state.model.currentLayout);
 
-  const dispatch = useAppDispatch();
-
-  const printGeneratedViewOnConsole = () => {
-    console.log(layout);
-  };
-  // useEffect(() => {
+ // useEffect(() => {
   //   if (appRunningOnServer !== "succeeded") {
   //     console.log("The application is not running on the server"); 
   //   }else if (appExchangeStatus !== "succeeded"){

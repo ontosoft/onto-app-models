@@ -187,7 +187,7 @@ def test_form_with_two_fields_and_a_button(caplog):
     app.run_application()
     response = app.app_interaction_model_instance.generate_layout()
     logger.debug("Output dictionary") 
-    logger.debug(jsonpickle.encode(response,  indent =2))
+    logger.debug(jsonpickle.encode(response, indent =2))
     wanted_result = AppExchangeGetOutput(
         message_type = "form",
         layout_type = "form",

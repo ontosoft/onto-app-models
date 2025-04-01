@@ -1,26 +1,20 @@
-import React, { useState, useEffect, createContext, useContext } from "react";
-import { person } from "@jsonforms/examples";
+import React, { useState } from "react";
+import { isSubmitButton } from "./ratingActionControlTester";
 import {
   materialRenderers,
   materialCells,
 } from "@jsonforms/material-renderers";
+import { CustomButtonRenderer } from "./CustomButtonRenderer";
 import { JsonForms } from "@jsonforms/react";
 import { UISchemaElement } from "@jsonforms/core";
-
-const initialData = {};
-
-const ThemeContext = createContext(null);
+import isAction from "@jsonforms/core";
+import { initiatePreviewModelList } from "../data/serverModelSlice";
 
 interface FormJSXProps {
   node: string;
   schema: object;
   uischema: UISchemaElement;
-}
-
-interface FormElement {
-  node: string;
-  element_type: string;
-  target_classes: string;
+  data: object;
 }
 
 interface Props {
@@ -29,8 +23,8 @@ interface Props {
 
 const getDefaultLayout = (
   layout_type: string,
-  data: unknown
-): React.JSX.Element => {
+  message_content: any
+): React.ReactElement => {
   return (
     <div>
       <h1>Default Layout</h1>
@@ -38,72 +32,71 @@ const getDefaultLayout = (
   );
 };
 
-const handleSubmit = (e: string) => {
-  console.log(e);
-};
-
-function Panel({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  const theme = useContext(ThemeContext);
-  const className = "panel-" + theme;
-  return (
-    <section className={className}>
-      <h1>{title}</h1>
-      {children}
-    </section>
-  );
-}
+const renderers = [
+  ...materialRenderers,
+  {
+    tester: isSubmitButton,
+    renderer: CustomButtonRenderer,
+  },
+];
 
 const FormComponent: React.FC<Props> = (props: Props) => {
   //const node = props.form.node;
   const schema = props.form.schema;
-  const schema1 = {
-    "properties": {
-      "Label name": {
-        "type": "string",
-        "position":1
-      }
-    }
-  };
-
-  console.log("The schema is", schema1);
-  const uischema = props.form.uischema;
-  console.log(uischema)
-  const uischema1 = {
-    "type": "VerticalLayout",
-    "elements": [
-        {
-        "type": "Control",
-        "scope": "#/properties/Label name"
-    }]
-  };
-
-  console.log("The uischema dynamic", uischema1);
+  const initialData = props.form.data;
   const [data, setData] = useState(initialData);
+
+  const schema1 = {
+    properties: {
+      name: {
+        type: "string",
+        position: 1,
+      },
+    },
+  };
+
+  console.log("The schema is", schema);
+  const uischema = props.form.uischema;
+  console.log(uischema);
+
+  const uischema1 = {
+    type: "VerticalLayout",
+    elements: [
+      {
+        type: "Control",
+        scope: "#/properties/name",
+        label: "Name",
+      },
+      {
+        type: "HorizontalLayout",
+        elements: [
+          {
+            type: "button",
+            label: "Submit",
+            onClick: "submit",
+          },
+          {
+            type: "button",
+            label: "Cancel",
+            onClick: "cancel",
+          },
+        ],
+      },
+    ],
+  };
+
+  console.log("The uischema dynamic", uischema);
 
   // useEffect(() => {
   //     console.log("Printed from useEffect", formName);
   // }, []);
 
   return (
-    //     <Panel title={""}>
-    //     <div>
-    //             <h1>{formName}</h1>
-    //             <label>Name</label>
-    //             <InputField input="" value = "", onChange = setField ()/>
-    //          <button type="submit" onClick={() => handleSubmit(field1)}>Submit</button>
-    //     </div>
-    //    </Panel>
     <JsonForms
-      schema={schema}
-      uischema={uischema}
+      schema={schema1}
+      uischema={uischema1}
       data={data}
-      renderers={materialRenderers}
+      renderers={renderers}
       cells={materialCells}
       onChange={({ data, errors }) => setData(data)}
     />

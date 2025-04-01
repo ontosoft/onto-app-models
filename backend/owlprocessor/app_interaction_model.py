@@ -36,18 +36,23 @@ class AppInteractionModel:
             # Checking if we are at the start of the application execution
             self.app_state.current_form_index = 0
         # TODO: This should be changed to a more sophisticated 
-        #  way of checking the end of
+        #  way of checking the end of the application execution
         if self.app_state.current_form_index >= len(self.inner_app_static_model.forms):
-            return "No more forms"
-        form_object : Form = self.inner_app_static_model.forms[self.app_state.current_form_index]
-        json_form = form_object.create_json_form_schemas(self.app_state) 
-        logger.debug(f" Created form is {jsonpickle.encode(json_form, indent=2)}")
-        output_message = AppExchangeGetOutput(
-            message_type = "form",
-            layout_type = "form",
-            message_content = json_form)
-        self.app_state.is_waiting_for_form_data = True 
-        return output_message
+            output_message = AppExchangeGetOutput(
+                message_type = "error",
+                layout_type = "notification",
+                message_content = "The application has finished.")
+            return  output_message
+        else:
+            form_object : Form = self.inner_app_static_model.forms[self.app_state.current_form_index]
+            json_form = form_object.create_json_form_schemas(self.app_state) 
+            logger.debug(f" Created form is {jsonpickle.encode(json_form, indent=2)}")
+            output_message = AppExchangeGetOutput(
+                message_type = "layout",
+                layout_type = "form",
+                message_content = json_form)
+            self.app_state.is_waiting_for_form_data = True 
+            return output_message
 
 
 

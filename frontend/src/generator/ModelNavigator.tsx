@@ -1,9 +1,5 @@
 import React, { useState, ChangeEvent } from "react";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
-import {
-  transformGraphToInnerTemplate,
-  prepareFormData,
-} from "../data/modelSlice";
 import { initiatePreviewModelList, readingListOfServerModels } from "../data/serverModelSlice";
 import { previewAppTerminationPane } from "../data/appStateSlice";
 import { serialize, Formula } from "rdflib";
@@ -11,6 +7,7 @@ import { OUTPUT_KG } from "../owlprocessor/InterfaceOntologyTypes";
 
 // Choose a model to load
 export const ModelNavigator: React.FC = () => {
+
   const dispatch = useAppDispatch();
   //TODO inputModelGraph here from the earlier version
   const inputModelGraph = useAppSelector((store) => store.model.rdfGraph);
@@ -25,15 +22,6 @@ export const ModelNavigator: React.FC = () => {
   );
   const currentForm = useAppSelector((store) => store.model.currentForm);
 
-  const processQuery = () => {
-    //Initiation of RDF graph transformation to inner representation
-    dispatch(transformGraphToInnerTemplate());
-    //Preparing the first form in application
-    dispatch(prepareFormData("-1"));
-    //    dispatch(initiateRunningOnServer());
-    console.log("Current form:");
-    console.log(currentForm);
-  };
 
   const initiatedLoad = useAppSelector(
     (state) => state.serverInnerModels.previewModelList
@@ -82,24 +70,13 @@ export const ModelNavigator: React.FC = () => {
     console.log("Upload successful");
   };
 
-  const readCurrentModelPage = async () => {
-    fetch("http://localhost:8089/read_current_model_page").then((response) => {
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.json();
-    });
-  };
-
+  //TODO is this really necessary?
   const runServerModel = () => {
-    //Initiation of RDF graph transformation to inner representation
-    dispatch(transformGraphToInnerTemplate());
-    //Preparing the first form in application
-    dispatch(prepareFormData("-1"));
-    //   dispatch(initiateRunningOnServer());
-    console.log("Current form:");
-    console.log(currentForm);
-  };
+    console.log("Running server model");
+    // dispatch(runInnerAppModelOnServer());
+  }
+
+
 
   const previewGraph = (graph: Formula) => {
     let base = OUTPUT_KG;
@@ -143,11 +120,6 @@ export const ModelNavigator: React.FC = () => {
         <input type="file" onChange={handleFileChange} />
         <button className="btn btn-primary m-2" onClick={handleUpload}>
           Upload model to server
-        </button>
-      </div>
-      <div className="row">
-        <button className="btn btn-primary m-2" onClick={processQuery}>
-          Run model
         </button>
       </div>
 

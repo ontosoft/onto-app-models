@@ -46,13 +46,22 @@ const ServerModelRunner: React.FC = () => {
       innerModelLoaded === "succeeded" &&
       appRunningOnServer === "idle"
     ) {
-      // If the inner model is loaded and the application should be run
+      // If the inner model is loaded then the application which is loaded should be run on the server
       dispatch(runInnerAppModelOnServer()).then(() => {
         /**
-         * After the model is run on the server, initiate the first
-         * exchange with the server
+         * Once the model is running on the server, initiate the first
+         * exchange with the server and get the first data from the server
+         * Every comunication with the server is done through the exchange
+         * in thes two steps
+         * 1. initiateAppExchange
+         * 2. appExchangeGet
+         * 
+         * In the first step the message is sent to the server and server
+         * prepares the data to be sent back to the client
+         * In the second step the client gets the data from the server
+         * and the data are processed in the client 
          **/
-        dispatch(initiateAppExchange()).then(() => {
+        dispatch(initiateAppExchange({ messageType:"initiate_exchange", messageContent: {} })).then(() => {
           /**
            * After the data to exchange are sent run the function to get data in the exchange
            *  */

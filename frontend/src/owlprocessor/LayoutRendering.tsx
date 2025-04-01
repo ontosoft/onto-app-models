@@ -1,44 +1,33 @@
-import React, { ReactElement } from "react";
-import { createElement, Fragment } from "react";
-import AppExchangeResponse from "./AppExchangeResponse";
+import React  from "react";
 import { getDefaultLayout } from "./CurrentLayoutFactory";
 import { FormJSXProps } from "./CurrentLayoutFactory";
 import FormComponent from "./CurrentLayoutFactory";
-import { Form } from "react-router-dom";
 
-const getLayout: React.FC<AppExchangeResponse> = (
-  serverExchangeResponse: AppExchangeResponse
-) => {
+interface LayoutProps {
+  layout_type: string;
+  message_content: any;
+}
+
+export const getLayout: React.FC<LayoutProps> = (layoutProps: LayoutProps) => {
+  console.log("The layout type is:", layoutProps.layout_type);
+  console.log("The server message content is", layoutProps.message_content);
+
   let layout: React.ReactNode = null;
-  if (serverExchangeResponse.message_type === "layout") {
+  if (layoutProps.layout_type === "form") {
+      const formProps: FormJSXProps = layoutProps.message_content;
+      console.log("The form props are", formProps);
+      layout = React.createElement(FormComponent, { form: formProps });
+  } else {
     layout = getDefaultLayout(
-      serverExchangeResponse.layout_type as
-        | "form"
+    layoutProps.layout_type as
         | "table"
         | "list"
         | "tree"
         | "chart",
-      serverExchangeResponse.message_content
+      layoutProps.message_content
     );
-  } else if (serverExchangeResponse.message_type === "form") {
-      const formProps: FormJSXProps = 
-        serverExchangeResponse.message_content;
-        console.log("The form props are", formProps);
-    layout = React.createElement(FormComponent, { form: formProps });
-  } else {
-    layout = React.createElement("div", null, "No layout available");
-  }
+  };
 
   return layout;
 };
 
-const Layout: React.FC<AppExchangeResponse> = (
-  serverExchangeResponse: AppExchangeResponse
-) => {
-  console.log("The server exchange response is", serverExchangeResponse);
-  console.log("The message type is", serverExchangeResponse.message_type);
-
-  return <div> {getLayout(serverExchangeResponse)} </div>;
-};
-
-export { Layout };

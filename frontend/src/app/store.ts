@@ -1,6 +1,7 @@
 import { configureStore, ThunkAction, Action, createListenerMiddleware  } from '@reduxjs/toolkit';
 import modelReducer from '../data/modelSlice';
 import appStateReducer from '../data/appStateSlice';
+import thunk from 'redux-thunk';
 import serverModel from '../data/serverModelSlice';
 import { effect } from 'zod';
 
@@ -15,7 +16,7 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: false,
-    }).prepend(listenerMiddleware.middleware)
+    }).prepend(listenerMiddleware.middleware).prepend(thunk),
 });
 
 

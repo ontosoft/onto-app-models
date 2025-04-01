@@ -1,7 +1,3 @@
-import {
-  transformGraphToInnerTemplate,
-  prepareFormData,
-} from "../data/modelSlice";
 import { serialize, Formula } from "rdflib";
 import { OUTPUT_KG } from "../owlprocessor/InterfaceOntologyTypes";
 import { useAppDispatch, useAppSelector } from "../app/hooks";

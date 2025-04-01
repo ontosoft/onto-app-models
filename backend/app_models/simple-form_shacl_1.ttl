@@ -79,3 +79,13 @@ _:genid2 shacl:path schema:streetAddress ;
            obop:hasLabel "Name" ;
            obop:hasPositionNumber "1"^^xsd:int ;
            dc:title "field name" .
+
+
+###  http://example.org/logicinterface/testing/button_1
+:button_1 rdf:type owl:NamedIndividual ,
+                   obop:Button ;
+          obop:activatesAction :action_1 ;
+          obop:belongsTo :block_1 ;
+          obop:hasLabel "Save" ;
+          obop:hasPositionNumber "3"^^xsd:int .
+

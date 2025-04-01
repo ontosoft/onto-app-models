@@ -96,19 +96,19 @@ export const terminateAppOnServer = createAsyncThunk('appstate/terminateAppOnSer
  * This function initiates the exchange with the server
  */
 export const initiateAppExchange = createAsyncThunk('appstate/initiateAppExchange',
-    async (_, thunkApi) => {
+    async (params:{messageType:string, messageContent:any}, thunkApi) => {
         let state:RootState = thunkApi.getState() as RootState;
-        console.log("The app state (read form inside the Thunk) is", state.stateData.startAppOnServer);
-        if (state.stateData.startAppOnServer !== 'succeeded') {
+        console.log("The app state (read form inside the Thunk) is", state.stateData.runningOnServer);
+        if (!state.stateData.runningOnServer) {
             return { status: "failed",
-                message: "The model is still not running on the server."
+                message: "The app is still not running on the server."
              };
         }
         else {
             const response:AppExchangeResponse = await initiateAppExchangeAPI(
                 {
-                 message_type: "initiate_exchange", 
-                 message_content: {}
+                   message_type: params.messageType,
+                   message_content: params.messageContent
                 }
             );
             return response;
