@@ -1,12 +1,13 @@
-from rdflib import Graph
 from .app_interaction_model import AppInteractionModel
-from .app_model_factory import UIModelFactory
+from .app_model_factory import AppStaticModelFactory
 from .app_model import AppInternalStaticModel
 from .communication import AppExchangeFrontEndData, AppExchangeGetOutput
-from pathlib import Path
 import jsonpickle
 import logging
+from config.settings import get_settings, Settings 
 
+
+settings:Settings = get_settings()
 logger = logging.getLogger('ontoui_app')
 
 class AppEngine():
@@ -14,7 +15,7 @@ class AppEngine():
     Represents the entry point for the backend model.
 
     """
-    def __init__(self, config = "development") -> None:
+    def __init__(self) -> None:
         """_summary_
 
         Attributes:
@@ -32,49 +33,34 @@ class AppEngine():
         """
         self.inner_app_static_model: AppInternalStaticModel = None 
         self.app_interaction_model_instance: AppInteractionModel = None
-        self.model_graph: Graph = None
-        self.is_model_graph_read = False
+        # The interaction model instance is created from the inner_app_static_model
+        # and is used to represents the running application. It is basically a dynamic
+        # representation of the application model
         self.is_inner_app_static_model_loaded = False
         self.model_name = None
-        self.model_directory = None
-        self.config = config
+        self.model_directory : str = settings.MODEL_DIRECTORY
 
-        if self.config == "development":
-            self.model_directory = Path("./app_models")
-            logger.debug("The application has a model directory set to the default value. {model_directory}")
-        elif self.config == "test":
-            self.model_directory = Path("./tests/test_models")
-            logger.debug("The application has a model directory set to the default value. {model_directory}")
-        elif self.config == "production":
-            self.model_directory = Path("/app_models")
-        self.model_directory.mkdir(parents=True, exist_ok=True)
-    
-    def read_graph(self, rdf_file_name: str):
-        """
-        Reads an RDF file and parses it into the model_graph attribute.
-
-        Args:
-            rdf_file (str): The path to the RDF file.
-        """
-        logger.debug(f"Reading and parsing the RDF file {rdf_file_name}")
-        filePath = self.model_directory.joinpath(rdf_file_name)
-        self.model_graph = Graph()
-        self.model_graph.parse(filePath, format="ttl") 
-        self.is_model_graph_read = True
-
-    def load_inner_app_model(self):
+    def load_inner_app_model(self, file_name: str = None, rdf_string: str = None):
         """
              Reads the Application model from the model_graph attribute and 
              assigns it to the inner_app_model attribute.
         """
  
-        model_factory = UIModelFactory()
-        self.inner_app_static_model = model_factory.rdf_graf_to_uimodel(self.model_graph)
+        model_factory = AppStaticModelFactory()
+        filePath :str = file_name
+        if file_name is not None:
+            filePath :str= self.model_directory+file_name
+        self.inner_app_static_model = model_factory.rdf_graf_to_uimodel(rdf_model_file=filePath, rdf_text_ttl=rdf_string)
         logger.debug("Application model loaded from the RDF graph.")
         logger.debug(self.inner_app_static_model)
         self.is_inner_app_static_model_loaded = True
 
     def run_application(self):
+        """
+        Starts the application interaction model instance. The main part is 
+        the process that generates an instance of the application interaction model
+        
+        """
         if self is not None and self.is_inner_app_static_model_loaded and \
             self.app_interaction_model_instance is None:
             self.app_interaction_model_instance = AppInteractionModel(self.inner_app_static_model)

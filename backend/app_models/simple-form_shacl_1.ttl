@@ -52,6 +52,22 @@
          obop:hasPositionNumber "1"^^xsd:int ;
          dc:title "block_1 for Form"^^rdfs:Literal .
 
+###  http://example.org/logicinterface/testing/vertical_layout_1
+:vertical_layout_1 rdf:type owl:NamedIndividual ,
+                  obop:VerticalLayout ;
+         obop:hasPositionNumber "1"^^xsd:int ;
+         obop:belongsTo :block_1 ;
+         dc:title "Vertical-Block1"^^rdfs:Literal .
+
+
+###  http://example.org/logicinterface/testing/horizontal_layout_1
+:horizontal_layout_1 rdf:type owl:NamedIndividual ,
+                  obop:HorizontalLayout ;
+         obop:hasPositionNumber "2"^^xsd:int ;
+         obop:belongsToVisual :vertical_layout_1 ;
+
+         dc:title "Horizontal-Layout"^^rdfs:Literal .
+
 
 
 ###  _:genid1 doesn't define position on the form 
@@ -73,6 +89,7 @@ _:genid2 shacl:path schema:streetAddress ;
 
 :field_1 rdf:type owl:NamedIndividual ,
                     obop:Field ;
+           obop:belongsToVisual :vertical_layout_1;
            obop:belongsTo :block_1 ;
            obop:containsDatatype v1:legalName ;
            obop:isRelatedToTargetOntologyInstance :shacl_shape_1 ;
@@ -85,7 +102,7 @@ _:genid2 shacl:path schema:streetAddress ;
 :button_1 rdf:type owl:NamedIndividual ,
                    obop:Button ;
           obop:activatesAction :action_1 ;
-          obop:belongsTo :block_1 ;
+          obop:belongsTo :horizontal_layout_1 ;
           obop:hasLabel "Save" ;
           obop:hasPositionNumber "3"^^xsd:int .
 

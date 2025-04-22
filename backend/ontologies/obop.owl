@@ -167,9 +167,10 @@ Note: The base URI of OBOP is http://purl.org/obop/. Please make sure you are on
     <owl:ObjectProperty rdf:about="http://purl.org/net/obop/belongsTo">
         <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
         <rdfs:domain rdf:resource="http://purl.org/net/obop/VisualElement"/>
-        <rdfs:comment xml:lang="en-gb">The belongsTo property relates a visual element to an interface container it belongs to.</rdfs:comment>
+        <rdfs:comment xml:lang="en-gb">The belongsTo property relates visual element or other elements to different
+        entities, e.g., to blocks that represent HTML forms. </rdfs:comment>
         <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
-        <rdfs:label xml:lang="en">belongs to</rdfs:label>
+        <rdfs:label xml:lang="en">belongsTo</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -183,6 +184,18 @@ Note: The base URI of OBOP is http://purl.org/obop/. Please make sure you are on
         <rdfs:comment xml:lang="en">A belongsToCollection is an object property that relates a collection item and collection that collection item belongs to.</rdfs:comment>
         <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
         <rdfs:label xml:lang="en">belongsToCollection</rdfs:label>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://purl.org/net/obop/belongsToVisual -->
+
+    <owl:ObjectProperty rdf:about="http://purl.org/net/obop/belongsToVisual">
+        <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
+        <rdfs:domain rdf:resource="http://purl.org/net/obop/VisualElement"/>
+        <rdfs:comment xml:lang="en-gb">The belongsTo property relates a visual element to an interface container it belongs to.</rdfs:comment>
+        <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">belongsToVisual</rdfs:label>
     </owl:ObjectProperty>
     
 
@@ -335,7 +348,7 @@ Note: The base URI of OBOP is http://purl.org/obop/. Please make sure you are on
 
     <owl:ObjectProperty rdf:about="http://purl.org/net/obop/modelBelongsTo">
         <rdfs:domain rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
-        <rdfs:range rdf:resource="http://purl.org/net/obop/InterfaceContainer"/>
+        <rdfs:range rdf:resource="http://purl.org/net/obop/FunctionalContainer"/>
         <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
         <rdfs:label xml:lang="en">model belongs to interface container</rdfs:label>
     </owl:ObjectProperty>
@@ -499,7 +512,7 @@ This can be used to track the version of the interface used to populate the know
     <!-- http://purl.org/net/obop/Block -->
 
     <owl:Class rdf:about="http://purl.org/net/obop/Block">
-        <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/InterfaceContainer"/>
+        <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/FunctionalContainer"/>
         <rdfs:label rdf:resource="http://purl.org/net/obop/v01"/>
         <rdfs:label xml:lang="en">Block</rdfs:label>
     </owl:Class>
@@ -565,7 +578,7 @@ This can be used to track the version of the interface used to populate the know
     <!-- http://purl.org/net/obop/ConversationBlock -->
 
     <owl:Class rdf:about="http://purl.org/net/obop/ConversationBlock">
-        <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/InterfaceContainer"/>
+        <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/FunctionalContainer"/>
         <rdfs:comment xml:lang="en">A conversation block represents a collection of data entered in a single turn using a conversational agent. It servers as a modeling component for a part of the chatbot dialog which is analogous to HTML forms in web applications.</rdfs:comment>
         <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
         <rdfs:label>ConversationBlock</rdfs:label>
@@ -583,11 +596,21 @@ This can be used to track the version of the interface used to populate the know
     
 
 
-    <!-- http://purl.org/net/obop/InterfaceContainer -->
+    <!-- http://purl.org/net/obop/FunctionalContainer -->
 
-    <owl:Class rdf:about="http://purl.org/net/obop/InterfaceContainer">
+    <owl:Class rdf:about="http://purl.org/net/obop/FunctionalContainer">
         <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
-        <rdfs:label xml:lang="en">Interface Container</rdfs:label>
+        <rdfs:label xml:lang="en">Functional Container</rdfs:label>
+    </owl:Class>
+    
+
+
+    <!-- http://purl.org/net/obop/HorizontalLayout -->
+
+    <owl:Class rdf:about="http://purl.org/net/obop/HorizontalLayout">
+        <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/Layout"/>
+        <rdfs:label rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">HorizontalLayout</rdfs:label>
     </owl:Class>
     
 
@@ -598,6 +621,14 @@ This can be used to track the version of the interface used to populate the know
         <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/VisualElement"/>
         <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
         <rdfs:isDefinedBy xml:lang="en">Label</rdfs:isDefinedBy>
+    </owl:Class>
+    
+
+
+    <!-- http://purl.org/net/obop/Layout -->
+
+    <owl:Class rdf:about="http://purl.org/net/obop/Layout">
+        <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/VisualElement"/>
     </owl:Class>
     
 
@@ -622,7 +653,7 @@ This can be used to track the version of the interface used to populate the know
     <!-- http://purl.org/net/obop/Loop -->
 
     <owl:Class rdf:about="http://purl.org/net/obop/Loop">
-        <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/InterfaceContainer"/>
+        <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/FunctionalContainer"/>
         <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
         <rdfs:label xml:lang="en">Loop</rdfs:label>
     </owl:Class>
@@ -671,6 +702,16 @@ This can be used to track the version of the interface used to populate the know
     
 
 
+    <!-- http://purl.org/net/obop/VerticalLayout -->
+
+    <owl:Class rdf:about="http://purl.org/net/obop/VerticalLayout">
+        <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/Layout"/>
+        <rdfs:label rdf:resource="http://purl.org/net/obop/v01"/>
+        <rdfs:label xml:lang="en">VerticalLayout</rdfs:label>
+    </owl:Class>
+    
+
+
     <!-- http://purl.org/net/obop/VisualElement -->
 
     <owl:Class rdf:about="http://purl.org/net/obop/VisualElement">
@@ -678,7 +719,7 @@ This can be used to track the version of the interface used to populate the know
             <owl:Class>
                 <owl:unionOf rdf:parseType="Collection">
                     <rdf:Description rdf:about="http://purl.org/net/obop/Field"/>
-                    <rdf:Description rdf:about="http://purl.org/net/obop/InterfaceContainer"/>
+                    <rdf:Description rdf:about="http://purl.org/net/obop/FunctionalContainer"/>
                     <rdf:Description rdf:about="http://purl.org/net/obop/Loop"/>
                 </owl:unionOf>
             </owl:Class>

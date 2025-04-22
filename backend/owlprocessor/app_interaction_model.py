@@ -1,4 +1,5 @@
 from .forms import Form
+from rdflib import Graph
 from .app_model import AppInternalStaticModel as AppStaticModel
 from .communication import AppExchangeFrontEndData,  AppExchangeGetOutput
 import logging
@@ -14,6 +15,8 @@ class AppInteractionModel:
     """
     def __init__(self, uimodel):
         self.inner_app_static_model:AppStaticModel = uimodel
+
+        self.outputStore : Graph = Graph()
         self.app_state: ApplicationState = ApplicationState()
 
     def processReceivedClientData(self, frontend_state : AppExchangeFrontEndData):

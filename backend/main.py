@@ -1,23 +1,21 @@
 import uvicorn
 import logging
 from fastapi import FastAPI
+from config.settings import Settings, get_settings
 from fastapi.middleware.cors import CORSMiddleware
 from routers.onto_app_router import router as model_router
 
+
+settings: Settings = get_settings()
+
 # Configure basic logging
-logging.basicConfig(level=logging.DEBUG,
+app_logger = logging.basicConfig(level=logging.DEBUG if settings.DEBUG else logging.INFO,
                  format='%(asctime)s - %(name)s - %(levelname)-2s [%(filename)s:%(lineno)d]  - %(message)s')
 
  
 # Definition of origins
 origins = ["*"]
-app = FastAPI(debug=True)
-
-logger = logging.getLogger("uvicorn")
-logger.setLevel(logging.DEBUG)
-app_logger = logging.getLogger("ontoui_app")
-app_logger.setLevel(logging.DEBUG)
-
+app = FastAPI(debug=settings.DEBUG, title=settings.APP_NAME, version="0.1.0")   
 
 
 # add CORS middleware

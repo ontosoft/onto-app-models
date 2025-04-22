@@ -1,10 +1,20 @@
 import os
 import json
 import logging
+import tempfile
 from rdflib import Graph, RDF, Namespace
+from owlready2 import get_ontology
 from rdflib.plugins.sparql import  prepareQuery
-
+from owlready2 import World, sync_reasoner_pellet
+from pathlib import Path
+from config.settings import Settings, get_settings
 ontoui_logger = logging.getLogger("ontoui_app")
+
+ontoui_logger.error(os.environ)
+settings : Settings = get_settings()
+
+if "JAVA_HOME" not in os.environ:
+    os.environ['JAVA_HOME'] = "/Library/Java/JavaVirtualMachines/adoptopenjdk-13.jdk/Contents/Home/"
 
 OBOP = Namespace("http://purl.org/net/obop/")
 
@@ -52,3 +62,48 @@ def read_model_files_from_directory(models_directory: str = 'app_models'):
     models_info_json = json.dumps(models_info)
     ontoui_logger.debug('Model description: %s', models_info_json)
     return models_info_json
+
+def print_triples_in_graph(graph_world: World):
+    """
+    Prints all triples in the given graph_world.
+    """
+    for s, p, o in graph_world.as_rdflib_graph().triples((None, None, None)):
+        ontoui_logger.debug(f"Subject: {s}, Predicate: {p}, Object: {o}")
+
+def create_pellet_reasoning_graph(graph_world: World)-> World:
+    """
+    Runs a SPARQL query on the given graph using the pellet reasoner and returns the results.
+    The graph world is first cloned in order to avoid modifying the original graph.
+    """
+
+    try:
+        print_triples_in_graph(graph_world)
+
+        temporary_location = Path(settings.TEMPORARY_MODELS_DIRECTORY)
+        graph_world.save(file = str(temporary_location/"before.owl"), format = "rdfxml")
+        # Clone the graph world to avoid modifying the original graph
+        cloned_world = World()
+        # Step 1: Save the original world to a temporary file
+        with tempfile.NamedTemporaryFile(suffix=".owl") as tmp:
+            graph_world.save(tmp.name)
+
+            # Step 2: Load the saved data into the cloned world
+            ontology = cloned_world.get_ontology(tmp.name).load()
+
+        # Step 3: Apply Pellet reasoning
+
+        cloned_world.save(file = str(temporary_location/"after_cloning.owl"), format = "rdfxml")
+        with cloned_world:
+            sync_reasoner_pellet(cloned_world, infer_property_values=True, \
+                infer_data_property_values=True) 
+        ontoui_logger.debug('Graph world after Pellet reasoning:')
+        print_triples_in_graph(cloned_world)
+
+        cloned_world.save(file = str(temporary_location/"after_pellet_applied.owl"), format = "rdfxml")
+        return cloned_world
+    except FileNotFoundError as e:
+        ontoui_logger.error(f"File not found: {e}")
+        raise
+    except Exception as e:
+        ontoui_logger.error(f"Error during clonning or Pellet reasoning: {e}")
+        raise

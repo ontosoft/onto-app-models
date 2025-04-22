@@ -1,6 +1,8 @@
-from fastapi import APIRouter, UploadFile, File, Request
+from fastapi import APIRouter, UploadFile, File, Request, Depends
+from config.settings import get_settings, Settings
 from pathlib import Path
 from owlprocessor.app_engine import AppEngine
+from owlprocessor.app_model_factory import AppStaticModelFactory
 from utilities.model_directory_functions import read_model_files_from_directory
 from owlprocessor.communication import AppExchangeGetOutput
 import logging
@@ -13,23 +15,24 @@ app:AppEngine = AppEngine()
 #TODO App havy logic with dependency injection in FastAPI 
 i = 0
 
-@router.post("/upload_rdf_file", response_description="Upload new model file")
-async def upload_model_file(file: UploadFile = File(...)):
+@router.post("/upload_rdf_file", response_description="Upload new model file", )
+async def upload_model_file(file: UploadFile = File(...), settings : Settings = Depends(get_settings),):
     """
     Uploads a new model file and reads it into the inner application model.   
     """
     filecontent = await file.read()
     try:
         local_model = AppEngine()
-        local_model.read_graph(filecontent)
-        local_model.loadUIModel()
+        local_model = AppStaticModelFactory.rdf_graf_to_uimodel(filecontent)
+        if local_model is None:
+            return {"The file is not a valid UI model": "The file is not a valid UI model"}
     except Exception as e:
         return {"The file is not a valid UI model": str(e)}
 
-    modelsLocation = Path("./app_models")
+    modelsLocation = Path(".").joinpath(settings.MODEL_DIRECTORY)
     modelsLocation.mkdir(parents=True, exist_ok=True)
     filePath = modelsLocation/ file.filename
-    with open(filePath, "wb") as f:
+    with open(filePath, "w", encoding='utf-8') as f:
         f.write(filecontent)
     return {"filename": file.filename}
 
@@ -128,6 +131,6 @@ async def load_inner_server_model(filename: str):
         logger.debug(f"The app model \"{filename} \" is about to be loaded.") 
         app = AppEngine(config="development")
         app.read_graph(filename)
-        app.load_inner_app_model()
+        app.load_inner_app_model(filename)
         return {"message": f"The model is loaded {app.model_name}. "}
      

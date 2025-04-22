@@ -10,7 +10,7 @@
       "request": "launch",
       "module": "pytest",
       "args": [
-        "-s", "test_basics.py::test_combine_shacl_properties_and_obop_elements",
+        "-s", "test_onto_models_to_jsonforms.py::test_form_with_two_fields_and_vertical_layout",
       ],
       "cwd": "${workspaceFolder}/backend/tests",
       "env": {

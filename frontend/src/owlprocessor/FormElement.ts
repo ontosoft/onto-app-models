@@ -1,7 +1,6 @@
 export class FormElement {
     type: string | undefined;
     private _id: string;
-
     name!: string;
     private _label: string | undefined;
 
