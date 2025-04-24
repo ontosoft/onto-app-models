@@ -9,8 +9,10 @@ from routers.onto_app_router import router as model_router
 settings: Settings = get_settings()
 
 # Configure basic logging
-app_logger = logging.basicConfig(level=logging.DEBUG if settings.DEBUG else logging.INFO,
+logging.basicConfig(level=logging.DEBUG if settings.DEBUG else logging.INFO,
                  format='%(asctime)s - %(name)s - %(levelname)-2s [%(filename)s:%(lineno)d]  - %(message)s')
+
+app_logger = logging.getLogger("ontoui_app")
 
  
 # Definition of origins
@@ -31,5 +33,5 @@ app.add_middleware(
 app.include_router(model_router)
 
 if __name__ == "__main__":
-    app_logger.info('Info ========= ciao ========= ')
+    app_logger.info("========= STARTING-SERVER =========")
     uvicorn.run( "main:app",port=8089, host='0.0.0.0', reload=False, log_level='debug')

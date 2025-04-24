@@ -8,7 +8,7 @@ from .forms import Form, Layout, HorizontalLayout, VerticalLayout
 from .form_elements import OBOPElement, SHACLFormProperty, ActionPointer
 from .app_model import Action
 from rdflib.namespace import SH, OWL
-from owlready2 import World
+from owlready2 import World, Ontology
 from config.settings import get_settings, Settings
 import jsonpickle
 from .app_model import AppInternalStaticModel
@@ -27,7 +27,7 @@ class AppStaticModelFactory:
         internal_app_static_model = AppInternalStaticModel()
         internal_app_static_model.rdf_graph_rdflib = \
             AppStaticModelFactory.read_graph_rdflib(rdf_model_file, rdf_text_ttl)
-        internal_app_static_model.rdf_world_owlready = \
+        internal_app_static_model.rdf_world_owlready, internal_app_static_model.rdf_ontology_owlready = \
             AppStaticModelFactory.read_graph_owlready(internal_app_static_model.rdf_graph_rdflib)
         internal_app_static_model.rdf_pellet_reasoning_world = \
             create_pellet_reasoning_graph(
@@ -38,7 +38,7 @@ class AppStaticModelFactory:
         # self.setUpFirstForm()
         AppStaticModelFactory.combine_shacl_properties_and_obop_elements(internal_app_static_model)
         AppStaticModelFactory.assignOwnerFormsToLayouts(internal_app_static_model)
-        AppStaticModelFactory.assignElementsToLayouts(internal_app_static_model)
+        AppStaticModelFactory.assignElementsAndLayoutsToLayouts(internal_app_static_model)
         return internal_app_static_model
 
     @staticmethod
@@ -70,7 +70,7 @@ class AppStaticModelFactory:
             return rdf_graph_rdflib
 
     @staticmethod
-    def read_graph_owlready(rdf_graph_rdflib: Graph) -> World:
+    def read_graph_owlready(rdf_graph_rdflib: Graph) -> tuple[World, Ontology]:
         """
         Reads an RDF file and parses it using owlready library.
         The owlready2 library is used in order to enable reasoning over the RDF graph
@@ -90,14 +90,14 @@ class AppStaticModelFactory:
         rdf_graph_rdflib.serialize(destination=filePath, format="xml")
       
         graph_world :World = World()
-        model_graph_owlready = graph_world.get_ontology(str(filePath)).load()
+        model_graph_owlready : Ontology = graph_world.get_ontology(str(filePath)).load()
 
-        model_graph_with_obop = graph_world. \
+        model_graph_with_obop : Ontology = graph_world. \
             get_ontology(str(Path(settings.ONTOLOGIES_DIRECTORY).joinpath('obop.owl'))).load()
         # After reading the RDF file using owlready2, we need to remove the temporary file.
         os.remove(filePath)
 
-        return graph_world
+        return graph_world, model_graph_owlready
 
 
     def readAllLayouts(internal_app_static_model: AppInternalStaticModel):
@@ -185,7 +185,7 @@ class AppStaticModelFactory:
         """ 
             This method reads a part of the model which corresponds to a given SHACL property.
         """
-        rdf_graph_rdflib = form.internal_app_static_model.rdf_graph_rdflib
+        rdf_graph_rdflib = form.inner_app_static_model.rdf_graph_rdflib
         logger.debug(f"Reading SHACL property: {shacl_property_instance}") 
         property_path = rdf_graph_rdflib.value(shacl_property_instance, SH.path)
         property_name = rdf_graph_rdflib.value(shacl_property_instance, SH.name)
@@ -257,7 +257,8 @@ class AppStaticModelFactory:
                 logger.error(f"Error in sorting the form elements: {e}")    
                 logger.error(f"Some form elements: {form.elements} probably do \
                              not have the position attribute set.")
-
+                raise
+        
     def readActions(internal_app_static_model: AppInternalStaticModel):
         for action_instance in internal_app_static_model.rdf_graph_rdflib.subjects(RDF.type, OBOP.Action):
             action = Action(action_instance)
@@ -308,7 +309,7 @@ class AppStaticModelFactory:
             obop:belongsTo  of the layout in the model graph.
         """
         try:
-            forms_and_layouts_sparql_query1 = """
+            forms_and_layouts_sparql_query = """
             PREFIX obop: <http://purl.org/net/obop/>
             SELECT DISTINCT ?layout ?block
             WHERE {
@@ -319,19 +320,21 @@ class AppStaticModelFactory:
             }"""
 
             layout_block_pairs = internal_app_static_model.rdf_pellet_reasoning_world. \
-                sparql_query(forms_and_layouts_sparql_query1)
+                sparql(forms_and_layouts_sparql_query)
             #logger.debug(f"Query Results: {list(layout_block_pairs)}")
 
-            # Denote the form owners to those layouts that are main layouts of the form
+            # Denote the in the inner representation form owners to those layouts that are main layouts of the form
+            
             for row in layout_block_pairs:
                 (graph_layout, graph_block) = row
-                logger.debug(f"Row is: {internal_app_static_model.rdf_pellet_reasoning_world.base_iri(str(graph_layout))} - {str(graph_block)} ")
+                logger.debug(f"Layout : {graph_layout.iri} belongs to form {graph_block.iri} ")
                 layout = next((layout for layout in internal_app_static_model.layouts \
-                              if layout.node == graph_layout),None)
+                              if str(layout.node) == graph_layout.iri),None)
                 form = next((f for f in internal_app_static_model.forms \
-                             if f.node == graph_block),None)
+                             if str(f.node) == graph_block.iri),None)
                 if layout is not None and form is not None:
                     layout.owner_form = form
+                    form.main_layout = layout
 
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -340,55 +343,74 @@ class AppStaticModelFactory:
             logger.error(f"Error in assigning owner form to layout: {e}{exc_type, fname, exc_tb.tb_lineno}")
 
 
-    def assignLayoutToFormElements(internal_app_static_model : AppInternalStaticModel):
+    def assignElementsAndLayoutsToLayouts(internal_app_static_model: AppInternalStaticModel):
         """
-            This method assigns parent layouts to form elements
+            This method assigns form elements to layouts as lists of elements
+            that are part of the layout and assigns layouts to layouts if they are
+            nested in the layout.
         """
-        try:
-            for form in internal_app_static_model.forms:
-                for form_element in form.elements:
-                    parent_layouts = internal_app_static_model.rdf_graph_rdflib.objects(form_element.node, OBOP.belongsToVisual)
-                    if parent_layouts.__len__() > 1:
-                        raise Exception("More than one parent layout found. Parent layout  " +
-                        "is functional predicate and should be unique.")
-                    else:
-                        parent_layout = internal_app_static_model.layouts.find(
-                            lambda x: x.node == parent_layouts[0]
-                        )
-                        # Assigning the layout to the form element
-                        parent_layout.elements.append(form_element)
-
-            # Sorting in the order of the position on the HTML page
-            for layout in internal_app_static_model.layouts:
-                layout.elements.sort(key=lambda x: x.position)
-
-        except Exception as e:
-            logger.error(f"Error in assigning layout to form elements: {e}")    
-            logger.error(f"Some form elements: {form.elements} probably do \
-                         not have the layout attribute set.")
-
-    def assignElementsToLayouts(internal_app_static_model: AppInternalStaticModel):
-        """
-            This method assigns form elements to layouts
-        """
+        # Assigning form elements to the layout
         for form in internal_app_static_model.forms:
             for element in form.elements:
-                for visual_container in internal_app_static_model.rdf_graph_rdflib.objects(element.model_node,OBOP.belongsToVisual):
-                    # TODO: check if this comparison includes the reasoning (for example
-                    #  if the visual container is a subclass of the layout)
-                    if internal_app_static_model.rdf_graph_rdflib.value(visual_container, RDF.type) == OBOP.Layout:
-                        layout = internal_app_static_model.layouts.find(
-                            lambda x: x.node == visual_container
-                        ) 
-                        # Assigning the layout to the form element
-                        layout.elements.append(element)
-                    # Assigning the form to the layout
+                element_iri = str(element.model_node)
+                # Finding the visual container to which the element belongs in the model graph 
+                element_and_layout_sparql_query = f"""
+                    PREFIX obop: <http://purl.org/net/obop/>
+                    SELECT DISTINCT ?layout 
+                    WHERE {{
+                        <{element_iri}> obop:belongsToVisual ?layout .
+                        <{element_iri}> a ?c1 .
+                        ?c1 rdfs:subClassOf*  obop:VisualElement .
+                        ?layout a ?c2 . 
+                        ?c2 rdfs:subClassOf* obop:Layout .
+                    }}"""
+
+                layouts = internal_app_static_model.rdf_pellet_reasoning_world. \
+                    sparql(element_and_layout_sparql_query)
+                # Include the layout (element) in the list of elements of the layout 
+                
+                for row in layouts:
+                    (graph_layout,) = row
+                    logger.debug(f"Layout :  {graph_layout.iri} ")
+ 
+                    inner_layout = next((layout for layout in internal_app_static_model.layouts \
+                               if str(layout.node) == str(graph_layout.iri)), None)
+                    # Assigning elementi to the layout
+                    inner_layout.elements.append(element)
+
+        # Assigning nested layout to the parent layout
+        for layout in internal_app_static_model.layouts:
+            layout_iri = str(layout.model_node)
+            # Finding the parent layout  
+            parent_layout_sparql_query = f"""
+                PREFIX obop: <http://purl.org/net/obop/>
+                SELECT DISTINCT ?layout 
+                WHERE {{
+                    <{layout_iri}> obop:belongsToVisual ?layout .
+                    <{layout_iri}> a ?c1 .
+                    ?c1 rdfs:subClassOf* obop:Layout .
+                }}"""
+
+            layouts = internal_app_static_model.rdf_pellet_reasoning_world. \
+                sparql(parent_layout_sparql_query)
+
+            # Include found layout in the parent layout element list 
+            for row in layouts:
+                (graph_layout,) = row
+                logger.debug(f"Layout :  {graph_layout.iri} ")
+                # TODO: can this nesting be improved because layouts are still left
+                # in the internal_app_static_model.layouts list (not tree like structure)
+                inner_layout = next((layout for layout in internal_app_static_model.layouts \
+                           if str(layout.node) == str(graph_layout.iri)), None)
+                # Assigning layout to the parent layout
+                inner_layout.elements.append(element)
+
         # Sorting in the order of the position on the HTML page
         try:
             for layout in internal_app_static_model.layouts:
                 layout.elements.sort(key=lambda x: x.position)
         except Exception as e:
-            logger.error(f"Error in sorting the form elements: {e}")    
+            logger.error(f"Error in sorting the layout elements: {e}")    
             logger.error(f"Some form elements: {layout.elements} probably do \
              not have the position attribute set.")
 

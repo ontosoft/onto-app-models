@@ -3,3 +3,4 @@ __pycache__/
 .env
 .vercel
 .vscode/settings.json
+temporary_models/

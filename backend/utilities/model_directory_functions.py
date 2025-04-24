@@ -77,8 +77,6 @@ def create_pellet_reasoning_graph(graph_world: World)-> World:
     """
 
     try:
-        print_triples_in_graph(graph_world)
-
         temporary_location = Path(settings.TEMPORARY_MODELS_DIRECTORY)
         graph_world.save(file = str(temporary_location/"before.owl"), format = "rdfxml")
         # Clone the graph world to avoid modifying the original graph
@@ -96,9 +94,6 @@ def create_pellet_reasoning_graph(graph_world: World)-> World:
         with cloned_world:
             sync_reasoner_pellet(cloned_world, infer_property_values=True, \
                 infer_data_property_values=True) 
-        ontoui_logger.debug('Graph world after Pellet reasoning:')
-        print_triples_in_graph(cloned_world)
-
         cloned_world.save(file = str(temporary_location/"after_pellet_applied.owl"), format = "rdfxml")
         return cloned_world
     except FileNotFoundError as e:

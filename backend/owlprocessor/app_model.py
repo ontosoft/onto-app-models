@@ -1,6 +1,6 @@
 from __future__ import annotations
 from rdflib import Graph
-from owlready2 import World
+from owlready2 import World, Ontology
 
 class AppInternalStaticModel:
     """_summary_
@@ -13,6 +13,7 @@ class AppInternalStaticModel:
         self._startingFormBlock = None
         self._rdf_graph_rdflib : Graph = None
         self._rdf_world_owlready: World = None
+        self._rdf_ontology_owlready: Ontology = None
         self._rdf_pellet_reasoning_world: World = None
         self._layouts = []
         self._form_blocks = []
@@ -36,6 +37,13 @@ class AppInternalStaticModel:
     @rdf_world_owlready.setter
     def rdf_world_owlready(self, value):
         self._rdf_world_owlready = value
+
+    @property
+    def rdf_ontology_owlready(self)-> Ontology:
+        return self._rdf_ontology_owlready
+    @rdf_ontology_owlready.setter
+    def rdf_ontology_owlready(self, value):
+        self._rdf_ontology_owlready = value
     
     @property
     def rdf_pellet_reasoning_world(self)-> World:

@@ -46,10 +46,11 @@ class AppEngine():
              assigns it to the inner_app_model attribute.
         """
  
+        logger.debug("Loading the server-side application model.")
         model_factory = AppStaticModelFactory()
         filePath :str = file_name
         if file_name is not None:
-            filePath :str= self.model_directory+file_name
+            filePath :str= self.model_directory+"/"+file_name
         self.inner_app_static_model = model_factory.rdf_graf_to_uimodel(rdf_model_file=filePath, rdf_text_ttl=rdf_string)
         logger.debug("Application model loaded from the RDF graph.")
         logger.debug(self.inner_app_static_model)
@@ -80,7 +81,7 @@ class AppEngine():
 
             return AppExchangeGetOutput(
                 message_type ="error",
-                layout_type="",
+                layout_type="message_box",
                 message_content = {"message" : "An application model is not loaded."})
         elif self.app_interaction_model_instance is None: 
             return AppExchangeGetOutput(

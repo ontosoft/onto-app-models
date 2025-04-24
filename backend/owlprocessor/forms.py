@@ -24,6 +24,7 @@ class Form:
         self._elements = []
         self.model = None
         self._position: int = position
+        self._main_layout: Layout = None
         self.shapes = []
         self.inner_app_static_model : AppInternalStaticModel = inner_app_static_model
 
@@ -58,10 +59,16 @@ class Form:
     @property
     def elements(self):
         return self._elements
-
     @elements.setter
     def elements(self, value):
         self._elements = value
+
+    @property
+    def main_layout(self)-> Layout:
+        return self._main_layout
+    @main_layout.setter
+    def main_layout(self, value: Layout):
+        self._main_layout = value
 
     def add_element(self, element):
         self._elements.append(element)
@@ -156,7 +163,7 @@ class VerticalLayout(Layout):
     def add_element(self, element):
         self._elements.append(element)
 
-    def create_jsonform_ui_schema(self, app_state:ApplicationState):
+    def create_jsonform_ui_schema(self, app_state:ApplicationState)-> dict:
         """
         Creates a JSONForms uischema for the VerticalLayout.
         """

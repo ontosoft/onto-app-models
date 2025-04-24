@@ -112,6 +112,7 @@ async def read_the_list_of_app_models():
     Reads the current list of inner model files in the folder 'app_models' into
     json format. 
     """
+    logger.debug('Reading the list of inner UI models from the server')
     return read_model_files_from_directory() 
 
 @router.get("/load_inner_uimodel_from_server",  response_description="Load the chosen inner UI model from the server")
@@ -129,8 +130,7 @@ async def load_inner_server_model(filename: str):
         return {"message": f"The model {app.model_name} is loaded . The applicaton was already run before. Do you want to load a new model?"}
     else:
         logger.debug(f"The app model \"{filename} \" is about to be loaded.") 
-        app = AppEngine(config="development")
-        app.read_graph(filename)
+        app = AppEngine()
         app.load_inner_app_model(filename)
         return {"message": f"The model is loaded {app.model_name}. "}
      

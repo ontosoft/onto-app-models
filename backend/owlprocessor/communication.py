@@ -11,7 +11,7 @@ class AppExchangeGetOutput(BaseModel):
  
     """
     message_type: Literal[ "layout" , "notification" , "error"]
-    layout_type: Literal[ "form" , "massage-box"]
+    layout_type: Literal[ "form" , "message-box"]
     message_content: dict
 
 
