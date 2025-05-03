@@ -5,6 +5,22 @@
   "version": "0.2.0",
   "configurations": [
 {
+      "name": "Python Debugger: single test-case submit-cancel buttons",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "-s", "test_onto_models_to_jsonforms.py::test_form_with_one_field_and_two_buttons_in_nested_horizontal_layout",
+      ],
+      "cwd": "${workspaceFolder}/backend/tests",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/backend/venv/bin/python"
+      },
+      "python": "${workspaceFolder}/backend/venv/bin/python",
+
+      "console": "integratedTerminal"
+    },
+{
       "name": "Python Debugger: single test-case",
       "type": "debugpy",
       "request": "launch",
@@ -49,3 +65,4 @@
     }
   ]
 }
+

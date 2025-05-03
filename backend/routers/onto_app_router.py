@@ -29,7 +29,7 @@ async def upload_model_file(file: UploadFile = File(...), settings : Settings = 
     except Exception as e:
         return {"The file is not a valid UI model": str(e)}
 
-    modelsLocation = Path(".").joinpath(settings.MODEL_DIRECTORY)
+    modelsLocation : Path = settings.MODEL_DIRECTORY
     modelsLocation.mkdir(parents=True, exist_ok=True)
     filePath = modelsLocation/ file.filename
     with open(filePath, "w", encoding='utf-8') as f:
@@ -49,17 +49,19 @@ async def run_application():
     i += 1 
 
     logger.debug(f"This is the {i} th time the function is run.")
-    if app is not None and app.is_inner_app_static_model_loaded and app.app_interaction_model_instance is not None:
+    if app is not None and app.inner_app_static_model.is_inner_app_static_model_loaded and app.app_interaction_model_instance is not None:
         logger.info(f"Process generator exists { app.app_interaction_model_instance}")
         return {"message": "The applicaton was already run before.",
                 "model": app.app_interaction_model_instance}
         #jsonpickle.encode(
-    elif app is not None and app.is_inner_app_static_model_loaded and app.app_interaction_model_instance is None:
+    elif app is not None and app.inner_app_static_model is not None  and  \
+        app.inner_app_static_model.is_inner_app_static_model_loaded and app.app_interaction_model_instance is None:
         # The inner model static reporesentation corresponding to the RDF graph
         # was already loaded. However, the application is still not running because
         # (AppInteractionModelInstance is not created)
         app.run_application()
         return {"message_type": "information",
+                "layout_type": "",
                 "message_content": "The application is running."}
     elif app is None:
         return {"message_type": "information",
@@ -125,7 +127,8 @@ async def load_inner_server_model(filename: str):
         This file is stored in the 'app_models' folder as RDF file
     """
     global app
-    if app is not None and app.is_inner_app_static_model_loaded:
+    if app is not None and app.inner_app_static_model is not None and \
+        app.inner_app_static_model.is_inner_app_static_model_loaded:
         logger.debug(f"The app model \"{app.model_name} \" was already loaded.") 
         return {"message": f"The model {app.model_name} is loaded . The applicaton was already run before. Do you want to load a new model?"}
     else:

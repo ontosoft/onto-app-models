@@ -11,6 +11,7 @@ class AppInternalStaticModel:
     def __init__(self):
         self.model_graph = None
         self._startingFormBlock = None
+        self.is_inner_app_static_model_loaded : bool = False
         self._rdf_graph_rdflib : Graph = None
         self._rdf_world_owlready: World = None
         self._rdf_ontology_owlready: Ontology = None
@@ -18,6 +19,8 @@ class AppInternalStaticModel:
         self._layouts = []
         self._form_blocks = []
         self._actions : list[Action]= []
+        self._model_file_name : str = None
+        self._is_inner_app_static_model_loaded: bool = False
    
     @property
     def model_graph(self):
@@ -59,6 +62,20 @@ class AppInternalStaticModel:
     @firstForm.setter
     def firstForm(self, forms):
         self._startingFormBlock = forms
+
+    @property
+    def model_file_name(self):
+        return self._model_file_name
+    @model_file_name.setter
+    def model_file_name(self, value):
+        self._model_file_name = value
+
+    @property
+    def is_inner_app_static_model_loaded(self):
+        return self._is_inner_app_static_model_loaded
+    @is_inner_app_static_model_loaded.setter
+    def is_inner_app_static_model_loaded(self, value):
+        self._is_inner_app_static_model_loaded = value
 
     @property
     def forms(self):

@@ -77,7 +77,7 @@ def create_pellet_reasoning_graph(graph_world: World)-> World:
     """
 
     try:
-        temporary_location = Path(settings.TEMPORARY_MODELS_DIRECTORY)
+        temporary_location : Path= settings.TEMPORARY_MODELS_DIRECTORY
         graph_world.save(file = str(temporary_location/"before.owl"), format = "rdfxml")
         # Clone the graph world to avoid modifying the original graph
         cloned_world = World()

@@ -1,5 +1,5 @@
 export class Element {
-        _node = null;
+        _graph_node = null;
         _label = null;
         // type of the HTML element
         _type = null;
@@ -14,7 +14,7 @@ export class Element {
         _modelInstance = null;
 
     constructor(newNode){
-        this._node = newNode;
+        this._graph_node = newNode;
         this._label = null;
         // type of the HTML element
         this._type = null;
@@ -27,12 +27,12 @@ export class Element {
         this._modelInstance=null;
     }
 
-    get node(){
-        return this._node;
+    get graph_node(){
+        return this._graph_node;
     }
 
-    set node(newNode){
-        this._node = newNode;
+    set graph_node(newNode){
+        this._graph_node = newNode;
     }
 
     get label(){

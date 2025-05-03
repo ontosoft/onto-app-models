@@ -1,4 +1,4 @@
-from .forms import Form
+from .forms import Form, FunctionalJSONForm
 from rdflib import Graph
 from .app_model import AppInternalStaticModel as AppStaticModel
 from .communication import AppExchangeFrontEndData,  AppExchangeGetOutput
@@ -48,7 +48,7 @@ class AppInteractionModel:
             return  output_message
         else:
             form_object : Form = self.inner_app_static_model.forms[self.app_state.current_form_index]
-            json_form = form_object.create_json_form_schemas(self.app_state) 
+            json_form:FunctionalJSONForm = form_object.create_functional_json_form_schemas(self.app_state) 
             logger.debug(f" Created form is {jsonpickle.encode(json_form, indent=2)}")
             output_message = AppExchangeGetOutput(
                 message_type = "layout",

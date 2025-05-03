@@ -1,4 +1,4 @@
-from fastapi.testclient import TestClient 
+from fastapi.testclient import TestClient
 from pythonjsonlogger import jsonlogger
 from rdflib import Literal, Graph, URIRef
 from rdflib.namespace import XSD
@@ -7,11 +7,7 @@ from owlprocessor.app_engine import AppEngine
 from owlprocessor.communication import AppExchangeGetOutput
 import jsonpickle
 import logging
-import os
 from deepdiff import DeepDiff
-# Change the current working directory to the parent directory
-os.chdir(os.path.dirname(os.getcwd()))
-
 
 client = TestClient(app)
 logger = logging.getLogger("ontoui_app")
@@ -24,9 +20,8 @@ formatter = jsonlogger.JsonFormatter(
 
 
 def test_read_textual_field_model(caplog):
-
     """
-        Test only one single imput field in a form 
+    Test only one single imput field in a form
     """
 
     rdf_model = """
@@ -72,49 +67,41 @@ def test_read_textual_field_model(caplog):
 
     app: AppEngine = AppEngine()
     app.model_graph = Graph()
-    app.model_graph.parse(data = rdf_model)
+    app.model_graph.parse(data=rdf_model)
     app.load_inner_app_model()
     assert app.inner_app_static_model is not None
     assert app.inner_app_static_model.forms is not None
     assert len(app.inner_app_static_model.forms) > 0
-    logger.debug(f"Form: {jsonpickle.encode(app.inner_app_static_model.forms[0], indent=2)}")
+    logger.debug(
+        f"Form: {jsonpickle.encode(app.inner_app_static_model.forms[0], indent=2)}"
+    )
     app.run_application()
     response = app.app_interaction_model_instance.generate_layout()
-    logger.debug("Output dictionary") 
-    logger.debug(jsonpickle.encode(response,  indent =2))
+    logger.debug("Output dictionary")
+    logger.debug(jsonpickle.encode(response, indent=2))
     wanted_result = AppExchangeGetOutput(
-        message_type = "form",
-        layout_type = "form",
-        message_content = {
-            "node": "http://example.org/logicinterface/testing/block_1" ,
+        message_type="form",
+        layout_type="form",
+        message_content={
+            "node": "http://example.org/logicinterface/testing/block_1",
             "schema": {
                 "type": "object",
-                "properties": {
-                     "Label name": {
-                    "type": "string",
-                    "position": 1
-                    }
-                }
+                "properties": {"Label name": {"type": "string", "position": 1}},
             },
             "uischema": {
-                "type": 'VerticalLayout',
-                "elements": [
-                   {
-                       "type": "Control", 
-                       "scope": "#/properties/Label name" 
-                   }
-                ]
-            }
-        }
+                "type": "VerticalLayout",
+                "elements": [{"type": "Control", "scope": "#/properties/Label name"}],
+            },
+        },
     )
-    logger.debug("The difference is:") 
+    logger.debug("The difference is:")
     logger.debug(DeepDiff(response, wanted_result))
-    assert response == wanted_result  
+    assert response == wanted_result
+
 
 def test_form_with_two_fields_and_a_button(caplog):
-
     """
-        Test only two field and button in a form 
+    Test only two field and button in a form
     """
 
     rdf_model = """
@@ -168,61 +155,50 @@ def test_form_with_two_fields_and_a_button(caplog):
     logger.debug("1. Load the model ")
 
     app: AppEngine = None
-    app = AppEngine( config = "test")
+    app = AppEngine(config="test")
     app.model_graph = Graph()
-    app.model_graph.parse(data = rdf_model)
+    app.model_graph.parse(data=rdf_model)
     app.load_inner_app_model()
     assert app.inner_app_static_model is not None
     assert app.inner_app_static_model.forms is not None
     assert len(app.inner_app_static_model.forms) > 0
-    logger.debug(f"Form: {jsonpickle.encode(app.inner_app_static_model.forms[0], indent=2)}")
+    logger.debug(
+        f"Form: {jsonpickle.encode(app.inner_app_static_model.forms[0], indent=2)}"
+    )
     app.run_application()
     response = app.app_interaction_model_instance.generate_layout()
-    logger.debug("Output dictionary") 
-    logger.debug(jsonpickle.encode(response, indent =2))
+    logger.debug("Output dictionary")
+    logger.debug(jsonpickle.encode(response, indent=2))
     wanted_result = AppExchangeGetOutput(
-        message_type = "form",
-        layout_type = "form",
-        message_content = {
-            "node": "http://example.org/logicinterface/testing/block_1" ,
+        message_type="form",
+        layout_type="form",
+        message_content={
+            "node": "http://example.org/logicinterface/testing/block_1",
             "schema": {
                 "type": "object",
                 "properties": {
-                    "Field 1": {
-                       "type": "string",
-                       "position": 1
-                    },
-                    "Field 2": {
-                        "type": "string",
-                        "position": 2
-                    }
-                }
+                    "Field 1": {"type": "string", "position": 1},
+                    "Field 2": {"type": "string", "position": 2},
+                },
             },
             "uischema": {
-                "type": 'VerticalLayout',
+                "type": "VerticalLayout",
                 "elements": [
-                   {
-                       "type": "Control", 
-                       "scope": "#/properties/Field 1" 
-                   },
-                   {
-                       "type": "Control", 
-                       "scope": "#/properties/Field 2" 
-                   }
-                ]
-            }
-        }
+                    {"type": "Control", "scope": "#/properties/Field 1"},
+                    {"type": "Control", "scope": "#/properties/Field 2"},
+                ],
+            },
+        },
     )
-    logger.debug("The difference is:") 
+    logger.debug("The difference is:")
     logger.debug(DeepDiff(response, wanted_result))
-    assert response == wanted_result  
+    assert response == wanted_result
 
 
 def test_form_with_two_fields_and_vertical_layout(caplog):
-
     """
-        There is only one block (form) with the corresponding  vertical layout
-        and two fields in the form. The layout is generated with the vertical layout. 
+    There is only one block (form) with the corresponding  vertical layout
+    and two fields in the form. The layout is generated with the vertical layout.
     """
 
     rdf_model = """
@@ -292,50 +268,101 @@ def test_form_with_two_fields_and_vertical_layout(caplog):
     assert app.inner_app_static_model is not None
     assert app.inner_app_static_model.forms is not None
     assert len(app.inner_app_static_model.forms) > 0
-    #logger.debug(f"Form: {jsonpickle.encode(app.inner_app_static_model.forms[0], indent=2)}")
-    #logger.debug(f"Layout: {jsonpickle.encode(app.inner_app_static_model.layouts[0], indent=2)}")
+    # logger.debug(f"Form: {jsonpickle.encode(app.inner_app_static_model.forms[0], indent=2)}")
+    # logger.debug(f"Layout: {jsonpickle.encode(app.inner_app_static_model.layouts[0], indent=2)}")
     app.run_application()
     response = app.app_interaction_model_instance.generate_layout()
     assert app.inner_app_static_model.layouts[0].type == "VerticalLayout"
-    assert app.inner_app_static_model.layouts[0].position == Literal('0', datatype=XSD.int)
-    assert app.inner_app_static_model.layouts[0].node == URIRef("http://example.org/logicinterface/testing/vertical_layout_1")
-    assert app.inner_app_static_model.layouts[0].owner_form == app.inner_app_static_model.forms[0]
-    logger.debug("Output dictionary") 
-    logger.debug(jsonpickle.encode(response, indent =2))
+    assert app.inner_app_static_model.layouts[0].position == Literal(
+        "0", datatype=XSD.int
+    )
+    assert app.inner_app_static_model.layouts[0].graph_node == URIRef(
+        "http://example.org/logicinterface/testing/vertical_layout_1"
+    )
+    assert (
+        app.inner_app_static_model.layouts[0].owner_form
+        == app.inner_app_static_model.forms[0]
+    )
+    logger.debug("Output dictionary")
+    logger.debug(jsonpickle.encode(response, indent=2))
     wanted_result = AppExchangeGetOutput(
-        message_type = "layout",
-        layout_type = "form",
-        message_content = {
-            "node": "http://example.org/logicinterface/testing/block_1" ,
+        message_type="layout",
+        layout_type="form",
+        message_content={
+            "graph_node": "http://example.org/logicinterface/testing/block_1",
             "schema": {
                 "type": "object",
                 "properties": {
-                    "Field 1": {
-                       "type": "string",
-                       "position": 0
-                    },
-                    "Field 2": {
-                        "type": "string",
-                        "position": 1
-                    }
-                }
+                    "Field 1": {"type": "string", "position": 0},
+                    "Field 2": {"type": "string", "position": 1},
+                },
             },
             "uischema": {
-                "type": 'VerticalLayout',
+                "type": "VerticalLayout",
                 "elements": [
-                   {
-                       "type": "Control", 
-                       "scope": "#/properties/Field 1" 
-                   },
-                   {
-                       "type": "Control", 
-                       "scope": "#/properties/Field 2" 
-                   }
-                ]
-            }
-        }
+                    {"type": "Control", "scope": "#/properties/Field 1"},
+                    {"type": "Control", "scope": "#/properties/Field 2"},
+                ],
+            },
+            "data": {},
+        },
     )
-    logger.debug("The difference is:") 
+    logger.debug("The difference is:")
     logger.debug(DeepDiff(response, wanted_result))
-    assert response == wanted_result  
+    assert response == wanted_result
 
+
+def test_form_with_one_field_and_two_buttons_in_nested_horizontal_layout(caplog):
+    """
+    There is only one block (form) with the corresponding  vertical layout
+    and one imput field in the form. The layout is generated with the vertical layout
+    and nested horizontal layout for submit and cancel buttons.
+    """
+
+    caplog.set_level(logging.DEBUG, logger="ontoui_app")
+    logger.debug("1. Load the model ")
+
+    # AppEngine is configured on testing settings through pytest.ini
+    app: AppEngine = AppEngine()
+    # Reading the model from the file
+    app.load_inner_app_model(file_name="test_submit_cancel_buttons.ttl")
+    assert app.inner_app_static_model is not None
+    assert app.inner_app_static_model.forms is not None
+    assert len(app.inner_app_static_model.forms) > 0
+    # logger.debug(f"Form: {jsonpickle.encode(app.inner_app_static_model.forms[0], indent=2)}")
+    # logger.debug(f"Layout: {jsonpickle.encode(app.inner_app_static_model.layouts[0], indent=2)}")
+    app.run_application()
+    response = app.app_interaction_model_instance.generate_layout()
+    logger.debug("Output dictionary")
+    logger.debug(jsonpickle.encode(response, indent=2))
+    wanted_result = AppExchangeGetOutput(
+        message_type="layout",
+        layout_type="form",
+        message_content={
+            "graph_node": "http://example.org/logicinterface/testing/block_1",
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "Field 1": {"type": "string", "position": 0},
+                },
+            },
+            "uischema": {
+                "type": "VerticalLayout",
+                "elements": [
+                    {"type": "Control", 
+                     "scope": "#/properties/Field 1"},
+                    {
+                        "type": "HorizontalLayout",
+                        "elements": [
+                            {"type": "Control", "scope": "#/properties/Submit"},
+                            {"type": "Control", "scope": "#/properties/Cancel"},
+                        ],
+                    },
+                ],
+            },
+            "data": {},
+        },
+    )
+    logger.debug("The difference is:")
+    logger.debug(DeepDiff(response, wanted_result))
+    assert response == wanted_result

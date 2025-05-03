@@ -133,7 +133,7 @@ shacl:NodeShape rdf:type owl:Class .
                    obop:Button ;
           obop:activatesAction :action_1 ;
           obop:belongsTo :block_1 ;
-          obop:hasLabel "Save" ;
+          obop:hasLabel "Submit" ;
           obop:hasPositionNumber "2"^^xsd:int .
 
 

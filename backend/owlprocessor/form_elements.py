@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 from json import JSONEncoder
 import logging
 from rdflib import  Namespace
+from rdflib import URIRef
 OBOP = Namespace("http://purl.org/net/obop/")
 from rdflib.namespace import SH
 
@@ -12,8 +13,8 @@ if TYPE_CHECKING:
     from .app_interaction_model import ApplicationState
 
 class FormElement:
-    def __init__(self,form , model_node, type, position = 0 ):
-        self.model_node = model_node
+    def __init__(self,form , graph_node, type, position:int = 0 ):
+        self.graph_node = graph_node
         self.type = type
         self.position :int = position
         self.action_pointers = []
@@ -34,33 +35,64 @@ class FormElement:
         # TODO Naming the property as a label for OBOPElements."
         # This should be considered once again. Label could be part 
         # of the basic form element not only OBOPElement
+
+        # OBOP.Button elements are not part of the JSONschema but are
+        # part of the UI schema.
+        if self.type in [ OBOP.Button] :
+            return ""
         if str(self.type) == str(OBOP.Field):
             field_type = "string" 
         if isinstance(self, OBOPElement) and self.label !="":
             new_property_name = str(self.label)
-            app_state.current_json_form_name_mapping[str(self.model_node)] = str(self.label)
+            app_state.current_json_form_name_mapping[str(self.graph_node)] = str(self.label)
         # then it is a SHACL property
         elif isinstance(self, SHACLFormProperty) and  \
             self.property_data_type !="": 
-            # TODO The type checking should be besser organized
+            # TODO The type checking should be better organized
             # not just string
             field_type = "string" 
             new_property_name = str(self.property_name)
-            app_state.current_json_form_name_mapping[str(self.model_node)] = str(self.property_name)
+            app_state.current_json_form_name_mapping[str(self.graph_node)] = str(self.property_name)
 
 
         return {
             new_property_name: {
                 "type": field_type,
-                "position": int(self.position),
+                "position": self.position,
         #        "action_pointers": self.action_pointers
             }
         }
 
     def create_jsonform_ui_schema_element(self, app_state:ApplicationState):
+        """
+            This method assigns a name to the element in the UI schema."
+            It is the name of the mapped property if the element is a SHACL property
+            for which ther is a related OBOP element with additional information
+            If the element has a label, it is used as the name of the element.
+            If the none of the above is true, the name is taken from the graph node
+            as the last part of the URI.
+        """
         encoded_name: str = None
-        if str(self.model_node) in app_state.current_json_form_name_mapping:        
-            encoded_name = app_state.current_json_form_name_mapping[str(self.model_node)] 
+        if str(self.graph_node) in app_state.current_json_form_name_mapping:        
+            encoded_name = app_state.current_json_form_name_mapping[str(self.graph_node)] 
+        elif self.label != "":
+            encoded_name = str(self.label)
+        elif isinstance(self.graph_node, URIRef):
+            encoded_name = str(self.graph_node).split("/")[-1]       
+        else:
+            raise ValueError(f"An element with the graph node {self.graph_node} doesn not hae a label")
+        if self.type == OBOP.Button:
+            return {
+                "type": 'button',
+                "scope": '#/properties/' + encoded_name,
+                "label": encoded_name,
+            }
+        elif self.type == OBOP.Field:
+            return {
+                "type": 'Control',
+                "scope": '#/properties/' + encoded_name,
+                "label": encoded_name,
+            }
         return {
             "type": 'Control',
             "scope": '#/properties/' + encoded_name,
@@ -77,7 +109,7 @@ class FormElementEncoder(JSONEncoder):
             if isinstance(o, FormElement):
                 form_element = {
                     "type": o.type,
-                    "model_node": o.model_node,
+                    "graph_node": o.graph_node,
                     "position": o.position,
                     "action_pointers": o.action_pointers
                 }
@@ -90,7 +122,7 @@ class SHACLFormProperty(FormElement):
     def __init__(
         self,
         form,
-        model_node,
+        graph_node,
         property_path,
         property_order,
         property_name=None,
@@ -99,7 +131,7 @@ class SHACLFormProperty(FormElement):
         property_min_count=None,
         related_element = None
     ):
-        super().__init__(form, model_node, property_path, property_order)
+        super().__init__(form, graph_node, property_path, property_order)
         self.property_name = property_name
         self.property_data_type = property_data_type
         self.property_description = property_description
@@ -119,8 +151,8 @@ class SHACLFormProperty(FormElement):
 """
 
 class OBOPElement(FormElement):
-    def __init__(self, parent_form, model_node, type, position, label = None, action_initiator=None):
-        super().__init__(parent_form, model_node, type, position)
+    def __init__(self, parent_form, graph_node, type, position:int, label = None, action_initiator=None):
+        super().__init__(parent_form, graph_node, type, position)
         self.label = label
         self._action_pointers = []
 

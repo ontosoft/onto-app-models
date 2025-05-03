@@ -93,8 +93,8 @@ const FormComponent: React.FC<Props> = (props: Props) => {
 
   return (
     <JsonForms
-      schema={schema1}
-      uischema={uischema1}
+      schema={schema}
+      uischema={uischema}
       data={data}
       renderers={renderers}
       cells={materialCells}

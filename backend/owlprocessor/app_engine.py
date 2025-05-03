@@ -2,6 +2,7 @@ from .app_interaction_model import AppInteractionModel
 from .app_model_factory import AppStaticModelFactory
 from .app_model import AppInternalStaticModel
 from .communication import AppExchangeFrontEndData, AppExchangeGetOutput
+from pathlib import Path
 import jsonpickle
 import logging
 from config.settings import get_settings, Settings 
@@ -36,25 +37,21 @@ class AppEngine():
         # The interaction model instance is created from the inner_app_static_model
         # and is used to represents the running application. It is basically a dynamic
         # representation of the application model
-        self.is_inner_app_static_model_loaded = False
         self.model_name = None
-        self.model_directory : str = settings.MODEL_DIRECTORY
+        self.model_directory : Path = settings.MODEL_DIRECTORY
 
-    def load_inner_app_model(self, file_name: str = None, rdf_string: str = None):
+    def load_inner_app_model(self, file_name: Path = None, rdf_string: str = None):
         """
-             Reads the Application model from the model_graph attribute and 
-             assigns it to the inner_app_model attribute.
+             Loads the Application model from the rdf graph either in the file or
+             as a string. Only one of the two parameters can be used at a time.
         """
  
         logger.debug("Loading the server-side application model.")
         model_factory = AppStaticModelFactory()
-        filePath :str = file_name
+        filePath : Path = file_name
         if file_name is not None:
-            filePath :str= self.model_directory+"/"+file_name
+            filePath = self.model_directory/file_name
         self.inner_app_static_model = model_factory.rdf_graf_to_uimodel(rdf_model_file=filePath, rdf_text_ttl=rdf_string)
-        logger.debug("Application model loaded from the RDF graph.")
-        logger.debug(self.inner_app_static_model)
-        self.is_inner_app_static_model_loaded = True
 
     def run_application(self):
         """
@@ -62,7 +59,8 @@ class AppEngine():
         the process that generates an instance of the application interaction model
         
         """
-        if self is not None and self.is_inner_app_static_model_loaded and \
+        if self is not None and self.inner_app_static_model is not None and \
+            self.inner_app_static_model.is_inner_app_static_model_loaded and \
             self.app_interaction_model_instance is None:
             self.app_interaction_model_instance = AppInteractionModel(self.inner_app_static_model)
             logger.debug("A new application interaction is started.")

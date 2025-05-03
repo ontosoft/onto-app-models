@@ -36,5 +36,13 @@
            obop:belongsTo :block_1 ;
            obop:containsDatatype v1:legalName ;
            obop:hasLabel "Label name" ;
+           obop:belongsToVisual :vertical_layout_1 ;
            obop:hasPositionNumber "1"^^xsd:int ;
            dc:title "field name" .
+
+###  http://example.org/logicinterface/testing/vertical_layout_1
+:vertical_layout_1 rdf:type owl:NamedIndividual ,
+                  obop:VerticalLayout ;
+         obop:belongsTo :block_1 ;
+         obop:hasPositionNumber "0"^^xsd:int ;
+         dc:title "Main vertical layout for the Form"^^rdfs:Literal .

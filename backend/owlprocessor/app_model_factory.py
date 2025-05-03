@@ -23,7 +23,7 @@ class AppStaticModelFactory:
         
 
     @staticmethod
-    def rdf_graf_to_uimodel(rdf_model_file: str = None, rdf_text_ttl: str = None ) -> AppInternalStaticModel:
+    def rdf_graf_to_uimodel(rdf_model_file: Path = None, rdf_text_ttl: str = None ) -> AppInternalStaticModel:
         internal_app_static_model = AppInternalStaticModel()
         internal_app_static_model.rdf_graph_rdflib = \
             AppStaticModelFactory.read_graph_rdflib(rdf_model_file, rdf_text_ttl)
@@ -39,6 +39,7 @@ class AppStaticModelFactory:
         AppStaticModelFactory.combine_shacl_properties_and_obop_elements(internal_app_static_model)
         AppStaticModelFactory.assignOwnerFormsToLayouts(internal_app_static_model)
         AppStaticModelFactory.assignElementsAndLayoutsToLayouts(internal_app_static_model)
+        AppStaticModelFactory.assignAdditionalParameters(internal_app_static_model, rdf_model_file, rdf_text_ttl)
         return internal_app_static_model
 
     @staticmethod
@@ -83,7 +84,7 @@ class AppStaticModelFactory:
         # Because the owlready2 library does not support parsing RDF 
         # files in the string form, we need to serialize rdflib RDF graph to 
         # a temporary file and then read it using owlready2.
-        temporary_location = Path(settings.TEMPORARY_MODELS_DIRECTORY)
+        temporary_location : Path = settings.TEMPORARY_MODELS_DIRECTORY
         temporary_location.mkdir(parents=True, exist_ok=True)
         temporary_model_file = uuid.uuid4().hex + ".xml"
         filePath = temporary_location/temporary_model_file
@@ -93,7 +94,7 @@ class AppStaticModelFactory:
         model_graph_owlready : Ontology = graph_world.get_ontology(str(filePath)).load()
 
         model_graph_with_obop : Ontology = graph_world. \
-            get_ontology(str(Path(settings.ONTOLOGIES_DIRECTORY).joinpath('obop.owl'))).load()
+            get_ontology(str(settings.ONTOLOGIES_DIRECTORY/"obop.owl")).load()
         # After reading the RDF file using owlready2, we need to remove the temporary file.
         os.remove(filePath)
 
@@ -110,8 +111,11 @@ class AppStaticModelFactory:
             layout = HorizontalLayout(internal_app_static_model, layout_individual)
             # Read layout position because it represents the order 
             # of nesting in the UI. It is also a functional property of the layout and is used to sort the layouts.
-            positions = internal_app_static_model.rdf_graph_rdflib.value(layout_individual, OBOP.hasPositionNumber)
-            layout.position = positions
+            graph_position = internal_app_static_model.rdf_graph_rdflib.value(layout_individual, OBOP.hasPositionNumber)
+            if graph_position is None:
+                logger.error(f"Layout {layout_individual} does not have a position number.")
+            position = graph_position.toPython()
+            layout.position = position
             internal_app_static_model.add_layout(layout)
         # Read vertical layouts
         for layout_individual in internal_app_static_model.rdf_graph_rdflib.subjects(RDF.type, OBOP.VerticalLayout):
@@ -119,8 +123,11 @@ class AppStaticModelFactory:
             layout = VerticalLayout(internal_app_static_model, layout_individual)
             # Read layout position because it represents the order
             # of nesting in the UI. It is also a functional property of the layout and is used to sort the layouts.
-            positions = internal_app_static_model.rdf_graph_rdflib.value(layout_individual, OBOP.hasPositionNumber)
-            layout.position = positions
+            graph_position = internal_app_static_model.rdf_graph_rdflib.value(layout_individual, OBOP.hasPositionNumber)
+            if graph_position is None:
+                logger.error(f"Layout {layout_individual} does not have a position number.")
+            position = graph_position.toPython()
+            layout.position = position
             internal_app_static_model.add_layout(layout)
 
     def readAllForms(internal_app_static_model: AppInternalStaticModel):
@@ -132,8 +139,10 @@ class AppStaticModelFactory:
             # Read form position because it represents the order of the form
             #  in the UI. Iti is also a functional property of the form and can be used to sort the forms.
             # value of the position
-            positions = internal_app_static_model.rdf_graph_rdflib.value(block, OBOP.hasPositionNumber)
-            form = Form(internal_app_static_model, block, positions)
+            position = internal_app_static_model.rdf_graph_rdflib.value(block, OBOP.hasPositionNumber)
+            if position is None:
+                logger.error(f"Form {block} does not have a position number.")
+            form = Form(internal_app_static_model, block, position.toPython())
             internal_app_static_model.forms.append(form)
             AppStaticModelFactory.readFormElements(form, internal_app_static_model.rdf_graph_rdflib)
 
@@ -150,7 +159,7 @@ class AppStaticModelFactory:
         mode graph but with OBOP elements such as button, label and similar elements, These elements are
         so far related to the form using the obop:belongsTo property. Its different from the SHACL shapes.
         """
-        shapes = rdf_graph_rdflib.subjects(OBOP.modelBelongsTo, form.node)
+        shapes = rdf_graph_rdflib.subjects(OBOP.modelBelongsTo, form.graph_node)
         for s in shapes:
             if (s, RDF.type, SH.NodeShape) in rdf_graph_rdflib:
                 shacl_node_shape = s  # TODO check if there is only one shape for a form
@@ -176,7 +185,7 @@ class AppStaticModelFactory:
                         AppStaticModelFactory.readShaclProperty(shacl_property_instance, form)
 
         # Reading other OBOP elements that are not represented with SHACL shapes
-        other_obop_elements = rdf_graph_rdflib.subjects(OBOP.belongsTo, form.node)
+        other_obop_elements = rdf_graph_rdflib.subjects(OBOP.belongsTo, form.graph_node)
         for element in other_obop_elements:
             AppStaticModelFactory.readOtherOBOPElement(element, form )
 
@@ -218,22 +227,25 @@ class AppStaticModelFactory:
     def readOtherOBOPElement(element, form : Form):
         logger.debug(f"Reading OBOP element: {element}")
         rdf_graph_rdflib = form.inner_app_static_model.rdf_graph_rdflib
-        position = rdf_graph_rdflib.value(element, OBOP.hasPositionNumber)
+        graph_position = rdf_graph_rdflib.value(element, OBOP.hasPositionNumber)
+        position:int = -1
+        label = None
+        if element in rdf_graph_rdflib.subjects(
+            OBOP.hasLabel, None):
+            label = rdf_graph_rdflib.value(element, OBOP.hasLabel)
+        if graph_position is None:
+            logger.error(f"OBOP element {element} does not have a position number.")
+        position = graph_position.toPython()
         internal_element: OBOPElement = None
         if element in rdf_graph_rdflib.subjects(
                     RDF.type, OBOP.Button):
-            internal_element = OBOPElement(form, element, OBOP.Button, position)
+            internal_element = OBOPElement(form, element, OBOP.Button, position, label)
         elif element in rdf_graph_rdflib.subjects(
                     RDF.type, OBOP.Label):
-            internal_element = OBOPElement(form, element, OBOP.Label, position)
+            internal_element = OBOPElement(form, element, OBOP.Label, position, label)
         elif element in rdf_graph_rdflib.subjects(
-                    RDF.type, OBOP.Field):
-            if element in rdf_graph_rdflib.subjects(
-                    OBOP.hasLabel, None):
-                label = rdf_graph_rdflib.value(element, OBOP.hasLabel)
-                internal_element = OBOPElement(form, element, OBOP.Field, position, label)
-            else:
-                internal_element = OBOPElement(form, element, OBOP.Field, position)
+            RDF.type, OBOP.Field):
+               internal_element = OBOPElement(form, element, OBOP.Field, position, label)
         elif element in rdf_graph_rdflib.subjects(
                     RDF.type, OBOP.Loop):
             internal_element = OBOPElement(form, element, OBOP.Loop, position)
@@ -295,7 +307,7 @@ class AppStaticModelFactory:
                 if isinstance(shacl_property, SHACLFormProperty) and shacl_property.related_element is not None:
                     for obop_element in form.elements:
                         if isinstance(obop_element, OBOPElement):
-                            if str(obop_element.model_node) == shacl_property.related_element:
+                            if str(obop_element.graph_node) == shacl_property.related_element:
                                 shacl_property.position = obop_element.position
                                 shacl_property.action_pointers += obop_element.action_pointers
                                 ### TODO Other properties of the OBOP element should be assigned to the SHACL property
@@ -318,7 +330,7 @@ class AppStaticModelFactory:
                 ?layout a ?c1 . 
                 ?c1 rdfs:subClassOf* obop:Layout .
             }"""
-
+            #TODO
             layout_block_pairs = internal_app_static_model.rdf_pellet_reasoning_world. \
                 sparql(forms_and_layouts_sparql_query)
             #logger.debug(f"Query Results: {list(layout_block_pairs)}")
@@ -327,11 +339,11 @@ class AppStaticModelFactory:
             
             for row in layout_block_pairs:
                 (graph_layout, graph_block) = row
-                logger.debug(f"Layout : {graph_layout.iri} belongs to form {graph_block.iri} ")
+                logger.debug(f"Layout  {graph_layout.iri} belongs originally to form {graph_block.iri} ")
                 layout = next((layout for layout in internal_app_static_model.layouts \
-                              if str(layout.node) == graph_layout.iri),None)
+                              if str(layout.graph_node) == graph_layout.iri),None)
                 form = next((f for f in internal_app_static_model.forms \
-                             if str(f.node) == graph_block.iri),None)
+                             if str(f.graph_node) == graph_block.iri),None)
                 if layout is not None and form is not None:
                     layout.owner_form = form
                     form.main_layout = layout
@@ -352,7 +364,7 @@ class AppStaticModelFactory:
         # Assigning form elements to the layout
         for form in internal_app_static_model.forms:
             for element in form.elements:
-                element_iri = str(element.model_node)
+                element_iri = str(element.graph_node)
                 # Finding the visual container to which the element belongs in the model graph 
                 element_and_layout_sparql_query = f"""
                     PREFIX obop: <http://purl.org/net/obop/>
@@ -371,24 +383,26 @@ class AppStaticModelFactory:
                 
                 for row in layouts:
                     (graph_layout,) = row
-                    logger.debug(f"Layout :  {graph_layout.iri} ")
  
-                    inner_layout = next((layout for layout in internal_app_static_model.layouts \
-                               if str(layout.node) == str(graph_layout.iri)), None)
-                    # Assigning elementi to the layout
-                    inner_layout.elements.append(element)
+                    inner_parent_layout = next((layout for layout in internal_app_static_model.layouts \
+                               if str(layout.graph_node) == str(graph_layout.iri)), None)
+                    # Assigning the element to the layout
+                    logger.debug(f"Element {element_iri} belongs to the layout :  {graph_layout.iri} ")
+                    inner_parent_layout.elements.append(element)
 
         # Assigning nested layout to the parent layout
         for layout in internal_app_static_model.layouts:
-            layout_iri = str(layout.model_node)
+            layout_iri = str(layout.graph_node)
             # Finding the parent layout  
             parent_layout_sparql_query = f"""
                 PREFIX obop: <http://purl.org/net/obop/>
-                SELECT DISTINCT ?layout 
+                SELECT DISTINCT ?parent_layout 
                 WHERE {{
-                    <{layout_iri}> obop:belongsToVisual ?layout .
+                    <{layout_iri}> obop:belongsToVisual ?parent_layout .
                     <{layout_iri}> a ?c1 .
                     ?c1 rdfs:subClassOf* obop:Layout .
+                    ?parent_layout a ?c2 .
+                    ?c2 rdfs:subClassOf* obop:Layout .
                 }}"""
 
             layouts = internal_app_static_model.rdf_pellet_reasoning_world. \
@@ -396,14 +410,15 @@ class AppStaticModelFactory:
 
             # Include found layout in the parent layout element list 
             for row in layouts:
-                (graph_layout,) = row
-                logger.debug(f"Layout :  {graph_layout.iri} ")
+                (parent_layout,) = row
                 # TODO: can this nesting be improved because layouts are still left
                 # in the internal_app_static_model.layouts list (not tree like structure)
-                inner_layout = next((layout for layout in internal_app_static_model.layouts \
-                           if str(layout.node) == str(graph_layout.iri)), None)
+                inner_parent_layout = next((layout for layout in internal_app_static_model.layouts \
+                           if str(layout.graph_node) == str(parent_layout.iri)), None)
+
+                logger.debug(f"Layout {layout_iri} belongs to the layout {parent_layout.iri} ")
                 # Assigning layout to the parent layout
-                inner_layout.elements.append(element)
+                inner_parent_layout.elements.append(layout)
 
         # Sorting in the order of the position on the HTML page
         try:
@@ -414,3 +429,17 @@ class AppStaticModelFactory:
             logger.error(f"Some form elements: {layout.elements} probably do \
              not have the position attribute set.")
 
+    def assignAdditionalParameters(internal_app_static_model: AppInternalStaticModel, rdf_model_file: Path, rdf_text_ttl: str):
+        """
+        This method assigns other parameters to the internal application model like model file name and indicator that the model is loaded.
+        """
+        if rdf_model_file is not None:
+            internal_app_static_model.model_file_name = rdf_model_file.name
+        elif rdf_text_ttl is not None:
+            internal_app_static_model.model_file_name = "Loaded simple string" 
+
+        # Indicate that the inner application model is loaded successfully
+        internal_app_static_model.is_inner_app_static_model_loaded = True
+
+
+            

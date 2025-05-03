@@ -10,8 +10,8 @@ class AppExchangeGetOutput(BaseModel):
     create that form.
  
     """
-    message_type: Literal[ "layout" , "notification" , "error"]
-    layout_type: Literal[ "form" , "message-box"]
+    message_type: Literal[ "layout" , "notification","information" , "error"]
+    layout_type: Literal[ "form" , "message-box",""]
     message_content: dict
 
 
