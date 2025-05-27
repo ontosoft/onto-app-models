@@ -42,10 +42,10 @@ const ServerModelRunner: React.FC = () => {
   const runModelOnServer = async () => {
     if (innerModelLoaded === "idle") {
       console.log("The inner model is not loaded yet");
-    } else if (
+    }else if(
       innerModelLoaded === "succeeded" &&
       appRunningOnServer === "idle"
-    ) {
+    )  {
       // If the inner model is loaded then the application which is loaded should be run on the server
       dispatch(runInnerAppModelOnServer()).then(() => {
         /**
@@ -59,10 +59,11 @@ const ServerModelRunner: React.FC = () => {
          * In the first step the message is sent to the server and server
          * prepares the data to be sent back to the client
          * In the second step the client gets the data from the server
-         * and the data are processed in the client 
+         * and the data are processed (shown) in the client side 
          **/
         dispatch(initiateAppExchange({ messageType:"initiate_exchange", messageContent: {} })).then(() => {
           /**
+           * Only for the very first exchange message_type is "initiate_exchange"
            * After the data to exchange are sent run the function to get data in the exchange
            *  */
           dispatch(appExchangeGet());
@@ -83,6 +84,11 @@ const ServerModelRunner: React.FC = () => {
         <h2>The following model is loaded.</h2>
       </div>
 
+    { innerModelLoaded === "loading" ? (
+      < div style ={{ textAlign: "center", padding: "2em" }}>
+        <span> Loading model, please wait...</span>
+      </div>
+    ) : (
       <table className="table">
         <thead>
           <tr>
@@ -121,6 +127,7 @@ const ServerModelRunner: React.FC = () => {
           )}
         </tbody>
       </table>
+    )}
     </div>
   );
 };

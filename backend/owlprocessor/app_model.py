@@ -113,7 +113,7 @@ class AppInternalStaticModel:
 
 class Action:
     def __init__(self, node):
-        self._node = node
+        self._graph_node = node
         self._type = None
         self._isSubmit = False
 
@@ -121,12 +121,12 @@ class Action:
         return f"Action: {self.node}"
 
     @property
-    def node (self):
-        return self._node
+    def graph_node (self):
+        return self._graph_node
     
-    @node.setter
-    def node(self, value):
-        self._node = value
+    @graph_node.setter
+    def graph_node(self, value):
+        self._graph_node = value
 
     @property
     def type(self):
@@ -143,3 +143,14 @@ class Action:
     @isSubmit.setter
     def isSubmit(self, value):
         self._isSubmit = value
+
+    def execute(self, form_data):
+        """
+        Execute the action with the given form data.
+        """
+        if self.isSubmit:
+            # Process the form data
+            print(f"Executing action {self.graph_node} with form data: {form_data}")
+        else:
+            # Handle other action types
+            print(f"Executing action {self.graph_node} without form data.")

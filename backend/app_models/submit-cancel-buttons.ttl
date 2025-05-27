@@ -24,9 +24,11 @@
 
 ###  http://example.org/logicinterface/testing/block_1
 :block_1 rdf:type owl:NamedIndividual ,
-                  obop:Block ;
-         obop:hasPositionNumber "1"^^xsd:int ;
-         dc:title "block_1 for Form"^^rdfs:Literal .
+                obop:Block ;
+                obop:targetClass obo:ENVO_01000934 ,
+                                   v1:BusinessEntity ;
+         obop:hasPositionNumber "0"^^xsd:int ;
+         dc:title "block_1 - HTML Form"^^rdfs:Literal .
 
 
 ###  http://example.org/logicinterface/testing/field_1
@@ -57,7 +59,7 @@
          obop:belongsToVisual :vertical_layout_1 ;
          dc:title "Horizontal layout for submit and cancel buttons."^^rdfs:Literal .
 
-###  http://example.org/logicinterface/restaurant/button_1
+###  http://example.org/logicinterface/testing/button_1
 :button_1 rdf:type owl:NamedIndividual ,
                    obop:Button ;
           obop:activatesAction :action_1 ;
@@ -67,7 +69,7 @@
           obop:hasPositionNumber "0"^^xsd:int .
 
 
-###  http://example.org/logicinterface/restaurant/button_2
+###  http://example.org/logicinterface/testing/button_2
 :button_2 rdf:type owl:NamedIndividual ,
                    obop:Button ;
           obop:activatesAction :action_2 ;
@@ -76,5 +78,14 @@
           obop:belongsToVisual :horizontal_layout_1 ;
           obop:hasPositionNumber "1"^^xsd:int ;
           rdfs:comment "This is a cancel button that is used for canceling function and going back in the application workflow." .
+
+###  http://example.org/logicinterface/testing/action_1
+:action_1 rdf:type owl:NamedIndividual ,
+                   obop:SubmitBlockAction ;
+          obop:actionInBlock :block_1 ;
+          obop:hasInitiator "onClick";
+          obop:hasInitiator "onEnter";
+          obop:hasLabel "Submit" ;
+          obop:hasPositionNumber "0"^^xsd:int .
 
 

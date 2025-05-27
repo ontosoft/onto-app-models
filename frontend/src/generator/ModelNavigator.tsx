@@ -14,7 +14,7 @@ export const ModelNavigator: React.FC = () => {
   const appRunningOnServer = useAppSelector(
     (state) => state.stateData.runningOnServer
   );
-  const outputKnowledgeGraph = useAppSelector(
+  const outputKnowledgeGraph: String = useAppSelector(
     (store) => store.model.outputGraph
   );
   const isShownTerminationPane = useAppSelector(
@@ -78,14 +78,9 @@ export const ModelNavigator: React.FC = () => {
 
 
 
-  const previewGraph = (graph: Formula) => {
-    let base = OUTPUT_KG;
-    let serializedGraph = undefined;
-    serialize(null, graph, base, "application/rdf+xml", function (err, str) {
-      console.log("Serialized output graph:");
-      serializedGraph = str;
-    });
-    return serializedGraph ? serializedGraph : "Empty";
+  const previewGraph = (graph: String) => {
+
+    return graph ? graph : "Empty";
   };
 
   const printState = () => {
@@ -94,18 +89,8 @@ export const ModelNavigator: React.FC = () => {
     // document.body.appendChild(link);
     // link.click();
     // document.body.removeChild(link);
-    let base = OUTPUT_KG;
-    serialize(
-      null,
-      outputKnowledgeGraph,
-      base,
-      "application/rdf+xml",
-      function (err, str) {
-        console.log("Serialized output graph:");
-        console.log(str);
-        //       localStorage.setItem("pageData", str);
-      }
-    );
+    console.log("Serialized output graph:");
+    console.log(outputKnowledgeGraph)
     //window.open(newPageUrl, "_blank") //to open new page
   };
 

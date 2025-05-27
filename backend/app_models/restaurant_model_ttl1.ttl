@@ -170,16 +170,6 @@ shacl:NodeShape rdf:type owl:Class .
         obop:hasSource :restaurantShape .
 
 
-###  http://example.org/logicinterface/restaurant/field_1_1
-:field_1_1 rdf:type owl:NamedIndividual ,
-                    obop:Field ;
-           obop:belongsTo :block_1 ;
-           obop:containsDatatype v1:legalName ;
-           obop:isRelatedToTargetOntologyInstance :restaurantShape ;
-           obop:hasLabel "Restaurant name" ;
-           obop:hasPositionNumber "1"^^xsd:int ;
-           dc:title "field_1_1_restaurant_name" .
-
 
 ###  http://example.org/logicinterface/restaurant/field_1_2
 :field_1_2 rdf:type owl:NamedIndividual ,
@@ -267,6 +257,18 @@ _:genid1 shacl:datatype xsd:string ;
           shacl:maxCount 1 ;
           dash:singleLine "true"^^xsd:boolean ;
           obop:specifedBy :field_1_1 .
+
+###  http://example.org/logicinterface/restaurant/field_1_1
+:field_1_1 rdf:type owl:NamedIndividual ,
+                    obop:Field ;
+           obop:belongsTo :block_1 ;
+           obop:containsDatatype v1:legalName ;
+           obop:isRelatedToTargetOntologyInstance :restaurantShape ;
+           obop:hasLabel "Restaurant name" ;
+           obop:hasPositionNumber "1"^^xsd:int ;
+           dc:title "field_1_1_restaurant_name" .
+
+
 
 _:genid2 shacl:path schema:streetAddress ;
           obop:specifedBy :field_1_2 ;

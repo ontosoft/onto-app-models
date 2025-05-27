@@ -134,10 +134,12 @@ export const appExchangeGet = createAsyncThunk('appstate/appExchangeGetData',
              * The main application pane is activated in the appStateSlice by the action activateMainApplicationPana
              */
             const response:AppExchangeResponse = await appExchangeGetAPI();
+            console.log("The response from the server is", response);
             thunkApi.dispatch(processReceivedMessage(response));
             let state1:RootState = thunkApi.getState() as RootState;
             console.log("Do we need to refresh the layout?", state1.model.layoutRefreshNecessary);
  
+            console.log("Output knowledge graph", state1.model.outputGraph);
             if (state1.model.layoutRefreshNecessary) {
                 thunkApi.dispatch(activateMainApplicationPane());
             }

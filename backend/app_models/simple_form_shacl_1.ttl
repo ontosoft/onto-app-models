@@ -63,7 +63,7 @@
 ###  http://example.org/logicinterface/testing/horizontal_layout_1
 :horizontal_layout_1 rdf:type owl:NamedIndividual ,
                   obop:HorizontalLayout ;
-         obop:hasPositionNumber "2"^^xsd:int ;
+         obop:hasPositionNumber "1"^^xsd:int ;
          obop:belongsToVisual :vertical_layout_1 ;
 
          dc:title "Horizontal-Layout"^^rdfs:Literal .

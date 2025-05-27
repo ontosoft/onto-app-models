@@ -4,3 +4,4 @@ __pycache__/
 .vercel
 .vscode/settings.json
 temporary_models/
+*.DS_Store

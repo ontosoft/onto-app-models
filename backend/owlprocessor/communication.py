@@ -13,6 +13,7 @@ class AppExchangeGetOutput(BaseModel):
     message_type: Literal[ "layout" , "notification","information" , "error"]
     layout_type: Literal[ "form" , "message-box",""]
     message_content: dict
+    output_knowledge_graph: str
 
 
 class AppExchangeFrontEndData(BaseModel):

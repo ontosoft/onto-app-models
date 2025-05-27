@@ -3,8 +3,8 @@ import os
 import sys
 import uuid
 from pathlib import Path
-from rdflib import Graph, RDF, Literal, BNode, URIRef, Namespace
-from .forms import Form, Layout, HorizontalLayout, VerticalLayout
+from rdflib import Graph, RDF, Namespace
+from .forms import Form, HorizontalLayout, VerticalLayout
 from .form_elements import OBOPElement, SHACLFormProperty, ActionPointer
 from .app_model import Action
 from rdflib.namespace import SH, OWL
@@ -35,7 +35,6 @@ class AppStaticModelFactory:
         AppStaticModelFactory.readAllLayouts(internal_app_static_model)
         AppStaticModelFactory.readAllForms(internal_app_static_model)
         AppStaticModelFactory.readActions(internal_app_static_model)
-        # self.setUpFirstForm()
         AppStaticModelFactory.combine_shacl_properties_and_obop_elements(internal_app_static_model)
         AppStaticModelFactory.assignOwnerFormsToLayouts(internal_app_static_model)
         AppStaticModelFactory.assignElementsAndLayoutsToLayouts(internal_app_static_model)
@@ -142,7 +141,11 @@ class AppStaticModelFactory:
             position = internal_app_static_model.rdf_graph_rdflib.value(block, OBOP.hasPositionNumber)
             if position is None:
                 logger.error(f"Form {block} does not have a position number.")
+            
             form = Form(internal_app_static_model, block, position.toPython())
+            form.target_classes =  \
+                internal_app_static_model.rdf_graph_rdflib.objects( block, OBOP.targetClass)
+            
             internal_app_static_model.forms.append(form)
             AppStaticModelFactory.readFormElements(form, internal_app_static_model.rdf_graph_rdflib)
 
@@ -250,21 +253,31 @@ class AppStaticModelFactory:
                     RDF.type, OBOP.Loop):
             internal_element = OBOPElement(form, element, OBOP.Loop, position)
 
-        # Reading the action pointers that indicate what actions are related to the element
-        action_pointers = rdf_graph_rdflib.objects(element, OBOP.hasActionPointer)
-        for pointer in action_pointers:
-            action = rdf_graph_rdflib.value(pointer, OBOP.hasAction)
-            action_initiator = rdf_graph_rdflib.value(pointer, OBOP.hasActionInitiator)
+        # Reading the actions that can be activated by the element 
+        actions = rdf_graph_rdflib.objects(element, OBOP.activatesAction)
+        for action in actions:
+            action_type = "other"
+            # Checking the type of the action
+            if action in rdf_graph_rdflib.subjects(RDF.type, OBOP.SubmitBlockAction):
+                action_type = "submit"
+            action_pointer = ActionPointer(str(action), action_type)
+            # Reading action initiators which represent the form events 
+            # that activate the action. For examle, a button click
+            # can activate the submit action. 
+            # The ActionPointer  instances are (action, action_initiator)pairs 
+            action_initiators = rdf_graph_rdflib.objects(action, OBOP.hasInitiator)
+            for ai in action_initiators:
+                action_pointer.action_initiators.append(str(ai))
+                
             internal_element.action_pointers.append(
-                ActionPointer(action, action_initiator)
-            )
+                    action_pointer)
         if internal_element is not None:
             form.add_element(internal_element)
-        # Sorting in the order of the position on the HTML page
+        # Sorting on the HTML page in the order of positions 
         try:
             form.elements.sort(key=lambda x: x.position)
         except Exception as e:
-                #TODO it might be better to assigne some default value to the 
+                #TODO it might be better to assign some default value to the 
                 # position attribute of the form elements
                 logger.error(f"Error in sorting the form elements: {e}")    
                 logger.error(f"Some form elements: {form.elements} probably do \
@@ -272,13 +285,30 @@ class AppStaticModelFactory:
                 raise
         
     def readActions(internal_app_static_model: AppInternalStaticModel):
-        for action_instance in internal_app_static_model.rdf_graph_rdflib.subjects(RDF.type, OBOP.Action):
-            action = Action(action_instance)
-            action.type = internal_app_static_model.rdf_graph_rdflib.value(action_instance, OBOP.actionType)
-            if internal_app_static_model.rdf_graph_rdflib.value(action_instance, OBOP.isSubmitAction):
-                action.isSubmit = True
-            internal_app_static_model.actions.append(action)
+        """
+        This method reads all actions from the RDF graph into the internal static application model
+        """
+        try:
+            all_actions_query = """
+            PREFIX obop: <http://purl.org/net/obop/>
+            SELECT DISTINCT ?action ?xActionClass
+            WHERE {
+                ?action a ?xActionClass . 
+                ?xActionClass rdfs:subClassOf* obop:Action .
+            }"""
+            all_actions_generator = internal_app_static_model.rdf_pellet_reasoning_world. \
+                sparql(all_actions_query)
+            for row in all_actions_generator:
+                (graph_action, action_class) = row
+                logger.debug(f"Action  {graph_action.iri}  ")
+                action : Action = Action(graph_action.iri)
+                if (action_class == OBOP.SubmitBlockAction):
+                    action.type = "submit"
+                    action.isSubmit = True
 
+                internal_app_static_model.actions.append(action)
+
+            # TODO: For other action types
             # if isHasConnection(quad[1]):
             #     for quad1 in self.rdfGraph.triples((quad[2], None, None)):
             #         if isRdfType(quad1[1]) and isConnection(quad1[2]):
@@ -289,7 +319,9 @@ class AppStaticModelFactory:
             #             for dQuad in self.rdfGraph.triples((quad[2], HAS_DESTINATION_NODE, None)):
             #                 destination = dQuad[2]
             #             action.activity = {"connection": {"
-
+        except Exception as e:
+            logger.error(f"Error by reading actions: {e}")    
+            logger.exception("Error by reading actions")
 
 
     def combine_shacl_properties_and_obop_elements(internal_app_static_model: AppInternalStaticModel):
@@ -330,7 +362,6 @@ class AppStaticModelFactory:
                 ?layout a ?c1 . 
                 ?c1 rdfs:subClassOf* obop:Layout .
             }"""
-            #TODO
             layout_block_pairs = internal_app_static_model.rdf_pellet_reasoning_world. \
                 sparql(forms_and_layouts_sparql_query)
             #logger.debug(f"Query Results: {list(layout_block_pairs)}")

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 from json import JSONEncoder
 import logging
 from rdflib import  Namespace
@@ -17,7 +17,7 @@ class FormElement:
         self.graph_node = graph_node
         self.type = type
         self.position :int = position
-        self.action_pointers = []
+        self.action_pointers : List[ActionPointer] = []
         self.form:Form = form
 
     def add_action_pointer(self, action_pointer):
@@ -86,6 +86,14 @@ class FormElement:
                 "type": 'button',
                 "scope": '#/properties/' + encoded_name,
                 "label": encoded_name,
+                "actions": [
+                    {
+                        "graph_node": ap.graph_node,
+                        "type": ap.type,
+                        "initiators": [ initiator for initiator in  ap.action_initiators]
+                    }
+                    for ap in self.action_pointers
+                ],
             }
         elif self.type == OBOP.Field:
             return {
@@ -180,6 +188,7 @@ class OBOPElement(FormElement):
         For instance, this can be "onclick" for a button element
 """
 class ActionPointer:
-    def __init__(self, action, action_initiator=None):
-        self.action = action
-        self.action_initiator = action_initiator
+    def __init__(self, graph_node: str, type: str = None, action_initiators=None):
+        self.graph_node: str = graph_node
+        self.type: str = type  # Type of the action, e.g., "submit", "cancel"
+        self.action_initiators: List[str] = action_initiators or []

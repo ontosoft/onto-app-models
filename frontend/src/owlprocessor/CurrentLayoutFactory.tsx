@@ -4,14 +4,14 @@ import {
   materialRenderers,
   materialCells,
 } from "@jsonforms/material-renderers";
-import { CustomButtonRenderer } from "./CustomButtonRenderer";
+import  CustomButtonRenderer  from "./CustomButtonRenderer";
 import { JsonForms } from "@jsonforms/react";
 import { UISchemaElement } from "@jsonforms/core";
-import isAction from "@jsonforms/core";
-import { initiatePreviewModelList } from "../data/serverModelSlice";
+import { updateCurrentJSONFormData } from "../data/modelSlice";
+import { useAppSelector, useAppDispatch } from "../app/hooks";
 
 interface FormJSXProps {
-  node: string;
+  graph_node: string;
   schema: object;
   uischema: UISchemaElement;
   data: object;
@@ -41,11 +41,11 @@ const renderers = [
 ];
 
 const FormComponent: React.FC<Props> = (props: Props) => {
-  //const node = props.form.node;
   const schema = props.form.schema;
   const initialData = props.form.data;
   const [data, setData] = useState(initialData);
-
+  const dispatch = useAppDispatch();
+  
   const schema1 = {
     properties: {
       name: {
@@ -59,31 +59,31 @@ const FormComponent: React.FC<Props> = (props: Props) => {
   const uischema = props.form.uischema;
   console.log(uischema);
 
-  const uischema1 = {
-    type: "VerticalLayout",
-    elements: [
-      {
-        type: "Control",
-        scope: "#/properties/name",
-        label: "Name",
-      },
-      {
-        type: "HorizontalLayout",
-        elements: [
-          {
-            type: "button",
-            label: "Submit",
-            onClick: "submit",
-          },
-          {
-            type: "button",
-            label: "Cancel",
-            onClick: "cancel",
-          },
-        ],
-      },
-    ],
-  };
+  // const uischema1 = {
+  //   type: "VerticalLayout",
+  //   elements: [
+  //     {
+  //       type: "Control",
+  //       scope: "#/properties/name",
+  //       label: "Name",
+  //     },
+  //     {
+  //       type: "HorizontalLayout",
+  //       elements: [
+  //         {
+  //           type: "button",
+  //           label: "Submit",
+  //           onClick: "submit",
+  //         },
+  //         {
+  //           type: "button",
+  //           label: "Cancel",
+  //           onClick: "cancel",
+  //         },
+  //       ],
+  //     },
+  //   ],
+  // };
 
   console.log("The uischema dynamic", uischema);
 
@@ -98,54 +98,17 @@ const FormComponent: React.FC<Props> = (props: Props) => {
       data={data}
       renderers={renderers}
       cells={materialCells}
-      onChange={({ data, errors }) => setData(data)}
+      config = {{form_graph_node: props.form.graph_node}} 
+      onChange={({ data, errors }) => {
+        setData(data);
+        dispatch(updateCurrentJSONFormData(data));
+      }}
     />
   );
 };
 
-const InputField = ({
-  input,
-  value,
-  onChange,
-}: {
-  input: string;
-  value: string;
-  onChange: (e: string) => void;
-}): JSX.Element => {
-  return (
-    <input
-      type="text"
-      id={input}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-    />
-  );
-};
 
-const LabelJSX = ({
-  label,
-  input,
-}: {
-  label: string;
-  input: string;
-}): JSX.Element => {
-  return <label htmlFor="field1"> {label} </label>;
-};
-
-const ImageJSX = ({
-  src,
-  url,
-  alt,
-  caption,
-}: {
-  src: string;
-  url: string;
-  alt: string;
-  caption: string;
-}): JSX.Element => {
-  return <a href={url}>caption={caption}</a>;
-};
 
 export default FormComponent;
-export { getDefaultLayout, LabelJSX, ImageJSX };
+export { getDefaultLayout};
 export type { FormJSXProps };

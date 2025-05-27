@@ -1,6 +1,5 @@
-import { serialize, Formula } from "rdflib";
-import { OUTPUT_KG } from "../owlprocessor/InterfaceOntologyTypes";
 import { useAppDispatch, useAppSelector } from "../app/hooks";
+import { KnowledgeGraphViewer } from "./KnowledgGraphViewer";
 //import outputfile from "./output.owl";
 
 export function ModelPresenter() {
@@ -11,35 +10,16 @@ export function ModelPresenter() {
   );
   const currentForm = useAppSelector((store) => store.model.currentForm);
 
-  const previewGraph = (graph: Formula) => {
-    let base = OUTPUT_KG;
-    let serializedGraph = undefined;
-    serialize(null, graph, base, "application/rdf+xml", function (err, str) {
-      console.log("Serialized output graph:");
-      serializedGraph = str;
-    });
-    return serializedGraph ? serializedGraph : "Empty";
+  const previewGraph = (graph: any) => {
+    if (!graph) return "Empty";
+    if (typeof graph === "string") return graph;
+    // If it's an object, stringify it for display
+    return JSON.stringify(graph, null, 2);
   };
 
   const printState = () => {
-    // const link = document.createElement('a');
-    // link.href = `output.owl`;
-    // document.body.appendChild(link);
-    // link.click();
-    // document.body.removeChild(link);
-    let base = OUTPUT_KG;
-    serialize(
-      null,
-      outputKnowledgeGraph,
-      base,
-      "application/rdf+xml",
-      function (err, str) {
-        console.log("Serialized output graph:");
-        console.log(str);
-        //       localStorage.setItem("pageData", str);
-      }
-    );
-    //window.open(newPageUrl, "_blank") //to open new page
+    console.log("Serialized output graph:");
+    console.log(outputKnowledgeGraph);
   };
 
   return (
@@ -61,6 +41,9 @@ export function ModelPresenter() {
           {previewGraph(outputKnowledgeGraph)}
           {/*   {JSON.stringify(this.state).replace(/\n/g, "<br/>")} */}
         </pre>
+      </div>
+      <div>
+        <KnowledgeGraphViewer turtleString={outputKnowledgeGraph} />
       </div>
     </div>
   );

@@ -66,10 +66,17 @@ class AppEngine():
             logger.debug("A new application interaction is started.")
             #logger.debug(json.dumps(self.processGenerator.__dict__))
             #logger.debug(jsonpickle.encode(self.localAppInteractionModelInstance))
-        else :
+            # The application state is updated to indicate that the application is running
+            # and is waiting to get initiated data from the frontend 
+            self.app_interaction_model_instance.app_state.setRunningInitiated()
+            self.app_interaction_model_instance.app_state.setAppExchangeWaitingToSendData()  
+        elif self is not None and self.inner_app_static_model is not None and \
+            self.inner_app_static_model.is_inner_app_static_model_loaded and \
+            self.app_interaction_model_instance is not None and \
+                 self.app_interaction_model_instance.app_state.is_running_initiated: 
             logger.debug("An application is already being running.")
             #logger.debug(json.dumps(self.processGenerator.__dict__))
-            logger.debug(jsonpickle.encode(self.app_interaction_model_instance))
+            #logger.debug(jsonpickle.encode(self.app_interaction_model_instance))
 
     def read_new_model_layout(self)-> AppExchangeGetOutput:
         """
@@ -92,14 +99,21 @@ class AppEngine():
 
     def processReceivedClientData(self, frontend_state: any):
         """
-        Precesses and stores the new model data into the output 
+        Precesses the new data from the frontend and stores it into the output 
         knowledge graph
-        TODO better comment  
         """
         if self.inner_app_static_model is None:
-            return {"message":"An application model is not loaded."}
+            return AppExchangeGetOutput(
+                message_type ="error",
+                layout_type="message_box",
+                message_content = {"message" : "An application model is not loaded."})
+
+
         elif self.app_interaction_model_instance is None: 
-            return {"message":"An application is not running."}
+            return AppExchangeGetOutput(
+                message_type ="error",
+                layout_type="message_box",
+                message_content = {"message" : "An application is not running."})
         else:
             # Parse the JSON data into a AppExchangeFrontEndData object
             received_data = AppExchangeFrontEndData(**frontend_state)

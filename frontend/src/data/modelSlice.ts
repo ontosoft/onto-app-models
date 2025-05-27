@@ -7,10 +7,14 @@ import { CurrentForm } from "../owlprocessor/CurrentForm";
 import { getLayout } from "../owlprocessor/LayoutRendering";
 import AppExchangeResponse from "../owlprocessor/AppExchangeResponse";
 import { RootState } from "../app/store";
+import { Action } from "../owlprocessor/Action";
 import { initiateAppExchange, appExchangeGet } from "./appStateSlice";
 import React from "react";
+// @ts-ignore: internal import for WritableDraft type
+import type { WritableDraft } from "immer/dist/internal";
 import { AppDispatch } from "../app/store";
 import { avatarClasses } from "@mui/material";
+import { Console } from "console";
 
 type GeneralAction = PayloadAction<{}>;
 type ResponseAction = PayloadAction<AppExchangeResponse>;
@@ -30,7 +34,7 @@ export interface ModelState {
   currentForm: CurrentForm,
   currentJSONFormData: any,
   UIRunningInstance: RunningInstance,
-  outputGraph: Formula,
+  outputGraph: string,
   //status of the RDF reading
   asyncStatus: "loading" | "complete",
   currentLayout: React.ReactNode,
@@ -43,13 +47,14 @@ const initialState: ModelState = {
   currentForm: new CurrentForm(),
   currentJSONFormData: {},
   UIRunningInstance: {} as RunningInstance,
-  outputGraph: {} as Formula,
+  outputGraph: "",
   asyncStatus: 'complete',
   currentLayout: {} as React.ReactNode,
   layoutRefreshNecessary: false
 };
 
-const processResponse = (serverExchangeResponse: AppExchangeResponse): React.ReactNode => {
+const processResponse = (state: WritableDraft<ModelState>, serverExchangeResponse: AppExchangeResponse): React.ReactNode => {
+  state.outputGraph = serverExchangeResponse.output_knowledge_graph;
   let layout: React.ReactNode = null;
   if (serverExchangeResponse.message_type === "layout") {
     return getLayout({
@@ -64,49 +69,72 @@ const processResponse = (serverExchangeResponse: AppExchangeResponse): React.Rea
   return layout;
 }
 
+/*
+  * This function executes tha action on the server
 
-export const triggerAction = (actionType: string) => async (dispatch: AppDispatch, getState: () => RootState) => {
-  try {
-    const state: RootState = getState();
-    const currentForm: CurrentForm = state.model.currentForm;
+  */
+export const triggerAction = createAsyncThunk('model/triggerAction',
+  async (params: { action: Action, form_graph_node: string}, thunkApi) => {
+    let state: RootState = thunkApi.getState() as RootState;
     let messageType: string = "";
-    let messageContent: any = {}; 
-    if (actionType === "submit") {
-      messageType = "submit";
-      messageContent = {
-            "form_node": "form1",
-            "form_data": state.model.currentJSONFormData
-        }
+    let messageContent: any = {};
+    console.log("The app state (read form inside the Thunk) is", state.stateData.runningOnServer);
+    if (!state.stateData.runningOnServer) {
+      return {
+        status: "failed",
+        message: "The app is still not running on the server."
+      };
     }
+    else {
+      if (params.action.type === "submit") {
+        messageType = "action";
+        messageContent = {
+          "action_type": "submit",          
+          "action_graph_node": params.action.graph_node,
+          "form_graph_node": params.form_graph_node,
+          "form_data": state.model.currentJSONFormData
+        };
+      } else if (params.action.type === "reset") {
+        messageType = "action";
+        messageContent = {
+          "action": "reset",
+          "form_data": {}
+        };
+      }
+      try {
+        console.log("The message type:", messageType );
+        console.log("The message content:", messageContent );
+        thunkApi.dispatch(initiateAppExchange({ messageType, messageContent })).then(() => {
+          /**
+           * After the data are sent to the server with the function intiateAppExchange,
+           *  the function appExchangeGet is called to get the data from the server 
+           *  */
+          thunkApi.dispatch(appExchangeGet());
+        });
 
-    await dispatch(initiateAppExchange({ messageType, messageContent }));
-    await dispatch(appExchangeGet());
-  } catch (error) {
-    console.error("Failed to submit the form", error);
+      } catch (error) {
+        console.error("Failed to submit the form", error);
+      }
+    }
   }
-}
+);
 
 const modelSlice = createSlice({
   name: "model",
   initialState,
   reducers: {
 
-    updateFormData(state, action) {
-
+    updateCurrentJSONFormData(state, action) {
+      state.currentJSONFormData = action.payload;
     },
-    submitForm(state, action) {
-      // TODO: Implement form submission logic
-      // if we have more forms in the same page, we need to find the correct form
-      // const currentForm = state.templateTriples.forms.find(f => f.uuid === action.payload)
-      //owlTemplate.handleFormSubmission(action, action.payload);
-    },
+    
     generalAction: (state, action: GeneralAction) => {
       //const currentAction = state.templateTriples.actions.find(a => a.uuid === action.payload)
       owlTemplate.handleConnection(action, action.payload);
     },
 
     processReceivedMessage: function (state, action: ResponseAction) {
-      const layout = processResponse(action.payload);
+      const layout = processResponse(state, action.payload);
       state.currentLayout = layout !== null ? layout : React.createElement("div", null, "Error");
       state.layoutRefreshNecessary = true;
     }
@@ -115,6 +143,6 @@ const modelSlice = createSlice({
 });
 
 
-export const { generalAction, processReceivedMessage } = modelSlice.actions;
+export const { generalAction, processReceivedMessage, updateCurrentJSONFormData } = modelSlice.actions;
 
 export default modelSlice.reducer;
