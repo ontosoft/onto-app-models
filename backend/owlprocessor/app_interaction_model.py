@@ -1,5 +1,5 @@
 from .forms import Form, FunctionalJSONForm
-from rdflib import Graph, Namespace, RDF, URIRef
+from rdflib import Graph, Namespace, RDF, URIRef, Literal
 from .app_model import AppInternalStaticModel, Action 
 from .communication import AppExchangeFrontEndData,  AppExchangeGetOutput
 import logging
@@ -11,7 +11,6 @@ from uuid import uuid4
 
 
 OBOP = Namespace("http://purl.org/net/obop/")
-
 BASE = Namespace("http://example.org/logicinterface/testing/instance/")
 logger = logging.getLogger('ontoui_app')
 
@@ -109,34 +108,36 @@ class AppInteractionModel:
                     if str(af.graph_node) == str(form_graph_node)), None) 
                 if active_form is None:
                     logger.error(f"Active form with graph node {form_graph_node} not found in the application state.")
-                if active_form is not None and not active_form.has_stored_instances:
+                if not active_form.has_stored_instances:
                     # If the form has no store instances, we create those instances 
                     # and change the active form state
-                    new_instance_iri = BASE[str(uuid4())]
-                    logger.debug(f"New instance created for target classes has uri {new_instance_iri}")
+                    named_individual_iri = BASE[str(uuid4())]
+                    logger.debug(f"New instance created for target classes has uri {named_individual_iri}")
                     for target_class in form.target_classes:
-                        self.outputGraphStore.add((new_instance_iri, RDF.type, target_class))
-
-                        active_form.has_stored_instances = True
-                        active_form.stored_instance_graph_node = new_instance_iri
-
+                        self.outputGraphStore.add((named_individual_iri, RDF.type, target_class))
+                    active_form.has_stored_instances = True
+                    active_form.stored_instance_graph_node = named_individual_iri
+                    logger.debug(f"Active form {form_graph_node} has stored instances now.")
                 else:
-                    # If the form has already stored instances, we use the existing instance
-                    new_instance_iri = active_form.stored_instance_graph_node
-                    logger.debug(f"Using existing instance {new_instance_iri} for the form {form_graph_node}")
-
+                    # If the form has already stored instances (named individuals), we use that existing instance
+                    named_individual_iri = active_form.stored_instance_graph_node
+                    logger.debug(f"Using existing instance {named_individual_iri} for the form {form_graph_node}")
 
                 for key in form_data.keys():
-                    # find the element graph node for the data in the array of mappings
-                    element_graph_node = next(( k for k, v in self.app_state.  
+                    # find the element graph node iri for the data element in the array of mappings
+                    logger.debug(f"Mapping {self.app_state.current_json_form_name_mapping} is being searched ")
+                    element_graph_node_uri = next(( k for k, v in self.app_state.  
                         current_json_form_name_mapping.items() if v == key), None)
-                    logger.debug(f"Element graph node for the key {key} is {element_graph_node}")
+                    logger.debug(f"Graph node URI of the element for the key {key} is {element_graph_node_uri}")
                     for data_property in self.inner_app_static_model.rdf_graph_rdflib.objects(
-                        subject=element_graph_node, predicate=OBOP.containsDatatype):
+                        URIRef(element_graph_node_uri), OBOP.containsDatatype):
+                        logger.debug(f"Data property found for the element {element_graph_node_uri}: {data_property}")
                         # Add the data to the output graph store
-                        self.outputGraphStore.add(element_graph_node, data_property, form_data[key])
-                        logger.debug(f"Added data {form_data[key]} for element {element_graph_node} to the output store.")
-                    element = next((el for el in form.elements if str(el.graph_node) == str(element_graph_node)), None) 
+                        self.outputGraphStore.add((named_individual_iri, data_property, Literal(form_data[key])))
+                        logger.debug(f"Added data {form_data[key]} for element {element_graph_node_uri} to the output store.")
+                # We have to decide what to do with other form elements that 
+                # are not inserted in the form data
+                # element = next((el for el in form.elements if str(el.graph_node) == str(element_graph_node_uri)), None) 
  
         elif action_message.action_type == "cancel":
 

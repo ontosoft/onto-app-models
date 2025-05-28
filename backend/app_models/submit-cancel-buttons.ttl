@@ -8,6 +8,7 @@
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix dash: <http://datashapes.org/dash#> .
 @prefix obop: <http://purl.org/net/obop/> .
+@prefix bbo: <https://www.irit.fr/recherches/MELODI/ontologies/BBO#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix chebi: <http://purl.obolibrary.org/obo/chebi/> .
 @prefix shacl: <http://www.w3.org/ns/shacl#> .
@@ -16,8 +17,8 @@
 
 <http://example.org/logicinterface/testing> rdf:type owl:Ontology .
 
-###  http://example.org/logicinterface/testing/simple_form_model
-:simple_form_model rdf:type owl:NamedIndividual ,
+###  http://example.org/logicinterface/testing/one_simple_form_model
+:one_simple_form_model rdf:type owl:NamedIndividual ,
                            obop:Model ;
                   obop:modelDescription "The form consists of a single imput field, submit and cancel button."@en .
 
@@ -89,3 +90,15 @@
           obop:hasPositionNumber "0"^^xsd:int .
 
 
+###  http://example.org/logicinterface/testing/activity_1
+:activity_1 rdf:type owl:NamedIndividual ,
+                   bbo:Activity ;
+          obop:hasLabel "Submit activity" .
+
+###  http://example.org/logicinterface/testing/InsertDataTask
+:insert_data_task a bbo:Task ;
+    rdfs:label "Send Order Confirmation" .
+
+###  http://example.org/logicinterface/testing/inserted_data_confirmation
+:inserted_data_confirmation a bbo:Task ;
+    rdfs:label "Inserted Data Confirmation" .
