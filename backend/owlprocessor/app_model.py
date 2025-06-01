@@ -1,6 +1,7 @@
 from __future__ import annotations
 from rdflib import Graph
 from owlready2 import World, Ontology
+from .bbo_elements import BBOProcess, BBOActivity, BBOEvent, BBOFlow
 
 class AppInternalStaticModel:
     """_summary_
@@ -9,18 +10,21 @@ class AppInternalStaticModel:
     a static representation of the application.
     """
     def __init__(self):
-        self.model_graph = None
-        self._startingFormBlock = None
-        self.is_inner_app_static_model_loaded : bool = False
+        self._model_file_name : str = None
+        self.is_loaded : bool = False
         self._rdf_graph_rdflib : Graph = None
         self._rdf_world_owlready: World = None
         self._rdf_ontology_owlready: Ontology = None
         self._rdf_pellet_reasoning_world: World = None
+        self._bbo_processes : list[BBOProcess] = []
+        self._bbo_activities :list[BBOActivity] = []
+        self._bbo_events : list[BBOEvent] = []
+        self._bbo_flows : list[BBOFlow] = []
         self._layouts = []
         self._form_blocks = []
         self._actions : list[Action]= []
         self._model_file_name : str = None
-        self._is_inner_app_static_model_loaded: bool = False
+        self._is_loaded: bool = False
    
     @property
     def model_graph(self):
@@ -56,27 +60,43 @@ class AppInternalStaticModel:
         self._rdf_pellet_reasoning_world = value
 
     @property
-    def firstForm(self):
-        return self._startingFormBlock
+    def bbo_process(self):
+        return self._bbo_process
+    @bbo_process.setter
+    def bbo_process(self, value):
+        self._bbo_process = value
 
-    @firstForm.setter
-    def firstForm(self, forms):
-        self._startingFormBlock = forms
+    @property
+    def bbo_activities(self):
+        return self._bbo_activities
+    @bbo_activities.setter
+    def bbo_activities(self, value):
+        self._bbo_activities = value
 
+    @property
+    def bbo_events(self):
+        return self._bbo_events
+    @bbo_events.setter
+    def bbo_events(self, value):
+        self._bbo_events = value
+    @property
+    def bbo_flows(self):
+        return self._bbo_flows
+    @bbo_flows.setter
+    def bbo_flows(self, value):
+        self._bbo_flows = value
     @property
     def model_file_name(self):
         return self._model_file_name
     @model_file_name.setter
     def model_file_name(self, value):
         self._model_file_name = value
-
     @property
-    def is_inner_app_static_model_loaded(self):
-        return self._is_inner_app_static_model_loaded
-    @is_inner_app_static_model_loaded.setter
-    def is_inner_app_static_model_loaded(self, value):
-        self._is_inner_app_static_model_loaded = value
-
+    def is_loaded(self):
+        return self._is_loaded
+    @is_loaded.setter
+    def is_loaded(self, value):
+        self._is_loaded = value
     @property
     def forms(self):
         return self._form_blocks

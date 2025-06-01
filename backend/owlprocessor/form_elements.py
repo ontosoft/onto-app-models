@@ -14,11 +14,11 @@ if TYPE_CHECKING:
 
 class FormElement:
     def __init__(self,form , graph_node, type, position:int = 0 ):
-        self.graph_node = graph_node
+        self.graph_node : URIRef = graph_node
         self.type = type
         self.position :int = position
         self.action_pointers : List[ActionPointer] = []
-        self.form:Form = form
+        self.form : Form = form
 
     def add_action_pointer(self, action_pointer):
         self.action_pointers.append(action_pointer)

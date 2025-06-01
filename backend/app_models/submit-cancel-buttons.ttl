@@ -89,16 +89,55 @@
           obop:hasLabel "Submit" ;
           obop:hasPositionNumber "0"^^xsd:int .
 
-
-###  http://example.org/logicinterface/testing/activity_1
-:activity_1 rdf:type owl:NamedIndividual ,
-                   bbo:Activity ;
+### The overall process that is being modeled
+###  http://example.org/logicinterface/testing/populating_simple_knowledge_graph
+:populating_simple_knowledge_graph rdf:type owl:NamedIndividual ,
+                   bbo:Process ;
+          bbo:hasStartEvent :show_form_start ;
+          bbo:hasEndEvent :data_insert_completed ;
           obop:hasLabel "Submit activity" .
 
+# --- Events ---
 ###  http://example.org/logicinterface/testing/InsertDataTask
+:show_form_start a owl:NamedIndividual,
+                 bbo:StartEvent ;
+    rdfs:label "User previewing the form" .
+
+###  http://example.org/logicinterface/testing/clicking_submit_button
+:clicking_submit_button a owl:NamedIndividual,
+                        bbo:Event ;
+    rdfs:label "User clicking the submit button" .
+
+###  http://example.org/logicinterface/testing/data_insertion_completed
+:data_insertion_completed a bbo:EndEvent ;
+    rdfs:label "Order Successfully Placed" .
+    
+###  http://example.org/logicinterface/testing/insert_data_task
 :insert_data_task a bbo:Task ;
-    rdfs:label "Send Order Confirmation" .
+    rdfs:label "Inserting data in the HTML form" .
 
 ###  http://example.org/logicinterface/testing/inserted_data_confirmation
 :inserted_data_confirmation a bbo:Task ;
     rdfs:label "Inserted Data Confirmation" .
+
+# --- 4. Events ---
+
+###  http://example.org/logicinterface/testing/show_form_start
+:show_form_start a bbo:StartEvent ,
+                 owl:NamedIndividual ;
+    rdfs:label "User previewing the form" .
+
+# --- 5. Sequence Flows ---
+# Initial flow
+###  http://example.org/logicinterface/testing/flow_1
+:flow_1 a bbo:SequenceFlow ,
+            owl:NamedIndividual;
+    bbo:hasSourceRef :show_form_start ;
+    bbo:hasTargetRef :clicking_submit_button .
+
+
+# Flow from the task to the end event
+###  http://example.org/logicinterface/testing/flow_2
+:flow_2 a bbo:SequenceFlow ;
+    bbo:hasSourceRef :clicking_submit_button ;
+    bbo:hasTargetRef :data_insert_completed .

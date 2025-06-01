@@ -1,11 +1,11 @@
 from .forms import Form, FunctionalJSONForm
 from rdflib import Graph, Namespace, RDF, URIRef, Literal
 from .app_model import AppInternalStaticModel, Action 
+from .bbo_elements import BBOFlow, BBOEvent, BBOActivity
 from .communication import AppExchangeFrontEndData,  AppExchangeGetOutput
 import logging
 import jsonpickle
 from collections.abc import Mapping
-from typing import List
 from uuid import uuid4
 
 
@@ -22,7 +22,7 @@ class AppInteractionModel:
     def __init__(self, uimodel):
         self.inner_app_static_model:AppInternalStaticModel = uimodel
 
-        self.outputGraphStore : Graph = Graph()
+        self.output_graph_store : Graph = Graph()
         self.app_state: ApplicationState = ApplicationState()
 
     def processReceivedClientData(self, frontend_state : AppExchangeFrontEndData):
@@ -54,7 +54,7 @@ class AppInteractionModel:
             self.app_state.current_form_index = 0
         # TODO: This should be changed to a more sophisticated 
         #  way of checking the end of the application execution
-        data = self.outputGraphStore.serialize(format="turtle")
+        data = self.output_graph_store.serialize(format="turtle")
         logger.debug(f"Output graph store has the data:\n {data}")
         if self.app_state.current_form_index >= len(self.inner_app_static_model.forms):
             output_message = AppExchangeGetOutput(
@@ -114,7 +114,7 @@ class AppInteractionModel:
                     named_individual_iri = BASE[str(uuid4())]
                     logger.debug(f"New instance created for target classes has uri {named_individual_iri}")
                     for target_class in form.target_classes:
-                        self.outputGraphStore.add((named_individual_iri, RDF.type, target_class))
+                        self.output_graph_store.add((named_individual_iri, RDF.type, target_class))
                     active_form.has_stored_instances = True
                     active_form.stored_instance_graph_node = named_individual_iri
                     logger.debug(f"Active form {form_graph_node} has stored instances now.")
@@ -133,7 +133,7 @@ class AppInteractionModel:
                         URIRef(element_graph_node_uri), OBOP.containsDatatype):
                         logger.debug(f"Data property found for the element {element_graph_node_uri}: {data_property}")
                         # Add the data to the output graph store
-                        self.outputGraphStore.add((named_individual_iri, data_property, Literal(form_data[key])))
+                        self.output_graph_store.add((named_individual_iri, data_property, Literal(form_data[key])))
                         logger.debug(f"Added data {form_data[key]} for element {element_graph_node_uri} to the output store.")
                 # We have to decide what to do with other form elements that 
                 # are not inserted in the form data
@@ -143,6 +143,32 @@ class AppInteractionModel:
 
             pass
 
+    def processExecutionNextStep(self):
+        """
+        Processes the next step in the application execution according to the control flow.
+        """
+        if self.app_state.current_control_flow_pointer.type == "StartEvent":
+            logger.debug("The application is at the start event. Generating the first layout.")
+            # The application is at the start event and can be found the process flow that 
+            # starts with the start event 
+            next_flow: BBOFlow = next(
+                (flow for flow in self.inner_app_static_model.bbo_flows
+                 if flow.start_event.graph_node == self.app_state.current_control_flow_pointer.graph_node),
+                None
+            )
+            target_reference : BBOEvent | BBOActivity = next_flow.target_event 
+
+            return self.generate_layout()
+
+        if self.app_state.is_waiting_for_form_data:
+            # The application is waiting for the form data to be sent back from the frontend
+            # We can generate the next layout in the control flow of the application
+            self.app_state.is_waiting_for_form_data = False
+            return self.generate_layout()
+        else:
+            logger.debug("The application is not waiting for form data.")
+            return None
+
 class ApplicationState:
     def __init__(self):
         self._current_form_index = -1 # The index of the current form
@@ -150,11 +176,13 @@ class ApplicationState:
         self._running_initiated = False
         self._app_exchange_waiting_to_send_data = False
         self._current_json_form_name_mapping : JSONFormNameMapping = {}
-        self.__list_of_active_forms: List[ActiveForm]= []  # List of forms sent to the frontend for editing
+        self.__list_of_active_forms: list[ActiveForm]= []  # List of forms sent to the frontend for editing
         #This list of forms is used to keep track of named individuaals
         # that are created during the previous form exchanges
         # If a form has a named individual here it means that properties are only being
-        # changed and schouldn't be created again. 
+        # changed and shouldn't be created again. 
+        self._current_control_flow_pointer : dict = None  # The current control flow pointer is 
+        # used to keep track of the current control flow in the application   
 
     @property
     def current_form_index(self):
@@ -185,8 +213,15 @@ class ApplicationState:
         return self.__list_of_active_forms
 
     @list_of_active_forms.setter
-    def list_of_active_forms(self, value: List["ActiveForm"]):
+    def list_of_active_forms(self, value: list["ActiveForm"]):
         self.__list_of_active_forms = value
+
+    @property
+    def current_control_flow_pointer(self):
+        return self._current_control_flow_pointer
+    @current_control_flow_pointer.setter
+    def current_control_flow_pointer(self, value: dict):
+        self._current_control_flow_pointer = value  
     
     def setRunningInitiated(self):
         self._running_initiated = True
@@ -196,9 +231,6 @@ class ApplicationState:
     
     def setAppExchangeWaitingToSendDataFalse(self):
         self._app_exchange_waiting_to_send_data = False
-
-
-
 
 
 class JSONFormNameMapping(Mapping):

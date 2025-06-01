@@ -40,8 +40,8 @@ async def upload_model_file(file: UploadFile = File(...), settings : Settings = 
 async def run_application():
     """
     Runs the application and generates the first layout.
-    If the application was already run before, it returns a message 
-    that the application was already run.
+    If the application was already run before, it displays a message 
+    indicating that the application is being running.
 
     """
     global i
@@ -49,13 +49,13 @@ async def run_application():
     i += 1 
 
     logger.debug(f"This is the {i} th time the function is run.")
-    if app is not None and app.inner_app_static_model.is_inner_app_static_model_loaded and app.app_interaction_model_instance is not None:
+    if app is not None and app.inner_app_static_model.is_loaded and app.app_interaction_model_instance is not None:
         logger.info(f"Process generator exists { app.app_interaction_model_instance}")
         return {"message": "The applicaton was already run before.",
                 "model": app.app_interaction_model_instance}
         #jsonpickle.encode(
     elif app is not None and app.inner_app_static_model is not None  and  \
-        app.inner_app_static_model.is_inner_app_static_model_loaded and app.app_interaction_model_instance is None:
+        app.inner_app_static_model.is_loaded and app.app_interaction_model_instance is None:
         # The inner model static reporesentation corresponding to the RDF graph
         # was already loaded. However, the application is still not running because
         # (AppInteractionModelInstance is not created)
@@ -128,7 +128,7 @@ async def load_inner_server_model(filename: str):
     """
     global app
     if app is not None and app.inner_app_static_model is not None and \
-        app.inner_app_static_model.is_inner_app_static_model_loaded:
+        app.inner_app_static_model.is_loaded:
         logger.debug(f"The app model \"{app.model_name} \" was already loaded.") 
         return {"message": f"The model {app.model_name} is loaded . The applicaton was already run before. Do you want to load a new model?"}
     else:

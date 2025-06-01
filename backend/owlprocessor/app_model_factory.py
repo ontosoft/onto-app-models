@@ -3,9 +3,11 @@ import os
 import sys
 import uuid
 from pathlib import Path
-from rdflib import Graph, RDF, Namespace
+from rdflib import Graph, RDF, Namespace, URIRef
 from .forms import Form, HorizontalLayout, VerticalLayout
 from .form_elements import OBOPElement, SHACLFormProperty, ActionPointer
+from .bbo_elements import BBOActivity, BBOEvent, BBOFlow
+from rdflib import RDFS
 from .app_model import Action
 from rdflib.namespace import SH, OWL
 from owlready2 import World, Ontology
@@ -15,6 +17,7 @@ from .app_model import AppInternalStaticModel
 from utilities.model_directory_functions import create_pellet_reasoning_graph 
 
 OBOP = Namespace("http://purl.org/net/obop/")
+BBO = Namespace("https://www.irit.fr/recherches/MELODI/ontologies/BBO#")
 logger = logging.getLogger('ontoui_app')
 
 settings:Settings = get_settings()
@@ -32,6 +35,7 @@ class AppStaticModelFactory:
         internal_app_static_model.rdf_pellet_reasoning_world = \
             create_pellet_reasoning_graph(
                 internal_app_static_model.rdf_world_owlready)           
+        AppStaticModelFactory.readBBOElements(internal_app_static_model)
         AppStaticModelFactory.readAllLayouts(internal_app_static_model)
         AppStaticModelFactory.readAllForms(internal_app_static_model)
         AppStaticModelFactory.readActions(internal_app_static_model)
@@ -91,14 +95,71 @@ class AppStaticModelFactory:
       
         graph_world :World = World()
         model_graph_owlready : Ontology = graph_world.get_ontology(str(filePath)).load()
-
+        logger.debug(f"Loading the obop ontology")
         model_graph_with_obop : Ontology = graph_world. \
             get_ontology(str(settings.ONTOLOGIES_DIRECTORY/"obop.owl")).load()
+        logger.debug(f"Loading the BPMN Based Ontology (BBO) ontology")
+        # The BBO ontology is used to represent the BBO processes and activities
+        # Two changes were done on the original bbo.owl file to avoid the following problem
+        # DataProperty http://BPMNbasedOntology#processType belongs to more than one entity types: [owl.ObjectProperty, owl.DatatypeProperty]; I'm trying to fix it...
+        # The first change was to remove the owl:ObjectProperty from the bbo.owl file
+        # The second change was to remove the owl:DatatypeProperty from the bbo.owl ware 
+        # removin the line :
+        # <owl:imports rdf:resource="http://purl.obolibrary.org/obo/uo/releases/2018-05-20/uo.owl"/>
+        # this is because the BBO ontology import was not possible to be resolved
+        model_graph_with_bbo : Ontology = graph_world. \
+            get_ontology(str(settings.ONTOLOGIES_DIRECTORY/"bbo.owl")).load()
+
         # After reading the RDF file using owlready2, we need to remove the temporary file.
         os.remove(filePath)
 
         return graph_world, model_graph_owlready
 
+    @staticmethod
+    def readBBOElements(internal_app_static_model: AppInternalStaticModel):
+        """
+        This method reads all BBO elements from the RDF graph into the internal static application model
+        """
+        # Read BBO processes - for the sake of simplicity, it can be assumed that 
+        # there exits only one BBO process in the model 
+        rdflib_kg: Graph = internal_app_static_model.rdf_graph_rdflib
+        main_bbo_process_uri:URIRef = None
+        if (len(list(rdflib_kg.subjects(RDF.type, BBO.Process))) != 1):
+            logger.error("No main BBO process found in the knowledge graph. ")
+        else:
+            main_bbo_process_uri = next(rdflib_kg.subjects(RDF.type, BBO.Process), None)
+        logger.info(f"BBO Process: {str(main_bbo_process_uri)}")
+
+        # Get all activities and their labels
+        for bbo_activity_uri in rdflib_kg.subjects(RDF.type, BBO.Activity):
+            logger.info(f"BBO Activity: {str(bbo_activity_uri)}")
+            label = rdflib_kg.value(bbo_activity_uri, RDFS.label)
+            activity = BBOActivity(bbo_activity_uri, BBO.Activity)
+            internal_app_static_model._bbo_activities.append(activity)
+
+        # Get all events 
+        for bbo_event_uri in rdflib_kg.subjects(RDF.type, BBO.Event):
+            logger.info(f"BBO Event: {str(bbo_event_uri)}")
+            bbo_event = BBOEvent(bbo_event_uri, rdflib_kg.value(bbo_event_uri, RDFS.label))
+            internal_app_static_model._bbo_events.append(bbo_event)
+
+
+        for bbo_sequence_flow_iri in rdflib_kg.subjects(RDF.type, BBO.SequenceFlow):
+            logger.info(f"BBO Sequence Flow: {str(bbo_sequence_flow_iri)}")
+            source = rdflib_kg.value(bbo_sequence_flow_iri, BBO.has_sourceRef)
+            target = rdflib_kg.value(bbo_sequence_flow_iri, BBO.has_targetRef)
+            source_event : BBOEvent = next((event for event in internal_app_static_model._bbo_events 
+                    if event.graph_node == source), None)
+            target_event : BBOEvent = next((event for event in internal_app_static_model._bbo_events 
+                    if event.graph_node == target), None)
+            if source is None:
+                logger.error(f"BBO Sequence flow {bbo_sequence_flow_iri} does not have source reference.")
+                continue
+            if target is None:
+                logger.error(f"BBO Sequence flow {bbo_sequence_flow_iri} does not have target reference.")
+                continue
+            internal_app_static_model._bbo_flows.append(
+                BBOFlow(bbo_sequence_flow_iri, source_event, target_event))
 
     def readAllLayouts(internal_app_static_model: AppInternalStaticModel):
         """
@@ -470,7 +531,7 @@ class AppStaticModelFactory:
             internal_app_static_model.model_file_name = "Loaded simple string" 
 
         # Indicate that the inner application model is loaded successfully
-        internal_app_static_model.is_inner_app_static_model_loaded = True
+        internal_app_static_model.is_loaded = True
 
 
             

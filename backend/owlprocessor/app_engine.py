@@ -53,14 +53,14 @@ class AppEngine():
             filePath = self.model_directory/file_name
         self.inner_app_static_model = model_factory.rdf_graf_to_uimodel(rdf_model_file=filePath, rdf_text_ttl=rdf_string)
 
-    def run_application(self):
+    def run_application(self)-> None:
         """
         Starts the application interaction model instance. The main part is 
         the process that generates an instance of the application interaction model
         
         """
         if self is not None and self.inner_app_static_model is not None and \
-            self.inner_app_static_model.is_inner_app_static_model_loaded and \
+            self.inner_app_static_model.is_loaded and \
             self.app_interaction_model_instance is None:
             self.app_interaction_model_instance = AppInteractionModel(self.inner_app_static_model)
             logger.debug("A new application interaction is started.")
@@ -71,10 +71,10 @@ class AppEngine():
             self.app_interaction_model_instance.app_state.setRunningInitiated()
             self.app_interaction_model_instance.app_state.setAppExchangeWaitingToSendData()  
         elif self is not None and self.inner_app_static_model is not None and \
-            self.inner_app_static_model.is_inner_app_static_model_loaded and \
+            self.inner_app_static_model.is_loaded and \
             self.app_interaction_model_instance is not None and \
                  self.app_interaction_model_instance.app_state.is_running_initiated: 
-            logger.debug("An application is already being running.")
+            logger.debug("The application is already running.")
             #logger.debug(json.dumps(self.processGenerator.__dict__))
             #logger.debug(jsonpickle.encode(self.app_interaction_model_instance))
 
