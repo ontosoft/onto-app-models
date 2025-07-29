@@ -113,7 +113,7 @@ class AppStaticModelFactory:
         # After reading the RDF file using owlready2, we need to remove the temporary file.
         os.remove(filePath)
 
-        return graph_world, model_graph_owlready
+        return graph_world, model_graph_with_bbo
 
     @staticmethod
     def readBBOElements(internal_app_static_model: AppInternalStaticModel):
@@ -138,19 +138,33 @@ class AppStaticModelFactory:
             internal_app_static_model._bbo_activities.append(activity)
 
         # Get all events 
-        for bbo_event_uri in rdflib_kg.subjects(RDF.type, BBO.Event):
-            logger.info(f"BBO Event: {str(bbo_event_uri)}")
-            bbo_event = BBOEvent(bbo_event_uri, rdflib_kg.value(bbo_event_uri, RDFS.label))
-            internal_app_static_model._bbo_events.append(bbo_event)
+        all_bbo_events_query = """
+            PREFIX obop: <http://purl.org/net/obop/>
+            PREFIX bbo: <https://www.irit.fr/recherches/MELODI/ontologies/BBO#>
+            SELECT DISTINCT ?bbo_event_iri
+            WHERE {{
+                ?bbo_event_iri a ?c1.
+                ?c1 rdfs:subClassOf*  bbo:Event .
+            }}"""
+
+        events = internal_app_static_model.rdf_pellet_reasoning_world. \
+                    sparql(all_bbo_events_query)
+        
+        # Include the events in the internal application model 
+        for row in events:
+            (bbo_event_iri,) = row
+            logger.info(f"BBO Event: {bbo_event_iri.iri}")
+            bbo_event = BBOEvent(bbo_event_iri, rdflib_kg.value(bbo_event_iri, RDFS.label))
+            internal_app_static_model.bbo_events.append(bbo_event)
 
 
         for bbo_sequence_flow_iri in rdflib_kg.subjects(RDF.type, BBO.SequenceFlow):
             logger.info(f"BBO Sequence Flow: {str(bbo_sequence_flow_iri)}")
             source = rdflib_kg.value(bbo_sequence_flow_iri, BBO.has_sourceRef)
             target = rdflib_kg.value(bbo_sequence_flow_iri, BBO.has_targetRef)
-            source_event : BBOEvent = next((event for event in internal_app_static_model._bbo_events 
+            source_event : BBOEvent = next((event for event in internal_app_static_model.bbo_events 
                     if event.graph_node == source), None)
-            target_event : BBOEvent = next((event for event in internal_app_static_model._bbo_events 
+            target_event : BBOEvent = next((event for event in internal_app_static_model.bbo_events 
                     if event.graph_node == target), None)
             if source is None:
                 logger.error(f"BBO Sequence flow {bbo_sequence_flow_iri} does not have source reference.")

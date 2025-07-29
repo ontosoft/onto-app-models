@@ -91,69 +91,59 @@
 
 ### The overall process that is being modeled
 ###  http://example.org/logicinterface/testing/populating_simple_knowledge_graph
-:populating_simple_knowledge_graph rdf:type owl:NamedIndividual ,
-                   bbo:Process ;
-          rdfs:label "Process: Enter data in one form field"@en ;
-          bbo:hasStartEvent :generate_start_form ;
-          bbo:hasEndEvent :data_insert_completed ;
-          obop:hasLabel "Submit activity" .
+:populating_simple_knowledge_graph a  bbo:Process ;
+          rdfs:label "Process: Enter data in one form field"@en .
 
-# --- Events ---
-###  http://example.org/logicinterface/testing/generate_start_form
-:generate_start_form a owl:NamedIndividual,
-                 bbo:StartEvent ;
+###  http://example.org/logicinterface/testing/start
+:start a  bbo:StartEvent ;
     rdfs:label "The input form is presented to the user." .
 
-###  http://example.org/logicinterface/testing/clicking_submit_button
-:clicking_submit_button a owl:NamedIndividual,
-                        bbo:Event ;
-    rdfs:label "User clicking the submit button" .
+###  http://example.org/logicinterface/testing/generate_form_representation
+:generate_form_representation a bbo:Task ;
+    rdfs:label "Generate the form representation on the server side" .
 
-###  http://example.org/logicinterface/testing/data_insertion_completed
-:data_insertion_completed a owl:NamedIndividual,
-                        bbo:EndEvent ;
-    rdfs:label "Order Successfully Placed" .
-    
-###  http://example.org/logicinterface/testing/insert_data_task
-:insert_data_task a bbo:Task ;
-    rdfs:label "Inserting data in the HTML form" .
+###  http://example.org/logicinterface/testing/unser_enters_data
+:user_enters_data a bbo:UserTask ;
+    rdfs:label "User entering data in the web form on the client side" .
 
 ###  http://example.org/logicinterface/testing/inserted_data_confirmation
 :inserted_data_confirmation a bbo:Task ;
     rdfs:label "Inserted Data Confirmation" .
 
-# --- 4. Events ---
+### Gateway to decide if the entered data is valid or not
+###  http://example.org/logicinterface/testing/decision
+:decision a bbo:ExclusiveGateway ;
+    bbo:has_default ex:inserted_data_confirmation .
 
-###  http://example.org/logicinterface/testing/generate_start_form
-:generate_start_form a bbo:StartEvent ,
-                 owl:NamedIndividual ;
-    rdfs:label "User previewing the form" .
+###  http://example.org/logicinterface/testing/data_insertion_completed
+:data_insertion_completed a bbo:EndEvent ;
+    rdfs:label "Order Successfully Placed" .
+    
 
-# --- 5. Sequence Flows ---
 # Initial flow
 ###  http://example.org/logicinterface/testing/flow_1
-:flow_1 a bbo:SequenceFlow ,
-            owl:NamedIndividual;
-    bbo:has_sourceRef :generate_start_form ;
-    bbo:has_targetRef :clicking_submit_button .
+:flow_1 a bbo:SequenceFlow ;
+    bbo:has_sourceRef :start ;
+    bbo:has_targetRef :generate_form_representation .
 
-# Flow from the task to the end event
-###  http://example.org/logicinterface/testing/flow_3
-:flow_2 a bbo:SequenceFlow ;
-    bbo:has_sourceRef :clicking_submit_button ;
-    bbo:has_targetRef :waiting_for_frontend_response .
-
-
-
-# Flow from the task to the end event
+# Flow from the task to the next task 
 ###  http://example.org/logicinterface/testing/flow_2
 :flow_2 a bbo:SequenceFlow ;
-    bbo:has_sourceRef :clicking_submit_button ;
-    bbo:has_targetRef :data_insert_completed .
+    bbo:has_sourceRef :generate_form_representation ;
+    bbo:has_targetRef :unser_enters_data .
 
 
+###  http://example.org/logicinterface/testing/flow_4
+:flow_4 a bbo:SequenceFlow ;
+    bbo:has_sourceRef :user_enters_data ;   
+    bbo:has_targetRef :processing_received_data .
 
-# --- Agents (Participants) ---
-ex:User
-    a bbo:HumanResource ;
-    rdfs:label "Human App User"@en 
+###  http://example.org/logicinterface/testing/processing_received_data
+:processing_received_data a bbo:Task ;
+    rdfs:label "Processing received data" . 
+
+###  http://example.org/logicinterface/testing/flow_5
+:flow_5 a bbo:SequenceFlow ;
+    bbo:has_sourceRef :processing_received_data ;   
+    bbo:has_targetRef :decision .
+

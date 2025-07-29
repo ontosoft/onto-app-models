@@ -33,12 +33,8 @@
                   obop:modelDescription "The application model of a from with two elements using shacl."@en .
 
 
-
-
-
 ###  http://example.org/logicinterface/testing/shacl_shape_1
-:shacl_shape_1 rdf:type owl:NamedIndividual ,
-                          shacl:NodeShape ;
+:shacl_shape_1 rdf:type shacl:NodeShape ;
                  obop:modelBelongsTo :block_1 ;
                  shacl:property _:genid1 ,
                                 _:genid2 ,
@@ -54,19 +50,15 @@
          dc:title "block_1 for Form"^^rdfs:Literal .
 
 ###  http://example.org/logicinterface/testing/vertical_layout_1
-:vertical_layout_1 rdf:type owl:NamedIndividual ,
-                  obop:VerticalLayout ;
+:vertical_layout_1 rdf:type obop:VerticalLayout ;
          obop:hasPositionNumber "1"^^xsd:int ;
          obop:belongsTo :block_1 ;
          dc:title "Vertical-Block1"^^rdfs:Literal .
 
-
 ###  http://example.org/logicinterface/testing/horizontal_layout_1
-:horizontal_layout_1 rdf:type owl:NamedIndividual ,
-                  obop:HorizontalLayout ;
+:horizontal_layout_1 rdf:type obop:HorizontalLayout ;
          obop:hasPositionNumber "1"^^xsd:int ;
          obop:belongsToVisual :vertical_layout_1 ;
-
          dc:title "Horizontal-Layout"^^rdfs:Literal .
 
 

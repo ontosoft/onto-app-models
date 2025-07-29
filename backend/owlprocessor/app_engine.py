@@ -64,8 +64,6 @@ class AppEngine():
             self.app_interaction_model_instance is None:
             self.app_interaction_model_instance = AppInteractionModel(self.inner_app_static_model)
             logger.debug("A new application interaction is started.")
-            #logger.debug(json.dumps(self.processGenerator.__dict__))
-            #logger.debug(jsonpickle.encode(self.localAppInteractionModelInstance))
             # The application state is updated to indicate that the application is running
             # and is waiting to get initiated data from the frontend 
             self.app_interaction_model_instance.app_state.setRunningInitiated()

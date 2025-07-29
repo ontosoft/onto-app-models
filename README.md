@@ -1,4 +1,4 @@
-# Onto Application Models - Documentation
+# Onto Application Models 
 This project is an implementation of the approach that combines data and the functionality to collect that data in knowledge graphs. The approach includes an implementation of the application generator that creates web-applications which collect data, i.e., generate knowledge graphs according to specified SHACL models. 
 
 ## Architecture

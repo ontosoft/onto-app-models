@@ -7,11 +7,13 @@ import logging
 import jsonpickle
 from collections.abc import Mapping
 from uuid import uuid4
+from pyshacl import validate
 
 
 
 OBOP = Namespace("http://purl.org/net/obop/")
 BASE = Namespace("http://example.org/logicinterface/testing/instance/")
+BBO = Namespace("http://BPMNbasedOntology#")
 logger = logging.getLogger('ontoui_app')
 
 class AppInteractionModel:
@@ -33,6 +35,8 @@ class AppInteractionModel:
         logger.debug(f"Message from the frontend has the content:\n {frontend_state.message_content}") 
         if frontend_state.message_type == "initiate_exchange":
             # The frontend has sent the data to start the first data exchange with the application
+            # This activates the start event in the applicaation control flow
+            # which is the StartEvent in the BBOFlow
             return True
         elif frontend_state.message_type == "action":
             self.action_processor(frontend_state.message_content)
@@ -168,6 +172,24 @@ class AppInteractionModel:
         else:
             logger.debug("The application is not waiting for form data.")
             return None
+    
+    def validateOutputGraphStore(self):
+        """
+        Validates the output graph store against the application static model.
+        This is used to ensure that the data in the output graph store is consistent with the application model.
+        """
+        result = validate(self.output_graph_store,
+                    shacl_graph=self.inner_app_static_model.shacl_graph,
+                    ont_graph=self.inner_app_static_model.rdf_graph_rdflib,
+                    inference='rdfs',
+                    abort_on_first=False,
+                    allow_infos=False,
+                    allow_warnings=False,
+                    meta_shacl=False,
+                    advanced=False,
+                    js=False,
+                    debug=False)
+        
 
 class ApplicationState:
     def __init__(self):

@@ -39,7 +39,7 @@ async def upload_model_file(file: UploadFile = File(...), settings : Settings = 
 @router.get("/run_application", response_description="Run the application")
 async def run_application():
     """
-    Runs the application and generates the first layout.
+    Runs the application by creating an instance of the AppInteractionModel.
     If the application was already run before, it displays a message 
     indicating that the application is being running.
 
@@ -89,8 +89,8 @@ async def stop_application():
 async def process_data_sent_from_frontend(request: Request):
     """
     Receiving the current data form the frontend (e.g. UI page). This method is called
-    before reading the data from the interactive model and both methods are used to
-    make data exchange between the frontend and the backend. 
+    before reading the data from the interactive model and then is used the method 
+    app_exchange_get are used to complete data exchange between the frontend and the backend. 
     """
     # The data sent from the frontend is in the json format
     frontend_state = await request.json()
@@ -101,7 +101,7 @@ async def process_data_sent_from_frontend(request: Request):
 async def read_current_app_data_from_model() -> AppExchangeGetOutput:
     """
     Reading the data from the the interactive model (e.g. UI page) and 
-    returns it in the json format to the frontend. This method is called after 
+    returns it in the json format to the frontend. This route is called after 
     processing the data sent from the frontend and both methods are used to 
     make data exchange between the frontend and the backend.
     """
