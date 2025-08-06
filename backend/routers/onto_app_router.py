@@ -1,4 +1,5 @@
 from fastapi import APIRouter, UploadFile, File, Request, Depends
+from fastapi import Query
 from config.settings import get_settings, Settings
 from pathlib import Path
 from owlprocessor.app_engine import AppEngine
@@ -117,8 +118,8 @@ async def read_the_list_of_app_models():
     logger.debug('Reading the list of inner UI models from the server')
     return read_model_files_from_directory() 
 
-@router.get("/load_inner_uimodel_from_server",  response_description="Load the chosen inner UI model from the server")
-async def load_inner_server_model(filename: str):
+@router.get("/load_inner_uimodel_from_server",  response_description="Load the chosen app model on the server")
+async def load_inner_server_model(filename: str, force_load: bool | None = Query (default = None, description="Force reload the model")):
     """
     Load the chosen inner UI model from the server.
 
@@ -127,7 +128,12 @@ async def load_inner_server_model(filename: str):
         This file is stored in the 'app_models' folder as RDF file
     """
     global app
-    if app is not None and app.inner_app_static_model is not None and \
+    if force_load is not None and force_load:
+        logger.debug(f"The app model \"{filename} \" is about to be loaded by force.") 
+        app = AppEngine()
+        app.load_inner_app_model(filename)
+        return {"message": f"The model is loaded {app.model_name} by force."}
+    elif app is not None and app.inner_app_static_model is not None and \
         app.inner_app_static_model.is_loaded:
         logger.debug(f"The app model \"{app.model_name} \" was already loaded.") 
         return {"message": f"The model {app.model_name} is loaded . The applicaton was already run before. Do you want to load a new model?"}
@@ -136,4 +142,3 @@ async def load_inner_server_model(filename: str):
         app = AppEngine()
         app.load_inner_app_model(filename)
         return {"message": f"The model is loaded {app.model_name}. "}
-     

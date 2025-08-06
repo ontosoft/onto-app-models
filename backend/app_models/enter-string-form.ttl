@@ -1,6 +1,7 @@
 @prefix : <http://example.org/logicinterface/testing/> .
 @prefix dc: <http://purl.org/dc/elements/1.1/> .
 @prefix v1: <http://purl.org/goodrelations/v1#> .
+@prefix bbo: <https://www.irit.fr/recherches/MELODI/ontologies/BBO#> .
 @prefix obo: <http://purl.obolibrary.org/obo/> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
@@ -8,62 +9,183 @@
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix dash: <http://datashapes.org/dash#> .
 @prefix obop: <http://purl.org/net/obop/> .
-@prefix bbo: <https://www.irit.fr/recherches/MELODI/ontologies/BBO#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix chebi: <http://purl.obolibrary.org/obo/chebi/> .
 @prefix shacl: <http://www.w3.org/ns/shacl#> .
 @prefix schema: <http://schema.org/> .
 @base <http://example.org/logicinterface/testing/> .
 
-<http://example.org/logicinterface/testing> rdf:type owl:Ontology .
+
+
 
 ###  http://example.org/logicinterface/testing/one_simple_form_model
 :one_simple_form_model rdf:type owl:NamedIndividual ,
-                           obop:Model ;
-                  obop:modelDescription "The form consists of a single imput field, submit and cancel button."@en .
+                obop:Model ;
+       obop:modelDescription "The form consists of a single imput field, submit and cancel button."@en .
+
+
+
+###  http://example.org/logicinterface/testing/popule_single_form_knowledge_graph
+:popule_single_form_knowledge_graph rdf:type owl:NamedIndividual ,
+                 bbo:Process ;
+        rdfs:comment "Process: Enter data in one form field"@en .
+
+###  http://example.org/logicinterface/testing/start
+:start rdf:type owl:NamedIndividual ,
+             bbo:ProcessStartEvent ;
+    rdfs:comment "The input form is presented to the user." ;
+    bbo:has_container :popule_single_form_knowledge_graph .
+
+###  http://example.org/logicinterface/testing/generate_form_representation
+:generate_form_representation rdf:type owl:NamedIndividual ,
+             bbo:Task ;
+    rdfs:comment "Generate the form representation on the server side" ;
+    bbo:has_container :popule_single_form_knowledge_graph .
+
+###  http://example.org/logicinterface/testing/user_enters_data
+:user_enters_data rdf:type owl:NamedIndividual ,
+             bbo:UserTask ;
+    rdfs:comment "User entering data in the web form on the client side" ;
+    bbo:has_container :popule_single_form_knowledge_graph .
+
+###  http://example.org/logicinterface/testing/processing_received_data
+:processing_received_data rdf:type owl:NamedIndividual ,
+                                   bbo:Task ;
+                          rdfs:comment "Processing received data" ;
+                          bbo:has_container :popule_single_form_knowledge_graph .
+
+###  http://example.org/logicinterface/testing/DecisionGateway1
+:DecisionGateway1 rdf:type owl:NamedIndividual ,
+                   bbo:ExclusiveGateway ;
+          rdfs:label "Decision on the entered data" ;
+          bbo:has_container :popule_single_form_knowledge_graph .
+
+###  http://example.org/logicinterface/testing/save_data
+:save_data rdf:type owl:NamedIndividual ,
+                                     bbo:Task ;
+                            rdfs:comment "Save the entered data in the rdfstore" ;
+                            bbo:has_container :popule_single_form_knowledge_graph .
+
+
+###  http://example.org/logicinterface/testing/save_data
+:abort_data_insert rdf:type owl:NamedIndividual ,
+                                     bbo:Task ;
+                            rdfs:comment "Save the entered data in the rdfstore" ;
+                            bbo:has_container :popule_single_form_knowledge_graph .
+
+
+
+###  http://example.org/logicinterface/testing/inserted_data_confirmation
+:inserted_data_confirmation rdf:type owl:NamedIndividual ,
+                                     bbo:Task ;
+                            rdfs:comment "Inserted Data Confirmation" ;
+                            bbo:has_container :popule_single_form_knowledge_graph .
+
+###  http://example.org/logicinterface/testing/data_insertion_completed
+:data_insertion_completed rdf:type owl:NamedIndividual ,
+             bbo:EndEvent ;
+    rdfs:comment "Order Successfully Placed" ;
+    bbo:has_container :popule_single_form_knowledge_graph .
+
+###  http://example.org/logicinterface/testing/abort_data_insert
+:abort_data_insert rdf:type owl:NamedIndividual ,
+             bbo:Task ;
+    rdfs:comment "Data insertion aborted" ;
+    bbo:has_container :popule_single_form_knowledge_graph .
+
+
+###  http://example.org/logicinterface/testing/flow_1
+:flow_1 rdf:type owl:NamedIndividual ,
+             bbo:NormalSequenceFlow ;
+    bbo:has_container :popule_single_form_knowledge_graph ;
+    bbo:has_sourceRef :start ;
+    bbo:has_targetRef :generate_form_representation .
+
+###  http://example.org/logicinterface/testing/flow_2
+:flow_2 rdf:type owl:NamedIndividual ,
+                 bbo:NormalSequenceFlow ;
+        bbo:has_container :popule_single_form_knowledge_graph ;
+        bbo:has_sourceRef :generate_form_representation ;
+        bbo:has_targetRef :unser_enters_data .
+
+###  http://example.org/logicinterface/testing/flow_3
+:flow_3 rdf:type owl:NamedIndividual ,
+             bbo:NormalSequenceFlow ;
+    bbo:has_container :popule_single_form_knowledge_graph ;
+    bbo:has_sourceRef :user_enters_data ;
+    bbo:has_targetRef :processing_received_data .
+
+###  http://example.org/logicinterface/testing/flow_4
+:flow_4 rdf:type owl:NamedIndividual ,
+    bbo:SequenceFlow ;
+    bbo:has_container :popule_single_form_knowledge_graph ;
+    bbo:has_sourceRef :processing_received_data ;
+    bbo:has_targetRef :DecisionGateway1 .
+
+###  http://example.org/logicinterface/testing/flow_5_1
+:flow_5_1 rdf:type owl:NamedIndividual ,
+    bbo:ConditionalSequenceFlow ;
+    bbo:has_container :popule_single_form_knowledge_graph ;
+    bbo:has_sourceRef :DecisionGateway1 ;
+    bbo:has_targetRef :abort_data_insert ;
+    bbo:has_conditionExpression :cancel_condition_expression .
+
+###  http://example.org/logicinterface/testing/cancel_condition_expression
+:cancel_condition_expression rdf:type owl:NamedIndividual ,
+    bbo:ConditionExpression ;
+    obop:selectedAction :cancel_action_1 ;
+    rdfs:comment "The condition expression for the cancel action." .
+
+
+###  http://example.org/logicinterface/testing/flow_5_2
+:flow_5_2 rdf:type owl:NamedIndividual ,
+    bbo:ConditionalSequenceFlow ;
+    bbo:has_container :popule_single_form_knowledge_graph ;
+    bbo:has_sourceRef :DecisionGateway1 ;
+    bbo:has_targetRef :save_data_insert ;
+    bbo:has_conditionExpression :submit_condition_expression1 .
+
+###  http://example.org/logicinterface/testing/submit_condition_expression1
+:submit_condition_expression1 rdf:type owl:NamedIndividual ,
+    bbo:ConditionExpression ;
+    obop:selectedAction :submit_action_1 ;
+    rdfs:comment "The condition expression exists for the submit action." .
+
+
+###  http://example.org/logicinterface/testing/submit_action_1
+:submit_action_1 rdf:type owl:NamedIndividual ,
+             obop:SubmitBlockAction ;
+    obop:actionInBlock :block_1 ;
+    obop:hasInitiator "onClick" ,
+                      "onEnter" ;
+    obop:hasLabel "Submit" ;
+    rdfs:comment "Basic save of data in the knowledge graph" .
+
+
+###  http://example.org/logicinterface/testing/submit_action_1
+:cancel_action_1 rdf:type owl:NamedIndividual ,
+             obop:SubmitBlockAction ;
+    obop:actionInBlock :block_1 ;
+    obop:hasInitiator "onClick" ;
+    obop:hasLabel "Cancel" ;
+    rdfs:comment "Basic cancel function" .
+
+
 
 
 ###  http://example.org/logicinterface/testing/block_1
 :block_1 rdf:type owl:NamedIndividual ,
-                obop:Block ;
-                obop:targetClass obo:ENVO_01000934 ,
-                                   v1:BusinessEntity ;
-         obop:hasPositionNumber "0"^^xsd:int ;
-         dc:title "block_1 - HTML Form"^^rdfs:Literal .
+             obop:Block ;
+    dc:title "block_1 - HTML Form"^^rdfs:Literal ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:targetClass obo:ENVO_01000934 ,
+                     v1:BusinessEntity .
 
-
-###  http://example.org/logicinterface/testing/field_1
-
-:field_1 rdf:type owl:NamedIndividual ,
-                    obop:Field ;
-           obop:belongsTo :block_1 ;
-           obop:containsDatatype v1:legalName ;
-           obop:hasLabel "Field 1" ;
-           obop:belongsToVisual :vertical_layout_1 ;
-           obop:hasPositionNumber "0"^^xsd:int ;
-           dc:title "field name" .
-
-###  http://example.org/logicinterface/testing/vertical_layout_1
-:vertical_layout_1 rdf:type owl:NamedIndividual ,
-                  obop:VerticalLayout ;
-         obop:belongsTo :block_1 ;
-         obop:hasPositionNumber "0"^^xsd:int ;
-         dc:title "Main vertical layout for the Form"^^rdfs:Literal .
-
-###  http://example.org/logicinterface/testing/horizontal_layout_1
-:horizontal_layout_1 rdf:type owl:NamedIndividual ,
-                  obop:HorizontalLayout ;
-         # It will be wrong here to write obop:belongsTo :block_1 ;
-         #because the horizontal layout is not a main layout
-         # but a sublayout of the vertical layout
-         obop:hasPositionNumber "1"^^xsd:int ;
-         obop:belongsToVisual :vertical_layout_1 ;
-         dc:title "Horizontal layout for submit and cancel buttons."^^rdfs:Literal .
 
 ###  http://example.org/logicinterface/testing/button_1
 :button_1 rdf:type owl:NamedIndividual ,
                    obop:Button ;
-          obop:activatesAction :action_1 ;
+          obop:activatesAction :submit_action_1 ;
           obop:belongsTo :block_1 ;
           obop:belongsToVisual :horizontal_layout_1 ;
           obop:hasLabel "Submit" ;
@@ -73,77 +195,42 @@
 ###  http://example.org/logicinterface/testing/button_2
 :button_2 rdf:type owl:NamedIndividual ,
                    obop:Button ;
-          obop:activatesAction :action_2 ;
+          obop:activatesAction :cancel_action_1 ;
           obop:belongsTo :block_1 ;
-          obop:hasLabel "Cancel" ;
           obop:belongsToVisual :horizontal_layout_1 ;
+          obop:hasLabel "Cancel" ;
           obop:hasPositionNumber "1"^^xsd:int ;
           rdfs:comment "This is a cancel button that is used for canceling function and going back in the application workflow." .
 
-###  http://example.org/logicinterface/testing/action_1
-:action_1 rdf:type owl:NamedIndividual ,
-                   obop:SubmitBlockAction ;
-          obop:actionInBlock :block_1 ;
-          obop:hasInitiator "onClick";
-          obop:hasInitiator "onEnter";
-          obop:hasLabel "Submit" ;
-          obop:hasPositionNumber "0"^^xsd:int .
-
-### The overall process that is being modeled
-###  http://example.org/logicinterface/testing/populating_simple_knowledge_graph
-:populating_simple_knowledge_graph a  bbo:Process ;
-          rdfs:label "Process: Enter data in one form field"@en .
-
-###  http://example.org/logicinterface/testing/start
-:start a  bbo:StartEvent ;
-    rdfs:label "The input form is presented to the user." .
-
-###  http://example.org/logicinterface/testing/generate_form_representation
-:generate_form_representation a bbo:Task ;
-    rdfs:label "Generate the form representation on the server side" .
-
-###  http://example.org/logicinterface/testing/unser_enters_data
-:user_enters_data a bbo:UserTask ;
-    rdfs:label "User entering data in the web form on the client side" .
-
-###  http://example.org/logicinterface/testing/inserted_data_confirmation
-:inserted_data_confirmation a bbo:Task ;
-    rdfs:label "Inserted Data Confirmation" .
-
-### Gateway to decide if the entered data is valid or not
-###  http://example.org/logicinterface/testing/decision
-:decision a bbo:ExclusiveGateway ;
-    bbo:has_default ex:inserted_data_confirmation .
-
-###  http://example.org/logicinterface/testing/data_insertion_completed
-:data_insertion_completed a bbo:EndEvent ;
-    rdfs:label "Order Successfully Placed" .
-    
-
-# Initial flow
-###  http://example.org/logicinterface/testing/flow_1
-:flow_1 a bbo:SequenceFlow ;
-    bbo:has_sourceRef :start ;
-    bbo:has_targetRef :generate_form_representation .
-
-# Flow from the task to the next task 
-###  http://example.org/logicinterface/testing/flow_2
-:flow_2 a bbo:SequenceFlow ;
-    bbo:has_sourceRef :generate_form_representation ;
-    bbo:has_targetRef :unser_enters_data .
 
 
-###  http://example.org/logicinterface/testing/flow_4
-:flow_4 a bbo:SequenceFlow ;
-    bbo:has_sourceRef :user_enters_data ;   
-    bbo:has_targetRef :processing_received_data .
+###  http://example.org/logicinterface/testing/field_1
+:field_1 rdf:type owl:NamedIndividual ,
+                  obop:Field ;
+         dc:title "field name" ;
+         obop:belongsTo :block_1 ;
+         obop:belongsToVisual :vertical_layout_1 ;
+         obop:containsDatatype v1:legalName ;
+         obop:hasLabel "Field 1" ;
+         obop:hasPositionNumber "0"^^xsd:int .
 
-###  http://example.org/logicinterface/testing/processing_received_data
-:processing_received_data a bbo:Task ;
-    rdfs:label "Processing received data" . 
 
-###  http://example.org/logicinterface/testing/flow_5
-:flow_5 a bbo:SequenceFlow ;
-    bbo:has_sourceRef :processing_received_data ;   
-    bbo:has_targetRef :decision .
 
+###  http://example.org/logicinterface/testing/horizontal_layout_1
+:horizontal_layout_1 rdf:type owl:NamedIndividual ,
+                              obop:HorizontalLayout ;
+                     dc:title "Horizontal layout for submit and cancel buttons."^^rdfs:Literal ;
+                     obop:belongsToVisual :vertical_layout_1 ;
+                     obop:hasPositionNumber "1"^^xsd:int .
+
+
+
+###  http://example.org/logicinterface/testing/vertical_layout_1
+:vertical_layout_1 rdf:type owl:NamedIndividual ,
+                            obop:VerticalLayout ;
+                   dc:title "Main vertical layout for the Form"^^rdfs:Literal ;
+                   obop:belongsTo :block_1 ;
+                   obop:hasPositionNumber "0"^^xsd:int .
+
+
+###  Generated by the OWL API (version 4.5.25.2023-02-15T19:15:49Z) https://github.com/owlcs/owlapi

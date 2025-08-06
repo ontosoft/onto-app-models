@@ -6,7 +6,9 @@ from pathlib import Path
 from rdflib import Graph, RDF, Namespace, URIRef
 from .forms import Form, HorizontalLayout, VerticalLayout
 from .form_elements import OBOPElement, SHACLFormProperty, ActionPointer
-from .bbo_elements import BBOActivity, BBOEvent, BBOFlow
+from .bbo_elements import BBOProcess, BBOActivity, BBOEvent, BBOFlowNode, \
+            BBOSubProcess, BBOFlowElementsContainer, BBOProcessStartEvent \
+            , BBOStartEvent, BBOEndEvent
 from rdflib import RDFS
 from .app_model import Action
 from rdflib.namespace import SH, OWL
@@ -35,7 +37,7 @@ class AppStaticModelFactory:
         internal_app_static_model.rdf_pellet_reasoning_world = \
             create_pellet_reasoning_graph(
                 internal_app_static_model.rdf_world_owlready)           
-        AppStaticModelFactory.readBBOElements(internal_app_static_model)
+        AppStaticModelFactory.read_bbo_elements(internal_app_static_model)
         AppStaticModelFactory.readAllLayouts(internal_app_static_model)
         AppStaticModelFactory.readAllForms(internal_app_static_model)
         AppStaticModelFactory.readActions(internal_app_static_model)
@@ -116,19 +118,16 @@ class AppStaticModelFactory:
         return graph_world, model_graph_with_bbo
 
     @staticmethod
-    def readBBOElements(internal_app_static_model: AppInternalStaticModel):
+    def read_bbo_elements(internal_app_static_model: AppInternalStaticModel):
         """
         This method reads all BBO elements from the RDF graph into the internal static application model
         """
-        # Read BBO processes - for the sake of simplicity, it can be assumed that 
-        # there exits only one BBO process in the model 
         rdflib_kg: Graph = internal_app_static_model.rdf_graph_rdflib
-        main_bbo_process_uri:URIRef = None
-        if (len(list(rdflib_kg.subjects(RDF.type, BBO.Process))) != 1):
-            logger.error("No main BBO process found in the knowledge graph. ")
-        else:
-            main_bbo_process_uri = next(rdflib_kg.subjects(RDF.type, BBO.Process), None)
-        logger.info(f"BBO Process: {str(main_bbo_process_uri)}")
+
+        # Read main BBO process
+        AppStaticModelFactory.read_bbo_process(internal_app_static_model)
+        # Read subprocesses 
+        AppStaticModelFactory.read_bbo_suprocesses(internal_app_static_model)
 
         # Get all activities and their labels
         for bbo_activity_uri in rdflib_kg.subjects(RDF.type, BBO.Activity):
@@ -173,7 +172,61 @@ class AppStaticModelFactory:
                 logger.error(f"BBO Sequence flow {bbo_sequence_flow_iri} does not have target reference.")
                 continue
             internal_app_static_model._bbo_flows.append(
-                BBOFlow(bbo_sequence_flow_iri, source_event, target_event))
+                BBOFlowNode(bbo_sequence_flow_iri, source_event, target_event))
+
+    @staticmethod
+    def read_bbo_process(internal_app_static_model: AppInternalStaticModel):
+        """
+        Reads BBO processes from the RDF graph into the internal static application model.
+        The BBO process is a main process in the application model.
+        """
+        rdflib_kg: Graph = internal_app_static_model.rdf_graph_rdflib
+        main_bbo_process_uri:URIRef = None
+        if (len(list(rdflib_kg.subjects(RDF.type, BBO.Process))) != 1):
+            logger.error("No main BBO process found in the knowledge graph. ")
+        else:
+            # If there is only one BBO process, we can assume that to be the main process
+            main_bbo_process_uri = next(rdflib_kg.subjects(RDF.type, BBO.Process), None)
+            internal_app_static_model.main_bbo_process = BBOProcess(main_bbo_process_uri)
+            logger.info(f"BBO Process: {str(main_bbo_process_uri)}")
+
+
+    @staticmethod
+    def read_bbo_suprocesses(internal_app_static_model: AppInternalStaticModel):
+        """ 
+            Read BBO subprocesses  
+        """
+        rdflib_kg: Graph = internal_app_static_model.rdf_graph_rdflib
+        # Read all BBO subprocesses and their super processes as containers
+        for bbo_subprocess_uri in rdflib_kg.subjects(RDF.type, BBO.SubProcess):
+            subprocess_has_container_query = f"""
+            PREFIX bbo: <https://www.irit.fr/recherches/MELODI/ontologies/BBO#>
+            SELECT DISTINCT ?container
+            WHERE {{
+                <{str(bbo_subprocess_uri)}> bbo:has_container ?container . 
+                ?container rdfs:subClassOf* bbo:FlowElementContainer .
+            }}"""
+            try:
+                result_generator = internal_app_static_model.rdf_pellet_reasoning_world. \
+                sparql(subprocess_has_container_query)
+                found_container : bool= False
+                for row in result_generator:
+                    (container, ) = row
+                    if not found_container:
+                        found_container = True
+                        internal_app_static_model.actions.append( 
+                            BBOSubProcess(bbo_subprocess_uri, container))
+                    else:
+                        raise ValueError(
+                            f"Multiple containers found for the BBO subprocess {bbo_subprocess_uri}.")
+            except Exception as e:
+                logger.error(f"Error by reading subprocesses: {e}")    
+                logger.exception("Error by reading subprocesses.")
+
+
+            internal_app_static_model.bbo_subprocesses.append(BBOSubProcess(bbo_subprocess_uri))
+            logger.info(f"BBO Process: {str(bbo_subprocess_uri)}")
+
 
     def readAllLayouts(internal_app_static_model: AppInternalStaticModel):
         """

@@ -10,7 +10,7 @@ from rdflib.namespace import SH
 logger = logging.getLogger("ontoui_app")
 if TYPE_CHECKING:
     from .forms import Form
-    from .app_interaction_model import ApplicationState
+    from .process_engine import ApplicationState
 
 class FormElement:
     def __init__(self,form , graph_node, type, position:int = 0 ):

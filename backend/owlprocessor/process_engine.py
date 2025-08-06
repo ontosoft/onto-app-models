@@ -1,7 +1,7 @@
 from .forms import Form, FunctionalJSONForm
 from rdflib import Graph, Namespace, RDF, URIRef, Literal
 from .app_model import AppInternalStaticModel, Action 
-from .bbo_elements import BBOFlow, BBOEvent, BBOActivity
+from .bbo_elements import BBOFlowElementsContainer, BBOProcess,  BBOEvent, BBOActivity
 from .communication import AppExchangeFrontEndData,  AppExchangeGetOutput
 import logging
 import jsonpickle
@@ -16,7 +16,7 @@ BASE = Namespace("http://example.org/logicinterface/testing/instance/")
 BBO = Namespace("http://BPMNbasedOntology#")
 logger = logging.getLogger('ontoui_app')
 
-class AppInteractionModel:
+class ProcessEngine:
     """
     This class represents the running application. It is reposible for
     generating the next layout in the control flow of the application. 
@@ -26,6 +26,13 @@ class AppInteractionModel:
 
         self.output_graph_store : Graph = Graph()
         self.app_state: ApplicationState = ApplicationState()
+
+    def start_process(self, process: BBOProcess):
+        # Find the start activity/event for the process
+        self.current_activity = self._find_start_activity(process)
+        print(f"Starting process: {process.graph_node}")
+        self._execute_activity(self.current_activity)
+
 
     def processReceivedClientData(self, frontend_state : AppExchangeFrontEndData):
         """
@@ -155,7 +162,7 @@ class AppInteractionModel:
             logger.debug("The application is at the start event. Generating the first layout.")
             # The application is at the start event and can be found the process flow that 
             # starts with the start event 
-            next_flow: BBOFlow = next(
+            next_flow: BBO = next(
                 (flow for flow in self.inner_app_static_model.bbo_flows
                  if flow.start_event.graph_node == self.app_state.current_control_flow_pointer.graph_node),
                 None

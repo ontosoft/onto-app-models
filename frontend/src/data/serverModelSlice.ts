@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction, } from "@reduxjs/toolkit";
 import { fetchListOfServerModels } from "./serverModelLoadingAPI";
 import { AppModelData } from "../app/communication";
-import { listenerMiddleware } from "../app/store";
 
 /*
    selectServerModelSlice has a function to choose among those 
@@ -39,13 +38,16 @@ export const readingListOfServerModels = createAsyncThunk('model/readListOfModel
     }
 );
 
-export const loadInnerUIModel = createAsyncThunk('model/loadModel', async (filename: string | undefined | null) => {
+export const loadInnerUIModel = createAsyncThunk('model/loadModel', async ({filename, force_load}: {filename:string | undefined | null, force_load: boolean | undefined | null}) => {
     /** Load the chosen UI model on the server and retrun the 
      * messige that the model is loaded
      */
     try {
         const url = new URL("http://localhost:8089/load_inner_uimodel_from_server?");
         url.searchParams.append('filename', filename as string);
+        if (force_load!== undefined && force_load!== null) {
+            url.searchParams.append('force_load', String(force_load));
+        }
         const response = await fetch(url.toString(), {
             method: "GET",
             headers: {

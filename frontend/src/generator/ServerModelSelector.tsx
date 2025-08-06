@@ -39,7 +39,7 @@ const ServerModelSelector: React.FC = () => {
     dispatch(initiateSelectedInnerModelLoading(filename));
     dispatch(closePreviewModelList());
     dispatch(resetLoadingModelListStatus());
-    dispatch(loadInnerUIModel(filename || ""));
+    dispatch(loadInnerUIModel({ filename: filename || "", force_load: true }));
   };
 
   return (

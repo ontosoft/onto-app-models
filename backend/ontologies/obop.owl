@@ -15,7 +15,7 @@
      xmlns:dcterms="http://purl.org/dc/terms/"
      xmlns:dctypes="http://purl.org/dc/dcmitype/"
      xmlns:ontologies="https://www.bbc.co.uk/ontologies/">
-    <owl:Ontology rdf:about="urn:absolute:f">
+    <owl:Ontology rdf:about="http://purl.org/net/obop">
         <owl:versionIRI rdf:resource="http://purl.org/net/obop/v01"/>
         <dc:creator xml:lang="en">Petko Rutesic</dc:creator>
         <dc:rights xml:lang="en">The OBOP ontology is available under the Creative Commons Attribution 3.0 Unported license; see http://creativecommons.org/licenses/by/3.0/. In a nutshell, you are free to copy, distribute and transmit the work; to remix/adapt the work (e.g. to import the ontology and create specializations of its elements), as long as you attribute the work in the manner specified by the author or licensor (but not in any way that suggests that they endorse you or your use of the work). Proper Attribution: Simply include the statement &quot;This work is based on the OBOP ontology, link back to http://purl.org/net/obop</dc:rights>
@@ -23,7 +23,7 @@
         <dc:title xml:lang="en">The OBOP vocabulary for ontology-based interface description and knowledge graph population</dc:title>
         <rdfs:comment xml:lang="en">The OBOP ontology provides a vocabulary for annotating models to describe graphical user interfaces used to populate ontology instances. Instances of this ontology are combined with other domain ontologies to generate graphical user interfaces to populate ontology instances (knowledge graphs).
 
-Note: The base URI of OBOP is http://purl.org/obop/. Please make sure you are only using element identifiers in this namespace, e.g. http://purl.org/obop/Block .</rdfs:comment>
+        Note: The base URI of OBOP is http://purl.org/obop/. Please make sure you are only using element identifiers in this namespace, e.g. http://purl.org/obop/Block .</rdfs:comment>
         <rdfs:label xml:lang="en">Ontology for Ontology-based Ontology Population</rdfs:label>
         <owl:versionInfo xml:lang="en">V 0.1, Release 2021-01-01</owl:versionInfo>
         <foaf:homepage rdf:resource="http://purl.org/net/obop/"/>

@@ -7,7 +7,7 @@ from typing import TypeAlias
 
 if TYPE_CHECKING:
     from .app_model import AppInternalStaticModel
-    from .app_interaction_model import ApplicationState
+    from .process_engine import ApplicationState
 
 logger = logging.getLogger("ontoui_app")
 

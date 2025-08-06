@@ -21,6 +21,13 @@
                            obop:Model ;
                   obop:modelDescription "The application model to insert one single field."@en .
 
+:insert_process rdf:type owl:NamedIndividual ,
+                           bbo:BBOProcess ;
+                  obop:hasPositionNumber "0"^^xsd:int ;
+                  obop:belongsTo :simple_form_model ;
+                  obop:hasLabel "Insert Process" ;
+                  obop:hasDescription "The process to insert a single field."@en .
+
 
 ###  http://example.org/logicinterface/testing/block_1
 :block_1 rdf:type owl:NamedIndividual ,

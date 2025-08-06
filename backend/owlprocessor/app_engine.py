@@ -1,4 +1,4 @@
-from .app_interaction_model import AppInteractionModel
+from .process_engine import ProcessEngine
 from .app_model_factory import AppStaticModelFactory
 from .app_model import AppInternalStaticModel
 from .communication import AppExchangeFrontEndData, AppExchangeGetOutput
@@ -33,7 +33,7 @@ class AppEngine():
 
         """
         self.inner_app_static_model: AppInternalStaticModel = None 
-        self.app_interaction_model_instance: AppInteractionModel = None
+        self.app_interaction_model_instance: ProcessEngine = None
         # The interaction model instance is created from the inner_app_static_model
         # and is used to represents the running application. It is basically a dynamic
         # representation of the application model
@@ -62,7 +62,7 @@ class AppEngine():
         if self is not None and self.inner_app_static_model is not None and \
             self.inner_app_static_model.is_loaded and \
             self.app_interaction_model_instance is None:
-            self.app_interaction_model_instance = AppInteractionModel(self.inner_app_static_model)
+            self.app_interaction_model_instance = ProcessEngine(self.inner_app_static_model)
             logger.debug("A new application interaction is started.")
             # The application state is updated to indicate that the application is running
             # and is waiting to get initiated data from the frontend 

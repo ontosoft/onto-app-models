@@ -1,7 +1,7 @@
 from __future__ import annotations
 from rdflib import Graph
 from owlready2 import World, Ontology
-from .bbo_elements import BBOProcess, BBOActivity, BBOEvent, BBOFlow
+from .bbo_elements import BBOProcess, BBOActivity, BBOEvent, BBOSubProcess,BBOFlowElementsContainer, BBOFlowNode
 
 class AppInternalStaticModel:
     """_summary_
@@ -16,10 +16,12 @@ class AppInternalStaticModel:
         self._rdf_world_owlready: World = None
         self._rdf_ontology_owlready: Ontology = None
         self._rdf_pellet_reasoning_world: World = None
-        self._bbo_processes : list[BBOProcess] = []
+        self._bbo_flow_elements_containers : list[BBOFlowElementsContainer] = []
+        self._bbo_flows : list[BBOFlowNode] = []
+        self._main_bbo_process : BBOProcess = None
+        self._bbo_subprocesses : BBOSubProcess = None
         self._bbo_activities :list[BBOActivity] = []
         self._bbo_events : list[BBOEvent] = []
-        self._bbo_flows : list[BBOFlow] = []
         self._layouts = []
         self._form_blocks = []
         self._actions : list[Action]= []
@@ -60,11 +62,11 @@ class AppInternalStaticModel:
         self._rdf_pellet_reasoning_world = value
 
     @property
-    def bbo_process(self):
-        return self._bbo_process
-    @bbo_process.setter
-    def bbo_process(self, value):
-        self._bbo_process = value
+    def main_bbo_process(self):
+        return self._main_bbo_process
+    @main_bbo_process.setter
+    def main_bbo_process(self, value):
+        self._main_bbo_process = value
 
     @property
     def bbo_activities(self):
