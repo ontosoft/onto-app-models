@@ -138,7 +138,12 @@ async def load_inner_server_model(filename: str, force_load: bool | None = Query
         logger.debug(f"The app model \"{app.model_name} \" was already loaded.") 
         return {"message": f"The model {app.model_name} is loaded . The applicaton was already run before. Do you want to load a new model?"}
     else:
-        logger.debug(f"The app model \"{filename} \" is about to be loaded.") 
-        app = AppEngine()
-        app.load_inner_app_model(filename)
-        return {"message": f"The model is loaded {app.model_name}. "}
+        # If the model is not loaded, load it even if it is not forced
+        try:
+            logger.debug(f"The app model \"{filename} \" is about to be loaded.") 
+            app = AppEngine()
+            app.load_inner_app_model(filename)
+            return {"message": f"The model is loaded {app.model_name}. "}
+        except Exception as e:
+            logger.error(f"Error loading the model {filename}: {e}")
+            return {"message": f"Error loading the model {filename}: {e}"}

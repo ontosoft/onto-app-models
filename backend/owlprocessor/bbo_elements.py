@@ -5,13 +5,28 @@ from typing import List
 
 class BBOFlowElementsContainer:
     def __init__(self, graph_node: URIRef):
-        self.graph_node : URIRef = graph_node
-        self.flow_elements : List[BBOFlowElement] = []
+        self._graph_node : URIRef = graph_node
+        self._flow_elements : List[BBOFlowElement] = []
+
+    @property
+    def graph_node(self) -> URIRef:
+        return self._graph_node 
+    @graph_node.setter
+    def graph_node(self, value: URIRef):
+        self._graph_node = value
+    
+    @property
+    def flow_elements(self) -> List[BBOFlowElement]:
+        return self._flow_elements
+
+    @flow_elements.setter
+    def flow_elements(self, value: List[BBOFlowElement]):
+        self._flow_elements = value
 
     def add_flow_element(self, flow_element: BBOFlowElement):
-        self.flow_elements.append(flow_element)
+        self._flow_elements.append(flow_element)
 
-    def __str__(self):
+    def __repr__(self):
         return f"BBOFlowElementsContainer: {self.graph_node}"
     
 
@@ -34,32 +49,61 @@ class BBOFlowElement:
         self.graph_node : URIRef = graph_node
         self.flow_element_container : BBOFlowElementsContainer = flow_element_container
 
-    def __str__(self):
-        return f"BBOFlowElement: {self.graph_node}"
-    
     def __repr__(self):
-        return f"BBOFlowElement: {self.graph_node}"
+        return f"BBOFlowElement: {str(self.graph_node)} in the container {str(self.flow_element_container.graph_node)}"
 
 class BBOFlowNode(BBOFlowElement):
     def __init__(self, graph_node: URIRef, 
-                 flow_elements_conatiner: BBOFlowElementsContainer, node_type: str):
-        super().__init__(graph_node, flow_elements_conatiner)
-        self.node_type : str = node_type
+                 flow_elements_conatainer: BBOFlowElementsContainer):
+        super().__init__(graph_node, flow_elements_conatainer)
 
-    def __str__(self):
-        return f"BBOFlowNode: {self.graph_node}, Type: {self.node_type}"
-
-
+    def __repr__(self):
+        parent_str = super().__repr__()
+        return f"BBOFlowNode: {parent_str}"
 
 class BBOActivity(BBOFlowNode):
-    def __init__(self, graph_node, activity_type, activity_description = None):
-        super().__init__(graph_node, "activity")
+    def __init__(self, graph_node,  
+                flow_elements_conatainer: BBOFlowElementsContainer
+                ):
+        super().__init__(graph_node, flow_elements_conatainer)
 
+    def __repr__(self):
+        parent_rep = super().__repr__()
+        return f"BBOActivity: {parent_rep}"
+
+class BBOTask(BBOActivity):
+    def __init__(self, graph_node: URIRef, container: BBOFlowElementsContainer,
+                 description: str = None):
+        super().__init__(graph_node, container)
+
+    def __repr__(self):
+        parent_rep = super().__repr__()
+        return f"BBOTask: {parent_rep}"
+
+class BBOScriptTask(BBOTask):
+    def __init__(self, graph_node: URIRef, container: BBOFlowElementsContainer,
+                 description: str = None):
+        super().__init__(graph_node, container)
+        self.description = description
+
+    def __repr__(self):
+        parent_rep = super().__repr__()
+        return f"BBOScriptTask: {parent_rep}, Description: {self.description}"
+
+class BBOUserTask(BBOTask):
+    def __init__(self, graph_node: URIRef, container: BBOFlowElementsContainer,
+                 description: str = None):
+        super().__init__(graph_node, container)
+        self.description = description
+
+    def __repr__(self):
+        parent_rep = super().__repr__()
+        return f"BBOUserTask: {parent_rep}, Description: {self.description}"
 
 class BBOSubProcess(BBOFlowElementsContainer, BBOActivity):
     def __init__(self, graph_node: URIRef, container: BBOFlowElementsContainer):
         BBOFlowElementsContainer.__init__(graph_node )
-        BBOActivity.__init__(self, graph_node, container)
+        BBOActivity.__init__(graph_node, container)
         self.loop_characteristic : BBOSubProcessLoopCharacteristic = None
 
     def __str__(self):
@@ -72,70 +116,127 @@ class BBOEvent(BBOFlowNode):
                 flow_elements_container: BBOFlowElementsContainer,
                 event_description = None):
         super().__init__(graph_node, flow_elements_container)
-        self.event_description = event_description
 
-    def __str__(self):
-        return f"BBOEvent: {self.graph_node}, Type: {self.event_type}, Description: {self.event_description}"
+    def __repr__(self):
+        parent_rep = super().__repr__()
+        return f"BBOEvent: {parent_rep}"
 
  
 class BBOCatchEvent(BBOEvent):
     def __init__(self, graph_node: URIRef,  
-                 flow_elements_container : BBOFlowElementsContainer, event_description = None):
-        super().__init__(graph_node, flow_elements_container, event_description)
+                 flow_elements_container : BBOFlowElementsContainer):
+        super().__init__(graph_node, flow_elements_container)
+
+    def __repr__(self):
+        parent_rep = super().__repr__()
+        return f"BBOCatchEvent: {parent_rep}"
 
 
 class BBOStartEvent(BBOCatchEvent):
     def __init__(self, graph_node: URIRef, 
-                 flow_elements_container : BBOFlowElementsContainer, event_description = None):
-        super().__init__(graph_node, flow_elements_container, "start", event_description)
+                 flow_elements_container : BBOFlowElementsContainer):
+        super().__init__(graph_node, flow_elements_container)
+    
+    def __repr__(self):
+        parent_rep = super().__repr__()
+        return f"BBOStartEvent: {parent_rep}"
 
 class BBOProcessStartEvent(BBOStartEvent):
-    def __init__(self, graph_node: URIRef, process: BBOProcess, event_description = None):
-        super().__init__(graph_node, event_description)
-        super().has_container = process
+    def __init__(self, graph_node: URIRef, process: BBOProcess, event_description: str = None):
+        super().__init__(graph_node, process)
+        self.description = event_description
 
-    def __str__(self):
-        return f"BBOProcessStartEvent: {self.graph_node}, Process: {self.process}"
+    def __repr__(self):
+        parent_rep = super().__repr__()
+        return f"BBOProcessStartEvent: {parent_rep}, Description: {self.description}"
 
 class BBOThrowEvent(BBOEvent):
-    def __init__(self, graph_node: URIRef, event_description = None):
-        super().__init__(graph_node, "throw", event_description)
+    def __init__(self, graph_node: URIRef, container: BBOFlowElementsContainer):
+        super().__init__(graph_node, container)
+
+    def __repr__(self):
+        parent_rep = super().__repr__()
+        return f"BBOThrowEvent: {parent_rep}"
 
 class BBOEndEvent(BBOThrowEvent):
-    def __init__(self, graph_node: URIRef, event_description = None):
-        super().__init__(graph_node, "end", event_description)
+    def __init__(self, graph_node: URIRef, container: BBOFlowElementsContainer,
+                  event_description = None):
+        super().__init__(graph_node, container)
+        self.description = event_description
 
+    def __repr__(self):
+        parent_rep = super().__repr__()
+        return f"BBOEndEvent: {parent_rep}, Description: {self.description}"
 
-class BBOEvent:
-    def __init__(self, graph_node : URIRef,  event_description = None):
-        self.graph_node : URIRef = graph_node
-        self.bbo_description = event_description
-
+class BBOEvent(BBOFlowNode):
+    def __init__(self, graph_node : URIRef,  container: BBOFlowElementsContainer):
+        super().__init__(graph_node, container)
+    
+    def __repr__(self):
+        parent_rep = super().__repr__()
+        return f"BBOEvent: {parent_rep}"
 
 class BBOGateway(BBOFlowNode):
-    def __init__(self, graph_node: URIRef):
-        super().__init__(graph_node,)
+    def __init__(self, graph_node: URIRef, 
+                 flow_elements_container: BBOFlowElementsContainer):
+        super().__init__(graph_node, flow_elements_container)
+    
+    def __repr__(self):
+        parent_rep = super().__repr__()
+        return f"BBOGateway: {parent_rep}" 
 
 class BBOExclusiveGateway(BBOGateway):
-    def __init__(self, graph_node: URIRef):
-        super().__init__(graph_node, "exclusive")
-        self.has_default_element = None
+    def __init__(self, graph_node: URIRef, 
+                 flow_elements_container: BBOFlowElementsContainer,
+                 description: str = None):
+        super().__init__(graph_node, flow_elements_container)
+        self.description: str = None
 
     def __str__(self):
-        return f"BBOGateway: {self.graph_node}, Type: {self.gateway_type}, Description: {self.gateway_description}"
+        parent_rep = super().__repr__()
+        return f"BBOExclusiveGateway: {parent_rep}, Description: {self.description}"
 
 class BBOSequenceFlow(BBOFlowElement):
     """ 
         Represents a sequence flow in a BBO process model. 
-
     """
-    def __init__(self, graph_node : URIRef, source_event: BBOEvent | BBOActivity , target_event: BBOEvent | BBOActivity ):
-        self.graph_node : URIRef = graph_node
-        self.source_event : BBOEvent | BBOActivity = source_event
-        self.target_event : BBOEvent | BBOActivity = target_event
+    def __init__(self, graph_node: URIRef, 
+                 container: BBOFlowElementsContainer, 
+                 source_ref: BBOFlowElement,
+                 target_ref: BBOFlowElement):
+        super().__init__(graph_node, container )
+        self.source_ref: BBOFlowElement = source_ref
+        self.target_ref: BBOFlowElement = target_ref
+
+    def __repr__(self):
+        parent_rep = super().__repr__() 
+        return f"BBOSequenceFlow: {parent_rep}, Source: {self.source_ref.graph_node}, Target: {self.target_ref.graph_node}"
 
 
 class BBONormalSequenceFlow(BBOSequenceFlow):
-    def __init__(self, graph_node: URIRef, source_event: BBOEvent | BBOActivity, target_event: BBOEvent | BBOActivity):
-        super().__init__(graph_node, source_event, target_event)
+    def __init__(self, graph_node: URIRef, 
+                 container: BBOFlowElementsContainer,
+                 source_ref: BBOFlowElement ,
+                 target_ref: BBOFlowElement ,
+                 description: str = None):
+        super().__init__(graph_node, container, source_ref, target_ref)
+        self.description = description
 
+    def __repr__(self):
+        parent_rep = super().__repr__() 
+        return f"BBONormalSequenceFlow: {parent_rep}, Description: {self.description}"
+
+
+class BBOConditionalSequenceFlow(BBOSequenceFlow):
+    def __init__(self, graph_node: URIRef, 
+                 container: BBOFlowElementsContainer,
+                 source_ref: BBOFlowElement ,
+                 target_ref: BBOFlowElement ,
+                 description: str = None):
+        super().__init__(graph_node, container, source_ref, target_ref)
+        self.description: None = description
+
+    def __repr__(self):
+        parent_rep = super().__repr__() 
+        desc = self.description if self.description is not None else ""
+        return f"BBOConditionalSequenceFlow: {parent_rep}, Description: {desc}"

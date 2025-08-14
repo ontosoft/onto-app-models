@@ -19,7 +19,7 @@ class AppInternalStaticModel:
         self._bbo_flow_elements_containers : list[BBOFlowElementsContainer] = []
         self._bbo_flows : list[BBOFlowNode] = []
         self._main_bbo_process : BBOProcess = None
-        self._bbo_subprocesses : BBOSubProcess = None
+        self._bbo_subprocesses : list[BBOSubProcess] = []
         self._bbo_activities :list[BBOActivity] = []
         self._bbo_events : list[BBOEvent] = []
         self._layouts = []
@@ -67,6 +67,13 @@ class AppInternalStaticModel:
     @main_bbo_process.setter
     def main_bbo_process(self, value):
         self._main_bbo_process = value
+
+    @property
+    def bbo_subprocesses(self)-> list[BBOSubProcess]:
+        return self._bbo_subprocesses
+    @bbo_subprocesses.setter
+    def bbo_subprocesses(self, value: list[BBOSubProcess]):
+        self._bbo_subprocesses = value
 
     @property
     def bbo_activities(self):

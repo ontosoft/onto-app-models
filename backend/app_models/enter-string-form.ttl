@@ -38,7 +38,7 @@
 
 ###  http://example.org/logicinterface/testing/generate_form_representation
 :generate_form_representation rdf:type owl:NamedIndividual ,
-             bbo:Task ;
+             bbo:ScriptTask ;
     rdfs:comment "Generate the form representation on the server side" ;
     bbo:has_container :popule_single_form_knowledge_graph .
 
@@ -50,7 +50,7 @@
 
 ###  http://example.org/logicinterface/testing/processing_received_data
 :processing_received_data rdf:type owl:NamedIndividual ,
-                                   bbo:Task ;
+                                   bbo:ScriptTask ;
                           rdfs:comment "Processing received data" ;
                           bbo:has_container :popule_single_form_knowledge_graph .
 
@@ -60,16 +60,16 @@
           rdfs:label "Decision on the entered data" ;
           bbo:has_container :popule_single_form_knowledge_graph .
 
-###  http://example.org/logicinterface/testing/save_data
-:save_data rdf:type owl:NamedIndividual ,
-                                     bbo:Task ;
+###  http://example.org/logicinterface/testing/save_data_insert
+:save_data_insert rdf:type owl:NamedIndividual ,
+                                     bbo:ScriptTask ;
                             rdfs:comment "Save the entered data in the rdfstore" ;
                             bbo:has_container :popule_single_form_knowledge_graph .
 
 
-###  http://example.org/logicinterface/testing/save_data
+###  http://example.org/logicinterface/testing/abort_data_insert
 :abort_data_insert rdf:type owl:NamedIndividual ,
-                                     bbo:Task ;
+                                     bbo:ScriptTask ;
                             rdfs:comment "Save the entered data in the rdfstore" ;
                             bbo:has_container :popule_single_form_knowledge_graph .
 
@@ -77,19 +77,19 @@
 
 ###  http://example.org/logicinterface/testing/inserted_data_confirmation
 :inserted_data_confirmation rdf:type owl:NamedIndividual ,
-                                     bbo:Task ;
+                                     bbo:ScriptTask ;
                             rdfs:comment "Inserted Data Confirmation" ;
                             bbo:has_container :popule_single_form_knowledge_graph .
 
 ###  http://example.org/logicinterface/testing/data_insertion_completed
-:data_insertion_completed rdf:type owl:NamedIndividual ,
+:end_event_data_insertion_completed rdf:type owl:NamedIndividual ,
              bbo:EndEvent ;
     rdfs:comment "Order Successfully Placed" ;
     bbo:has_container :popule_single_form_knowledge_graph .
 
 ###  http://example.org/logicinterface/testing/abort_data_insert
 :abort_data_insert rdf:type owl:NamedIndividual ,
-             bbo:Task ;
+             bbo:ScriptTask ;
     rdfs:comment "Data insertion aborted" ;
     bbo:has_container :popule_single_form_knowledge_graph .
 
@@ -106,7 +106,7 @@
                  bbo:NormalSequenceFlow ;
         bbo:has_container :popule_single_form_knowledge_graph ;
         bbo:has_sourceRef :generate_form_representation ;
-        bbo:has_targetRef :unser_enters_data .
+        bbo:has_targetRef :user_enters_data .
 
 ###  http://example.org/logicinterface/testing/flow_3
 :flow_3 rdf:type owl:NamedIndividual ,
@@ -117,7 +117,7 @@
 
 ###  http://example.org/logicinterface/testing/flow_4
 :flow_4 rdf:type owl:NamedIndividual ,
-    bbo:SequenceFlow ;
+    bbo:NormalSequenceFlow ;
     bbo:has_container :popule_single_form_knowledge_graph ;
     bbo:has_sourceRef :processing_received_data ;
     bbo:has_targetRef :DecisionGateway1 .
@@ -169,8 +169,6 @@
     obop:hasInitiator "onClick" ;
     obop:hasLabel "Cancel" ;
     rdfs:comment "Basic cancel function" .
-
-
 
 
 ###  http://example.org/logicinterface/testing/block_1

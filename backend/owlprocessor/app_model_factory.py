@@ -6,9 +6,10 @@ from pathlib import Path
 from rdflib import Graph, RDF, Namespace, URIRef
 from .forms import Form, HorizontalLayout, VerticalLayout
 from .form_elements import OBOPElement, SHACLFormProperty, ActionPointer
-from .bbo_elements import BBOProcess, BBOActivity, BBOEvent, BBOFlowNode, \
-            BBOSubProcess, BBOFlowElementsContainer, BBOProcessStartEvent \
-            , BBOStartEvent, BBOEndEvent
+from .bbo_elements import (BBOProcess,  BBOFlowNode, BBOSubProcess,  
+    BBOFlowElementsContainer, BBOProcessStartEvent, BBOExclusiveGateway,
+    BBOEndEvent, BBOScriptTask, BBOUserTask, BBONormalSequenceFlow,
+    BBOSubProcessLoopCharacteristic, BBOConditionalSequenceFlow)
 from rdflib import RDFS
 from .app_model import Action
 from rdflib.namespace import SH, OWL
@@ -128,51 +129,16 @@ class AppStaticModelFactory:
         AppStaticModelFactory.read_bbo_process(internal_app_static_model)
         # Read subprocesses 
         AppStaticModelFactory.read_bbo_suprocesses(internal_app_static_model)
-
-        # Get all activities and their labels
-        for bbo_activity_uri in rdflib_kg.subjects(RDF.type, BBO.Activity):
-            logger.info(f"BBO Activity: {str(bbo_activity_uri)}")
-            label = rdflib_kg.value(bbo_activity_uri, RDFS.label)
-            activity = BBOActivity(bbo_activity_uri, BBO.Activity)
-            internal_app_static_model._bbo_activities.append(activity)
-
+        # Get all tasks
+        AppStaticModelFactory.read_bbo_tasks(internal_app_static_model)
+        # Read gateways
+        AppStaticModelFactory.read_bbo_gateways(internal_app_static_model)
         # Get all events 
-        all_bbo_events_query = """
-            PREFIX obop: <http://purl.org/net/obop/>
-            PREFIX bbo: <https://www.irit.fr/recherches/MELODI/ontologies/BBO#>
-            SELECT DISTINCT ?bbo_event_iri
-            WHERE {{
-                ?bbo_event_iri a ?c1.
-                ?c1 rdfs:subClassOf*  bbo:Event .
-            }}"""
-
-        events = internal_app_static_model.rdf_pellet_reasoning_world. \
-                    sparql(all_bbo_events_query)
-        
-        # Include the events in the internal application model 
-        for row in events:
-            (bbo_event_iri,) = row
-            logger.info(f"BBO Event: {bbo_event_iri.iri}")
-            bbo_event = BBOEvent(bbo_event_iri, rdflib_kg.value(bbo_event_iri, RDFS.label))
-            internal_app_static_model.bbo_events.append(bbo_event)
+        AppStaticModelFactory.read_bbo_events(internal_app_static_model)
+        # Get all sequence flows
+        AppStaticModelFactory.read_bbo_flow_elements(internal_app_static_model) 
 
 
-        for bbo_sequence_flow_iri in rdflib_kg.subjects(RDF.type, BBO.SequenceFlow):
-            logger.info(f"BBO Sequence Flow: {str(bbo_sequence_flow_iri)}")
-            source = rdflib_kg.value(bbo_sequence_flow_iri, BBO.has_sourceRef)
-            target = rdflib_kg.value(bbo_sequence_flow_iri, BBO.has_targetRef)
-            source_event : BBOEvent = next((event for event in internal_app_static_model.bbo_events 
-                    if event.graph_node == source), None)
-            target_event : BBOEvent = next((event for event in internal_app_static_model.bbo_events 
-                    if event.graph_node == target), None)
-            if source is None:
-                logger.error(f"BBO Sequence flow {bbo_sequence_flow_iri} does not have source reference.")
-                continue
-            if target is None:
-                logger.error(f"BBO Sequence flow {bbo_sequence_flow_iri} does not have target reference.")
-                continue
-            internal_app_static_model._bbo_flows.append(
-                BBOFlowNode(bbo_sequence_flow_iri, source_event, target_event))
 
     @staticmethod
     def read_bbo_process(internal_app_static_model: AppInternalStaticModel):
@@ -214,20 +180,327 @@ class AppStaticModelFactory:
                     (container, ) = row
                     if not found_container:
                         found_container = True
-                        internal_app_static_model.actions.append( 
-                            BBOSubProcess(bbo_subprocess_uri, container))
+                        if str(internal_app_static_model.main_bbo_process.graph_node) == container.iri:
+                            # If the container is of main process, we can assume that the subprocess is a part of the main process
+                            internal_app_static_model.main_bbo_process.bbo_subprocesses.append(
+                                BBOSubProcess(bbo_subprocess_uri, internal_app_static_model.main_bbo_process))
+                        else:
+                            # If the container is not of main process, we can assume that the subprocess is a part of other subprocess
+                            BBcontainer : BBOSubProcess = next((c for c in internal_app_static_model.bbo_subprocesses 
+                                    if c.graph_node == container), None)
+                            if BBcontainer is None:
+                                logger.error(f"Container {container.iri} not found in the BBO subprocess {bbo_subprocess_uri}.")
+                                internal_app_static_model.bbo_subprocesses.append(
+                                    BBOSubProcess(bbo_subprocess_uri)) 
+                            else: # container found in the list of subprocesses
+                                internal_app_static_model.bbo_subprocesses.append( 
+                                    BBOSubProcess(bbo_subprocess_uri, BBcontainer))
                     else:
                         raise ValueError(
                             f"Multiple containers found for the BBO subprocess {bbo_subprocess_uri}.")
             except Exception as e:
                 logger.error(f"Error by reading subprocesses: {e}")    
-                logger.exception("Error by reading subprocesses.")
+                logger.exception("Error by reading subprocesses.{bbo_subprocess_uri}")
+            logger.info(f"BBO Subprocess: {str(bbo_subprocess_uri)}")
 
+       
+    @staticmethod
+    def read_bbo_events(internal_app_static_model: AppInternalStaticModel):
+        rdflib_kg: Graph = internal_app_static_model.rdf_graph_rdflib
+        # check if there are any BBO events in the knowledge graph
+        # that have no container
 
-            internal_app_static_model.bbo_subprocesses.append(BBOSubProcess(bbo_subprocess_uri))
-            logger.info(f"BBO Process: {str(bbo_subprocess_uri)}")
+        events_without_containers = """
+            PREFIX obop: <http://purl.org/net/obop/>
+            PREFIX bbo: <https://www.irit.fr/recherches/MELODI/ontologies/BBO#>
+            SELECT DISTINCT ?bbo_event
+            WHERE {{
+                ?bbo_event a ?c1 .
+                ?c1 rdfs:subClassOf*  bbo:Event .
+                FILTER NOT EXISTS { ?bbo_event bbo:has_container ?container . }
+            }}"""
 
+        try:
+            events_without_containers_result = internal_app_static_model.rdf_pellet_reasoning_world. \
+                sparql(events_without_containers)
+            for row in events_without_containers_result:
+                (bbo_event, ) = row
+                logger.error(f"BBO Event without container: {bbo_event.iri}")
+        except Exception as e:
+            logger.error(f"Error by reading BBO events without containers: {e}")
+            logger.exception("Error by reading BBO events without containers.") 
 
+        # Read all BBO events and their containers, because the BBO events 
+        # are part of the BBO processes or subprocesses in our application model.
+        all_bbo_events_query = """
+            PREFIX obop: <http://purl.org/net/obop/>
+            PREFIX bbo: <https://www.irit.fr/recherches/MELODI/ontologies/BBO#>
+            SELECT DISTINCT ?bbo_event ?c1 ?container
+            WHERE {{
+                ?bbo_event a ?c1 .
+                ?bbo_event bbo:has_container ?container .
+                ?c1 rdfs:subClassOf*  bbo:Event .
+            }}"""
+        try:
+            events = internal_app_static_model.rdf_pellet_reasoning_world. \
+                    sparql(all_bbo_events_query)
+        
+            # Include the events in the internal application model 
+            for row in events:
+                (bbo_event, c1, container) = row
+                logger.info(f"BBO Event: {bbo_event.iri}, of class: {c1.iri} in container: {container.iri}")
+                if c1.iri == str(BBO.ProcessStartEvent):
+                    # If the event is a process start event, we need to check if it is in the main process container
+                    if container.iri == str(internal_app_static_model.main_bbo_process.graph_node):
+                        inner_event : BBOProcessStartEvent = BBOProcessStartEvent(
+                            URIRef(bbo_event.iri),
+                            internal_app_static_model.main_bbo_process , 
+                            str(rdflib_kg.value(bbo_event, RDFS.comment)))
+                        internal_app_static_model.main_bbo_process.add_flow_element(inner_event)  
+                    else:
+                        logger.error(f"BBO Process Start Event {bbo_event.iri} is not in the \
+                             main process container.")
+                        raise ValueError( f"BBOEvent {bbo_event.iri} is not correctly specified ." )
+                elif c1.iri == str(BBO.EndEvent):
+                    # If the event is an end event, we need to check if it is in the main process container or in a subprocess container
+                    if container.iri == str(internal_app_static_model.main_bbo_process.graph_node):
+                        inner_event : BBOEndEvent = BBOEndEvent(URIRef(bbo_event.iri), 
+                                    internal_app_static_model.main_bbo_process, rdflib_kg.value(bbo_event, RDFS.comment))
+                        internal_app_static_model.main_bbo_process.add_flow_element( inner_event)
+                    else :
+                        # If the event is in a subprocess container, we need to find the corresponding subprocess
+                        internal_container = next((c for c in internal_app_static_model.bbo_subprocesses 
+                            if str(c.graph_node) == container.iri), None)
+
+                        if internal_container is not None:
+                            inner_event = BBOEndEvent(URIRef(bbo_event.iri), internal_container, rdflib_kg.value(bbo_event, RDFS.comment))
+                            internal_container.add_flow_element(inner_event)
+                        else:
+                            logger.error(f"BBO End Event {bbo_event.iri} is not in any subprocess container.")
+                            raise ValueError( f"BBOEvent {bbo_event.iri} is not correctly specified ." )
+                else:
+                    raise ValueError( f"Unknown BBO event type: {c1.iri}." )
+        except  Exception as e:
+            logger.error(f"Error by reading BBO events: {e}")
+            logger.exception("Error by reading BBO events.")
+                                    
+
+    @staticmethod
+    def read_bbo_tasks(internal_app_static_model: AppInternalStaticModel):
+        """
+        Reads BBO tasks from the RDF graph into the internal static application model.
+        The BBO task is a part of the BBO process or subprocesses.
+        """
+        rdflib_kg: Graph = internal_app_static_model.rdf_graph_rdflib
+        # Read BBO Script Tasks that are part of the BBO process or subprocesses
+        for bbo_task_uri in rdflib_kg.subjects(RDF.type, BBO.ScriptTask):
+            logger.info(f"BBO Script Task: {str(bbo_task_uri)}")
+            # Read the container of the task
+            container = rdflib_kg.value(bbo_task_uri, BBO.has_container)
+            if container is not None:
+                # Find the container by comparing the graph node
+                # with the main process and other subprocesses 
+                if (container == internal_app_static_model.main_bbo_process.graph_node):
+                    task = BBOScriptTask(bbo_task_uri, 
+                        internal_app_static_model.main_bbo_process, 
+                        str(rdflib_kg.value(bbo_task_uri, RDFS.comment)))
+                    internal_app_static_model.main_bbo_process.add_flow_element(task)
+                else:
+                    subprocess: BBOSubProcess = next((c for c in internal_app_static_model.bbo_subprocesses
+                                if c.graph_node == container), None)
+                    if subprocess is not None:
+                        task = BBOScriptTask(bbo_task_uri, 
+                                    subprocess, 
+                                    str(rdflib_kg.value(bbo_task_uri, RDFS.comment)))
+                        subprocess.add_flow_element(task)
+                    else:
+                        logger.error(f"BBO Script Task {bbo_task_uri} does not have a valid container.")
+                        continue
+            else:
+                logger.error(f"BBO Script Task {bbo_task_uri} does not have a container.")
+
+        # Read BBO User Tasks that are part of the BBO process or subprocesses
+        for bbo_task_uri in rdflib_kg.subjects(RDF.type, BBO.UserTask):
+            logger.info(f"BBO User Task: {str(bbo_task_uri)}")
+            # Read the container of the task
+            container = rdflib_kg.value(bbo_task_uri, BBO.has_container)
+            if container is not None:
+                # Find the container by comparing the graph node
+                # with the main process and other subprocesses 
+                if (container == internal_app_static_model.main_bbo_process.graph_node):
+                    task = BBOUserTask(bbo_task_uri, 
+                        internal_app_static_model.main_bbo_process, 
+                        str(rdflib_kg.value(bbo_task_uri, RDFS.comment)))
+                    internal_app_static_model.main_bbo_process.add_flow_element(task)
+                else:
+                    subprocess: BBOSubProcess = next((c for c in internal_app_static_model.bbo_subprocesses
+                                if c.graph_node == container), None)
+                    if subprocess is not None:
+                        task = BBOUserTask(bbo_task_uri, 
+                                    subprocess, 
+                                    str(rdflib_kg.value(bbo_task_uri, RDFS.comment)))
+                        subprocess.add_flow_element(task)
+                    else:
+                        logger.error(f"BBO Task {bbo_task_uri} does not have a valid container.")
+                        continue
+            else:
+                logger.error(f"BBO User {bbo_task_uri} does not have a container.")
+
+    @staticmethod
+    def read_bbo_gateways(internal_app_static_model: AppInternalStaticModel):
+        """
+        Reads BBO gateways from the RDF graph into the internal static application model.
+        The BBO gateway is a part of the BBO process or subprocesses.
+        """
+        rdflib_kg: Graph = internal_app_static_model.rdf_graph_rdflib
+        # Read BBO Exclusive Gateways that are part of the BBO process or subprocesses
+        for bbo_gateway_uri in rdflib_kg.subjects(RDF.type, BBO.ExclusiveGateway):
+            logger.info(f"BBO Exclusive Gateway: {str(bbo_gateway_uri)}")
+            # Read the container of the gateway
+            container = rdflib_kg.value(bbo_gateway_uri, BBO.has_container)
+            if container is not None:
+                # Find the container by comparing the graph nodes
+                # with the main process and other subprocesses 
+                if (container == internal_app_static_model.main_bbo_process.graph_node):
+                    gateway = BBOExclusiveGateway(bbo_gateway_uri, 
+                        internal_app_static_model.main_bbo_process, 
+                        str(rdflib_kg.value(bbo_gateway_uri, RDFS.comment)))
+                    internal_app_static_model.main_bbo_process.add_flow_element(gateway)
+                else:
+                    subprocess: BBOSubProcess = next((c for c in internal_app_static_model.bbo_subprocesses
+                                if c.graph_node == container), None)
+                    if subprocess is not None:
+                        gateway = BBOExclusiveGateway(bbo_gateway_uri, 
+                                    subprocess, 
+                                    str(rdflib_kg.value(bbo_gateway_uri, RDFS.comment)))
+                        subprocess.add_flow_element(gateway)
+                    else:
+                        logger.error(f"BBO Exclusive Gateway {bbo_gateway_uri} does not have a valid container.")
+                        continue
+            else:
+                logger.error(f"BBO Exclusive Gateway {bbo_gateway_uri} does not have a container.")
+
+    
+    @staticmethod
+    def read_bbo_flow_elements(internal_app_static_model: AppInternalStaticModel):
+        """
+        Reads BBO flow elements from the RDF graph into the internal static application model.
+        The BBO flow elements are part of the BBO process or subprocesses.
+        """
+
+        # Read first BBO Normal Sequence Flows
+        normal_sequence_flow_query = """ 
+        PREFIX bbo: <https://www.irit.fr/recherches/MELODI/ontologies/BBO#>     
+        SELECT DISTINCT ?bbo_sequence_flow ?source ?target ?container
+        WHERE {
+            ?bbo_sequence_flow a bbo:NormalSequenceFlow .
+            ?bbo_sequence_flow bbo:has_sourceRef ?source .   
+            ?bbo_sequence_flow bbo:has_targetRef ?target .
+            ?bbo_sequence_flow bbo:has_container ?container .
+        }"""
+        try:
+            results = internal_app_static_model.rdf_pellet_reasoning_world.sparql(normal_sequence_flow_query)
+            for row in results:
+                (bbo_sequence_flow, source, target, container) = row
+                logger.info(f"BBO Normal Sequence Flow Element: {bbo_sequence_flow.iri}, Source: {source.iri}, Target: {target.iri}, Container: {container.iri}")
+                # Find the source and target flow elements in the internal application model
+                if container.iri == str(internal_app_static_model.main_bbo_process.graph_node):
+                    # If the container is the main process, we can assume that the flow element is part of the main process
+                    bbo_flow_container: BBOFlowElementsContainer = internal_app_static_model.main_bbo_process
+                    source_element : BBOFlowNode = next((e for e in bbo_flow_container.flow_elements
+                            if str(e.graph_node) == source.iri), None)
+                    target_element :BBOFlowNode = next((e for e in bbo_flow_container.flow_elements
+                            if str(e.graph_node) == target.iri), None)
+
+                    # If the source and target elements are found, we can create a flow element
+                    if source_element is not None and target_element is not None:
+                        flow_element = BBONormalSequenceFlow(URIRef(bbo_sequence_flow.iri),
+                            bbo_flow_container, source_element, target_element)
+                        internal_app_static_model.main_bbo_process.flow_elements.append(flow_element)
+                    else:
+                        logger.error(f"BBO Flow Element {bbo_sequence_flow.iri} has invalid source or target.")
+                else:
+                    # If the container is not the main process, we need to find it in the corresponding subprocess
+                    bbo_flow_container: BBOSubProcess = next((c for c in internal_app_static_model.bbo_subprocesses 
+                                              if str(c.graph_node) == container.iri), None)
+                    if bbo_flow_container is None:
+                        logger.error(f"BBO Flow Element {bbo_sequence_flow.iri} does not have a valid container.")
+                        raise ValueError(f"BBO Flow Element {bbo_sequence_flow.iri} does not have a valid container.")
+                        continue
+                    else: 
+                        # If the container is a subprocess, we can assume that the flow element is part of the subprocess
+                        source_element: BBOFlowNode = next((e for e in bbo_flow_container.flow_elements 
+                            if str(e.graph_node) == source.iri), None)
+                        target_element : BBOFlowNode = next((e for e in bbo_flow_container.flow_elements
+                            if str(e.graph_node) == target.iri), None)
+                        if source_element is not None and target_element is not None:
+                            flow_element = BBONormalSequenceFlow(URIRef(bbo_sequence_flow.iri), bbo_flow_container, source_element, target_element)
+                            bbo_flow_container.add_flow_element(flow_element)
+                        else:
+                            logger.error(f"BBO Flow Element {bbo_sequence_flow.iri} has invalid source or target.")
+        except Exception as e:
+            logger.error(f"Error by reading BBO flow elements: {e}")
+            logger.exception("Error by reading BBO flow elements.")
+
+        # Read BBO Conditional Sequence Flows
+        conditional_sequence_flow_query = """   
+        PREFIX bbo: <https://www.irit.fr/recherches/MELODI/ontologies/BBO#> 
+        SELECT DISTINCT ?bbo_sequence_flow ?source ?target ?container
+        WHERE {
+            ?bbo_sequence_flow a bbo:ConditionalSequenceFlow .
+            ?bbo_sequence_flow bbo:has_sourceRef ?source .   
+            ?bbo_sequence_flow bbo:has_targetRef ?target .
+            ?bbo_sequence_flow bbo:has_container ?container .
+        }"""
+        try:  
+            results = internal_app_static_model.rdf_pellet_reasoning_world.sparql( 
+                conditional_sequence_flow_query)
+            for row in results: 
+                (bbo_sequence_flow, source, target, container) = row
+                logger.info(f"Reading BBO Conditional Sequence Flow Element: {bbo_sequence_flow.iri}, Source: {source.iri}, Target: {target.iri}, Container: {container.iri}")
+                # Find the source and target flow elements in the internal application model
+                if container.iri == str(internal_app_static_model.main_bbo_process.graph_node):
+                    # If the container is the main process, we can assume that the flow element is part of the main process
+                    bbo_flow_container: BBOFlowElementsContainer = internal_app_static_model.main_bbo_process
+                    source_element : BBOFlowNode = next((e for e in bbo_flow_container.flow_elements
+                            if str(e.graph_node) == source.iri), None)
+                    target_element :BBOFlowNode = next((e for e in bbo_flow_container.flow_elements
+                            if str(e.graph_node) == target.iri), None)
+
+                    # If the source and target elements are found, we can create a flow element
+                    if source_element is not None and target_element is not None:
+                        flow_element = BBOConditionalSequenceFlow(URIRef(bbo_sequence_flow.iri), bbo_flow_container, source_element, target_element, 
+                            str(internal_app_static_model.rdf_graph_rdflib.value(URIRef(bbo_sequence_flow.iri), RDFS.comment)))
+                        internal_app_static_model.main_bbo_process.flow_elements.append(flow_element)
+                        logger.debug("Loaded BBO Conditional Sequence Flow Element") 
+                        logger.debug(f"{flow_element.__repr__()} to the main process.")
+                    else:
+                        logger.error(f"BBO Conditional Sequence Flow Element {bbo_sequence_flow.iri} has invalid source or target.")
+                else:
+                    # If the container is not the main process, we need to find it in the corresponding subprocess
+                    bbo_flow_container: BBOSubProcess = next((c for c in internal_app_static_model.bbo_subprocesses 
+                                              if str(c.graph_node) == container.iri), None)
+                    if bbo_flow_container is None:
+                        logger.error(f"BBO Conditional Flow Element {bbo_sequence_flow.iri} does not have a valid container.")
+                        raise ValueError(f"BBO Conditional Flow Element {bbo_sequence_flow.iri} does not have a valid container.")
+                        continue
+                    else: 
+                        # If the container is a subprocess, we can assume that the flow element is part of the subprocess
+                        source_element: BBOFlowNode = next((e for e in bbo_flow_container.flow_elements 
+                            if str(e.graph_node) == source.iri), None)
+                        target_element : BBOFlowNode = next((e for e in bbo_flow_container.flow_elements
+                            if str(e.graph_node) == target.iri), None)
+                        if source_element is not None and target_element is not None:
+                            flow_element = BBOConditionalSequenceFlow(URIRef(bbo_sequence_flow.iri), bbo_flow_container, source_element, target_element, 
+                                str(internal_app_static_model.rdf_graph_rdflib.value(URIRef(bbo_sequence_flow.iri), RDFS.comment)))
+                            bbo_flow_container.add_flow_element(flow_element)
+                        else:
+                            logger.error(f"BBO Conditional Sequence Flow Element {bbo_sequence_flow.iri} has invalid source or target.")    
+        except Exception as e:
+            logger.error(f"Error by reading BBO conditional sequence flows: {e}")
+            logger.exception("Error by reading BBO conditional sequence flows.")    
+
+    @staticmethod
     def readAllLayouts(internal_app_static_model: AppInternalStaticModel):
         """
         This method reads all layouts from the RDF graph into the internal static application model
