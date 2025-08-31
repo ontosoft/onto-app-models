@@ -32,8 +32,8 @@ class AppEngine():
          data and is changed during the application run.  
 
         """
-        self.inner_app_static_model: AppInternalStaticModel = None 
-        self.app_interaction_model_instance: ProcessEngine = None
+        self.internal_app_static_model: AppInternalStaticModel = None 
+        self.process_engine_instance: ProcessEngine = None
         # The interaction model instance is created from the inner_app_static_model
         # and is used to represents the running application. It is basically a dynamic
         # representation of the application model
@@ -51,7 +51,7 @@ class AppEngine():
         filePath : Path = file_name
         if file_name is not None:
             filePath = self.model_directory/file_name
-        self.inner_app_static_model = model_factory.rdf_graf_to_uimodel(rdf_model_file=filePath, rdf_text_ttl=rdf_string)
+        self.internal_app_static_model = model_factory.rdf_graf_to_uimodel(rdf_model_file=filePath, rdf_text_ttl=rdf_string)
 
     def run_application(self)-> None:
         """
@@ -59,55 +59,54 @@ class AppEngine():
         the process that generates an instance of the application interaction model
         
         """
-        if self is not None and self.inner_app_static_model is not None and \
-            self.inner_app_static_model.is_loaded and \
-            self.app_interaction_model_instance is None:
-            self.app_interaction_model_instance = ProcessEngine(self.inner_app_static_model)
+        if self is not None and self.internal_app_static_model is not None and \
+            self.internal_app_static_model.is_loaded and \
+            self.process_engine_instance is None:
+            self.process_engine_instance = ProcessEngine(self.internal_app_static_model)
             logger.debug("A new application interaction is started.")
             # The application state is updated to indicate that the application is running
             # and is waiting to get initiated data from the frontend 
-            self.app_interaction_model_instance.app_state.setRunningInitiated()
-            self.app_interaction_model_instance.app_state.setAppExchangeWaitingToSendData()  
-        elif self is not None and self.inner_app_static_model is not None and \
-            self.inner_app_static_model.is_loaded and \
-            self.app_interaction_model_instance is not None and \
-                 self.app_interaction_model_instance.app_state.is_running_initiated: 
+            self.process_engine_instance.app_state.set_running_initiated()
+        elif self is not None and self.internal_app_static_model is not None and \
+            self.internal_app_static_model.is_loaded and \
+            self.process_engine_instance is not None and \
+                 self.process_engine_instance.app_state.is_running_initiated: 
             logger.debug("The application is already running.")
             #logger.debug(json.dumps(self.processGenerator.__dict__))
             #logger.debug(jsonpickle.encode(self.app_interaction_model_instance))
 
     def read_new_model_layout(self)-> AppExchangeGetOutput:
         """
-        Reads the new model layout from the running interaction model instance 
+        Reads the new model layout from the running interaction model instance (process engine).
         """
-        if self.inner_app_static_model is None:
+        if self.internal_app_static_model is None:
 
             return AppExchangeGetOutput(
                 message_type ="error",
                 layout_type="message_box",
                 message_content = {"message" : "An application model is not loaded."})
-        elif self.app_interaction_model_instance is None: 
+        elif self.process_engine_instance is None: 
             return AppExchangeGetOutput(
                 message_type ="notification",
-                layout_type="",
-                message_content = {"message" : "An application model is not loaded. Load the corresponding model."})
+                layout_type="message_box",
+                message_content = {"message" : "An application model is not running. Run the corresponding model."})
         else:
-            newModelLayout : AppExchangeGetOutput = self.app_interaction_model_instance.generate_layout()
+            newModelLayout : AppExchangeGetOutput = self.process_engine_instance.generate_layout()
         return newModelLayout
 
-    def processReceivedClientData(self, frontend_state: any):
+    def process_received_client_data(self, frontend_state: any):
         """
         Precesses the new data from the frontend and stores it into the output 
         knowledge graph
         """
-        if self.inner_app_static_model is None:
+        if self.internal_app_static_model is None:
             return AppExchangeGetOutput(
                 message_type ="error",
                 layout_type="message_box",
                 message_content = {"message" : "An application model is not loaded."})
 
 
-        elif self.app_interaction_model_instance is None: 
+        elif self.process_engine_instance is None: 
             return AppExchangeGetOutput(
                 message_type ="error",
                 layout_type="message_box",
@@ -115,7 +114,7 @@ class AppEngine():
         else:
             # Parse the JSON data into a AppExchangeFrontEndData object
             received_data = AppExchangeFrontEndData(**frontend_state)
-            processing_result = self.app_interaction_model_instance.processReceivedClientData(received_data)
+            processing_result = self.process_engine_instance.process_received_client_data(received_data)
         return processing_result
   
     

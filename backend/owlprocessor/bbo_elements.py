@@ -1,6 +1,7 @@
 from __future__ import annotations
 from rdflib import URIRef
 from typing import List
+from .obop_action import OBOPAction
 
 
 class BBOFlowElementsContainer:
@@ -82,9 +83,10 @@ class BBOTask(BBOActivity):
 
 class BBOScriptTask(BBOTask):
     def __init__(self, graph_node: URIRef, container: BBOFlowElementsContainer,
-                 description: str = None):
+                 description: str = None, action: OBOPAction = None ):
         super().__init__(graph_node, container)
         self.description = description
+        self.obop_action : OBOPAction = action
 
     def __repr__(self):
         parent_rep = super().__repr__()
@@ -149,6 +151,15 @@ class BBOProcessStartEvent(BBOStartEvent):
     def __repr__(self):
         parent_rep = super().__repr__()
         return f"BBOProcessStartEvent: {parent_rep}, Description: {self.description}"
+
+class BBOSubProcessStartEvent(BBOStartEvent):
+    def __init__(self, graph_node: URIRef, subprocess: BBOSubProcess, event_description: str = None):
+        super().__init__(graph_node, subprocess)
+        self.description = event_description
+
+    def __repr__(self):
+        parent_rep = super().__repr__()
+        return f"BBOSubProcessStartEvent: {parent_rep}, Description: {self.description}"
 
 class BBOThrowEvent(BBOEvent):
     def __init__(self, graph_node: URIRef, container: BBOFlowElementsContainer):

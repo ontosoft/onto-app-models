@@ -11,7 +11,7 @@ from .bbo_elements import (BBOProcess,  BBOFlowNode, BBOSubProcess,
     BBOEndEvent, BBOScriptTask, BBOUserTask, BBONormalSequenceFlow,
     BBOSubProcessLoopCharacteristic, BBOConditionalSequenceFlow)
 from rdflib import RDFS
-from .app_model import Action
+from .app_model import OBOPAction
 from rdflib.namespace import SH, OWL
 from owlready2 import World, Ontology
 from config.settings import get_settings, Settings
@@ -42,6 +42,7 @@ class AppStaticModelFactory:
         AppStaticModelFactory.readAllLayouts(internal_app_static_model)
         AppStaticModelFactory.readAllForms(internal_app_static_model)
         AppStaticModelFactory.readActions(internal_app_static_model)
+        AppStaticModelFactory.connect_bbo_script_tasks_with_obop_actions(internal_app_static_model)
         AppStaticModelFactory.combine_shacl_properties_and_obop_elements(internal_app_static_model)
         AppStaticModelFactory.assignOwnerFormsToLayouts(internal_app_static_model)
         AppStaticModelFactory.assignElementsAndLayoutsToLayouts(internal_app_static_model)
@@ -123,8 +124,6 @@ class AppStaticModelFactory:
         """
         This method reads all BBO elements from the RDF graph into the internal static application model
         """
-        rdflib_kg: Graph = internal_app_static_model.rdf_graph_rdflib
-
         # Read main BBO process
         AppStaticModelFactory.read_bbo_process(internal_app_static_model)
         # Read subprocesses 
@@ -170,7 +169,7 @@ class AppStaticModelFactory:
             SELECT DISTINCT ?container
             WHERE {{
                 <{str(bbo_subprocess_uri)}> bbo:has_container ?container . 
-                ?container rdfs:subClassOf* bbo:FlowElementContainer .
+                ?container rdfs:subClassOf* bbo:FlowElementsContainer .
             }}"""
             try:
                 result_generator = internal_app_static_model.rdf_pellet_reasoning_world. \
@@ -702,10 +701,12 @@ class AppStaticModelFactory:
             for row in all_actions_generator:
                 (graph_action, action_class) = row
                 logger.debug(f"Action  {graph_action.iri}  ")
-                action : Action = Action(graph_action.iri)
-                if (action_class == OBOP.SubmitBlockAction):
+                action : OBOPAction = OBOPAction(graph_action.iri)
+                if (action_class.iri == str(OBOP.SubmitBlockAction)):
                     action.type = "submit"
                     action.isSubmit = True
+                elif(action_class.iri == str(OBOP.GenerateJSONForm)):
+                    action.type = "generate_json_form"
 
                 internal_app_static_model.actions.append(action)
 
@@ -723,6 +724,72 @@ class AppStaticModelFactory:
         except Exception as e:
             logger.error(f"Error by reading actions: {e}")    
             logger.exception("Error by reading actions")
+
+    @staticmethod
+    def connect_bbo_script_tasks_with_obop_actions (internal_app_static_model: AppInternalStaticModel):
+        tasks_and_actions_query = """
+            PREFIX obop: <http://purl.org/net/obop/>
+            PREFIX bbo: <https://www.irit.fr/recherches/MELODI/ontologies/BBO#> 
+            SELECT DISTINCT ?bbo_script_task ?action ?container
+            WHERE {
+            ?bbo_script_task a bbo:ScriptTask .
+            ?bbo_script_task bbo:has_container ?container .
+            ?container a ?container_class .
+            ?container_class rdfs:subClassOf* bbo:FlowElementsContainer .
+            ?bbo_script_task obop:executesAction  ?action .
+            ?action a ?action_class .
+            ?action_class rdfs:subClassOf* obop:Action .
+            }"""
+        try:  
+            results = internal_app_static_model.rdf_pellet_reasoning_world.sparql( 
+                tasks_and_actions_query)
+            for row in results: 
+                (bbo_script_task, action, container) = row
+                logger.info(f"Reading BBO.ScriptTask: {bbo_script_task.iri} and OBOP action: {action.iri}, in container: {container.iri}")
+                # Find the source and target flow elements in the internal application model
+                if container.iri == str(internal_app_static_model.main_bbo_process.graph_node):
+                    # If the container is the main process, we update  of the main process
+                    bbo_flow_container: BBOFlowElementsContainer = internal_app_static_model.main_bbo_process
+                    internal_bbo_script_task : BBOScriptTask = next((e for e in bbo_flow_container.flow_elements
+                            if str(e.graph_node) == bbo_script_task.iri), None)
+                    internal_obop_action :OBOPAction = next((e for e in 
+                        internal_app_static_model.actions 
+                        if str(e.graph_node) == action.iri), None)
+
+                    # if the internal_bbo_script_task and internal_bbo_action are found, we can create the connection 
+
+                    if internal_bbo_script_task is not None and internal_obop_action is not None:
+                        internal_bbo_script_task.obop_action = internal_obop_action
+                        logger.debug(f"Connected BBO Script Task {internal_bbo_script_task} with OBOP action {internal_obop_action.__repr__()}.")
+                        logger.debug(f"{internal_bbo_script_task.__repr__()} connected script task.")
+                    else:
+                        logger.error(f"BBO Script Task {bbo_script_task.iri} or OBOP action {action.iri} not found in the internal model.")
+                        logger.exception("Error by connecting BBO script tasks with OBOP actions.")
+                else:
+                    # If the container is not the main process, we need to find it in the corresponding subprocess
+                    bbo_flow_container: BBOSubProcess = next((c for c in internal_app_static_model.bbo_subprocesses 
+                                              if str(c.graph_node) == container.iri), None)
+                    if bbo_flow_container is None:
+                        logger.error(f"BBO Script Task {bbo_script_task.iri} does not have a valid container.")
+                        raise ValueError(f"BBO Script Task {bbo_script_task.iri} does not have a valid container.")
+                        continue
+                    else: 
+                        # If the container is a subprocess, we can assume that the flow element is part of the subprocess
+                        internal_bbo_script_task: BBOFlowNode = next((e for e in bbo_flow_container.flow_elements 
+                            if str(e.graph_node) == bbo_script_task.iri), None)
+                        internal_obop_action : BBOFlowNode = next((e for e in bbo_flow_container.flow_elements
+                            if str(e.graph_node) == action.iri), None)
+
+                        if internal_bbo_script_task is not None and internal_obop_action is not None:
+                            internal_bbo_script_task.obop_action = internal_obop_action
+                            logger.debug(f"Connected BBO Script Task {internal_bbo_script_task} with OBOP action {internal_obop_action} in subprocess {bbo_flow_container}.")
+                            logger.debug(f"{internal_bbo_script_task.__repr__()} connected script task.")
+                        else:
+                            logger.error(f"BBO Script Task {bbo_script_task.iri} or OBOP action {action.iri} not found in the internal model.")
+                            logger.exception("Error by connecting BBO script tasks with OBOP actions.")
+        except Exception as e:
+            logger.error(f"Error by connecting BBO Script Task and OBOP actions: {e}")
+            logger.exception("Error by connecting BBO Script Task and OBOP actions.")
 
 
     def combine_shacl_properties_and_obop_elements(internal_app_static_model: AppInternalStaticModel):

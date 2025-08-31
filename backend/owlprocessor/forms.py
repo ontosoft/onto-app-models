@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 import logging
 from .form_elements import FormElement
 from typing import TypeAlias
+from collections.abc import Mapping
 
 if TYPE_CHECKING:
     from .app_model import AppInternalStaticModel
@@ -238,7 +239,41 @@ class HorizontalLayout(Layout):
                 jsonform_uischema["elements"].append(element.create_jsonform_ui_schema(app_state))
         return jsonform_uischema
 
+class ActiveForm:
+    """
+    This class represents a form that is currently active in the application.
+    It is used to keep track of the forms that are being edited by the user.
+    """
+    def __init__(self, form: Form):
+        self.has_stored_instances = False  # Indicates if the form is already has a stored instance in the output graph store
+        self.stored_instance_graph_node = None  # The graph node of the stored instance in the output graph store
+        self.graph_node = form.graph_node  # The graph node of the form
 
 
-        
+class JSONFormNameMapping(Mapping):
+    """ 
+    This dictionary stores the temporary mapping of property 
+    names for the JSONForm generation.
+    After the frontend returns inserted form data this mapping is 
+    used to identify correct Ontology concepts such as an individual 
+    of a specific Ontology class.
+    The reason for this mapping is that the form names such as 
+    "http://example.org/logicinterface/testing/field_1" are not
+    allowed in a JSONForm schema.
+    """
+    def __init__(self, name_mapping: dict):
+        super().__init__()
+        self._name_mapping = name_mapping
+    def __getitem__(self, key):
+        if key not in self and len(key) > 1:
+            raise KeyError(key)
+        return self._name_mapping(key)
+    def __setitem__(self, key, value):
+        self._name_mapping[key] = value
+    def __iter__(self):
+            return iter(self._name_mapping)
+    def __len__(self):
+        return len(self._name_mapping) 
+
+       
 

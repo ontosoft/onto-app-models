@@ -2,6 +2,7 @@ from __future__ import annotations
 from rdflib import Graph
 from owlready2 import World, Ontology
 from .bbo_elements import BBOProcess, BBOActivity, BBOEvent, BBOSubProcess,BBOFlowElementsContainer, BBOFlowNode
+from .obop_action import OBOPAction
 
 class AppInternalStaticModel:
     """_summary_
@@ -24,7 +25,7 @@ class AppInternalStaticModel:
         self._bbo_events : list[BBOEvent] = []
         self._layouts = []
         self._form_blocks = []
-        self._actions : list[Action]= []
+        self._actions : list[OBOPAction]= []
         self._model_file_name : str = None
         self._is_loaded: bool = False
    
@@ -140,46 +141,3 @@ class AppInternalStaticModel:
     
 
 
-class Action:
-    def __init__(self, node):
-        self._graph_node = node
-        self._type = None
-        self._isSubmit = False
-
-    def __str__(self):
-        return f"Action: {self.node}"
-
-    @property
-    def graph_node (self):
-        return self._graph_node
-    
-    @graph_node.setter
-    def graph_node(self, value):
-        self._graph_node = value
-
-    @property
-    def type(self):
-        return self._type
-
-    @type.setter
-    def type(self, value):
-        self._type = value
-
-    @property
-    def isSubmit(self):
-        return self._isSubmit
-
-    @isSubmit.setter
-    def isSubmit(self, value):
-        self._isSubmit = value
-
-    def execute(self, form_data):
-        """
-        Execute the action with the given form data.
-        """
-        if self.isSubmit:
-            # Process the form data
-            print(f"Executing action {self.graph_node} with form data: {form_data}")
-        else:
-            # Handle other action types
-            print(f"Executing action {self.graph_node} without form data.")

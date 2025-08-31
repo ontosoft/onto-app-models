@@ -40,9 +40,9 @@ async def upload_model_file(file: UploadFile = File(...), settings : Settings = 
 @router.get("/run_application", response_description="Run the application")
 async def run_application():
     """
-    Runs the application by creating an instance of the AppInteractionModel.
+    Runs the application by creating an instance of the ProcessEngine.
     If the application was already run before, it displays a message 
-    indicating that the application is being running.
+    indicating that the application is running.
 
     """
     global i
@@ -50,16 +50,18 @@ async def run_application():
     i += 1 
 
     logger.debug(f"This is the {i} th time the function is run.")
-    if app is not None and app.inner_app_static_model.is_loaded and app.app_interaction_model_instance is not None:
-        logger.info(f"Process generator exists { app.app_interaction_model_instance}")
+    if app is not None and app.internal_app_static_model.is_loaded and app.process_engine_instance is not None:
+        logger.info(f"Process generator exists { app.process_engine_instance}")
         return {"message": "The applicaton was already run before.",
-                "model": app.app_interaction_model_instance}
+                "model": app.process_engine_instance}
         #jsonpickle.encode(
-    elif app is not None and app.inner_app_static_model is not None  and  \
-        app.inner_app_static_model.is_loaded and app.app_interaction_model_instance is None:
+    elif app is not None and app.internal_app_static_model is not None  and  \
+        app.internal_app_static_model.is_loaded and app.process_engine_instance is None:
         # The inner model static reporesentation corresponding to the RDF graph
         # was already loaded. However, the application is still not running because
-        # (AppInteractionModelInstance is not created)
+        # (process engine instance is not created)
+        # Now we can run the application
+        logger.info(f"Running the application with the model {app.model_name}")
         app.run_application()
         return {"message_type": "information",
                 "layout_type": "",
@@ -96,7 +98,7 @@ async def process_data_sent_from_frontend(request: Request):
     # The data sent from the frontend is in the json format
     frontend_state = await request.json()
 
-    return app.processReceivedClientData(frontend_state)
+    return app.process_received_client_data(frontend_state)
 
 @router.get("/app_exchange_get", response_description="Get current UI page") 
 async def read_current_app_data_from_model() -> AppExchangeGetOutput:
@@ -133,8 +135,8 @@ async def load_inner_server_model(filename: str, force_load: bool | None = Query
         app = AppEngine()
         app.load_inner_app_model(filename)
         return {"message": f"The model is loaded {app.model_name} by force."}
-    elif app is not None and app.inner_app_static_model is not None and \
-        app.inner_app_static_model.is_loaded:
+    elif app is not None and app.internal_app_static_model is not None and \
+        app.internal_app_static_model.is_loaded:
         logger.debug(f"The app model \"{app.model_name} \" was already loaded.") 
         return {"message": f"The model {app.model_name} is loaded . The applicaton was already run before. Do you want to load a new model?"}
     else:

@@ -40,7 +40,14 @@
 :generate_form_representation rdf:type owl:NamedIndividual ,
              bbo:ScriptTask ;
     rdfs:comment "Generate the form representation on the server side" ;
-    bbo:has_container :popule_single_form_knowledge_graph .
+    bbo:has_container :popule_single_form_knowledge_graph ;
+    obop:executesAction :generateJSONFormAction . 
+
+
+###  http://example.org/logicinterface/testing/generateJSONFormAction
+:generateJSONFormAction rdf:type owl:NamedIndividual ,
+             obop:GenerateJSONForm ;
+             obop:actionInBlock :block_1 .
 
 ###  http://example.org/logicinterface/testing/user_enters_data
 :user_enters_data rdf:type owl:NamedIndividual ,

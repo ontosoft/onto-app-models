@@ -739,6 +739,15 @@ This can be used to track the version of the interface used to populate the know
     
 
 
+    <!-- http://purl.org/net/obop/GenerateJSONForm -->
+
+    <owl:Class rdf:about="http://purl.org/net/obop/GenerateJSONForm">
+        <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/BlockAction"/>
+        <rdfs:comment xml:lang="en">This action generates a JSONForm representation for an HTML form, derived from a SHACL shape and additional Block elements.</rdfs:comment>
+    </owl:Class>
+    
+
+
     <!-- http://purl.org/net/obop/HorizontalLayout -->
 
     <owl:Class rdf:about="http://purl.org/net/obop/HorizontalLayout">
@@ -816,7 +825,7 @@ This can be used to track the version of the interface used to populate the know
     <!-- http://purl.org/net/obop/MakeConnectionAction -->
 
     <owl:Class rdf:about="http://purl.org/net/obop/MakeConnectionAction">
-        <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/MoreBlockAction"/>
+        <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/MoreBlocksAction"/>
         <rdfs:comment xml:lang="en">This action is reserved for making connections between elements entered by many blocks (forms).</rdfs:comment>
     </owl:Class>
     
@@ -830,10 +839,11 @@ This can be used to track the version of the interface used to populate the know
     
 
 
-    <!-- http://purl.org/net/obop/MoreBlockAction -->
+    <!-- http://purl.org/net/obop/MoreBlocksAction -->
 
-    <owl:Class rdf:about="http://purl.org/net/obop/MoreBlockAction">
+    <owl:Class rdf:about="http://purl.org/net/obop/MoreBlocksAction">
         <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/Action"/>
+        <rdfs:comment xml:lang="en">The action considers more blocks or has an influence on more blocks, (e.g., data described with more SHACL shapes) </rdfs:comment>
     </owl:Class>
     
 

@@ -69,14 +69,14 @@ def test_read_textual_field_model(caplog):
     app.model_graph = Graph()
     app.model_graph.parse(data=rdf_model)
     app.load_inner_app_model()
-    assert app.inner_app_static_model is not None
-    assert app.inner_app_static_model.forms is not None
-    assert len(app.inner_app_static_model.forms) > 0
+    assert app.internal_app_static_model is not None
+    assert app.internal_app_static_model.forms is not None
+    assert len(app.internal_app_static_model.forms) > 0
     logger.debug(
-        f"Form: {jsonpickle.encode(app.inner_app_static_model.forms[0], indent=2)}"
+        f"Form: {jsonpickle.encode(app.internal_app_static_model.forms[0], indent=2)}"
     )
     app.run_application()
-    response = app.app_interaction_model_instance.generate_layout()
+    response = app.process_engine_instance.generate_layout()
     logger.debug("Output dictionary")
     logger.debug(jsonpickle.encode(response, indent=2))
     wanted_result = AppExchangeGetOutput(
@@ -159,14 +159,14 @@ def test_form_with_two_fields_and_a_button(caplog):
     app.model_graph = Graph()
     app.model_graph.parse(data=rdf_model)
     app.load_inner_app_model()
-    assert app.inner_app_static_model is not None
-    assert app.inner_app_static_model.forms is not None
-    assert len(app.inner_app_static_model.forms) > 0
+    assert app.internal_app_static_model is not None
+    assert app.internal_app_static_model.forms is not None
+    assert len(app.internal_app_static_model.forms) > 0
     logger.debug(
-        f"Form: {jsonpickle.encode(app.inner_app_static_model.forms[0], indent=2)}"
+        f"Form: {jsonpickle.encode(app.internal_app_static_model.forms[0], indent=2)}"
     )
     app.run_application()
-    response = app.app_interaction_model_instance.generate_layout()
+    response = app.process_engine_instance.generate_layout()
     logger.debug("Output dictionary")
     logger.debug(jsonpickle.encode(response, indent=2))
     wanted_result = AppExchangeGetOutput(
@@ -265,23 +265,23 @@ def test_form_with_two_fields_and_vertical_layout(caplog):
     # AppEngine is configured on testing settings through pytest.ini
     app: AppEngine = AppEngine()
     app.load_inner_app_model(rdf_string=rdf_model)
-    assert app.inner_app_static_model is not None
-    assert app.inner_app_static_model.forms is not None
-    assert len(app.inner_app_static_model.forms) > 0
+    assert app.internal_app_static_model is not None
+    assert app.internal_app_static_model.forms is not None
+    assert len(app.internal_app_static_model.forms) > 0
     # logger.debug(f"Form: {jsonpickle.encode(app.inner_app_static_model.forms[0], indent=2)}")
     # logger.debug(f"Layout: {jsonpickle.encode(app.inner_app_static_model.layouts[0], indent=2)}")
     app.run_application()
-    response = app.app_interaction_model_instance.generate_layout()
-    assert app.inner_app_static_model.layouts[0].type == "VerticalLayout"
-    assert app.inner_app_static_model.layouts[0].position == Literal(
+    response = app.process_engine_instance.generate_layout()
+    assert app.internal_app_static_model.layouts[0].type == "VerticalLayout"
+    assert app.internal_app_static_model.layouts[0].position == Literal(
         "0", datatype=XSD.int
     )
-    assert app.inner_app_static_model.layouts[0].graph_node == URIRef(
+    assert app.internal_app_static_model.layouts[0].graph_node == URIRef(
         "http://example.org/logicinterface/testing/vertical_layout_1"
     )
     assert (
-        app.inner_app_static_model.layouts[0].owner_form
-        == app.inner_app_static_model.forms[0]
+        app.internal_app_static_model.layouts[0].owner_form
+        == app.internal_app_static_model.forms[0]
     )
     logger.debug("Output dictionary")
     logger.debug(jsonpickle.encode(response, indent=2))
@@ -326,13 +326,13 @@ def test_form_with_one_field_and_two_buttons_in_nested_horizontal_layout(caplog)
     app: AppEngine = AppEngine()
     # Reading the model from the file
     app.load_inner_app_model(file_name="test_submit_cancel_buttons.ttl")
-    assert app.inner_app_static_model is not None
-    assert app.inner_app_static_model.forms is not None
-    assert len(app.inner_app_static_model.forms) > 0
+    assert app.internal_app_static_model is not None
+    assert app.internal_app_static_model.forms is not None
+    assert len(app.internal_app_static_model.forms) > 0
     # logger.debug(f"Form: {jsonpickle.encode(app.inner_app_static_model.forms[0], indent=2)}")
     # logger.debug(f"Layout: {jsonpickle.encode(app.inner_app_static_model.layouts[0], indent=2)}")
     app.run_application()
-    response = app.app_interaction_model_instance.generate_layout()
+    response = app.process_engine_instance.generate_layout()
     logger.debug("Output dictionary")
     logger.debug(jsonpickle.encode(response, indent=2))
     wanted_result = AppExchangeGetOutput(

@@ -1,11 +1,17 @@
 from .forms import Form, FunctionalJSONForm
 from rdflib import Graph, Namespace, RDF, URIRef, Literal
-from .app_model import AppInternalStaticModel, Action 
-from .bbo_elements import BBOFlowElementsContainer, BBOProcess,  BBOEvent, BBOActivity
+from .app_model import AppInternalStaticModel 
+from .obop_action import OBOPAction
+from .bbo_elements import BBOFlowElementsContainer,  \
+    BBOEvent, BBOActivity, BBOProcessStartEvent, BBOFlowElement, \
+    BBOSubProcessStartEvent, BBONormalSequenceFlow, BBOConditionalSequenceFlow, \
+    BBOEndEvent, BBOScriptTask, BBOSubProcess, BBOUserTask
+from .app_state import ApplicationState
+from .forms import ActiveForm
+
 from .communication import AppExchangeFrontEndData,  AppExchangeGetOutput
 import logging
 import jsonpickle
-from collections.abc import Mapping
 from uuid import uuid4
 from pyshacl import validate
 
@@ -21,20 +27,30 @@ class ProcessEngine:
     This class represents the running application. It is reposible for
     generating the next layout in the control flow of the application. 
     """
-    def __init__(self, uimodel):
-        self.inner_app_static_model:AppInternalStaticModel = uimodel
+    def __init__(self, uimodel: AppInternalStaticModel):
+        self._internal_app_static_model:AppInternalStaticModel = uimodel
+        self._output_graph_store : Graph = Graph()
+        self._app_state: ApplicationState = ApplicationState(self.internal_app_static_model)
 
-        self.output_graph_store : Graph = Graph()
-        self.app_state: ApplicationState = ApplicationState()
+    @property   
+    def internal_app_static_model(self)-> AppInternalStaticModel:
+        return self._internal_app_static_model 
+    
+    @property
+    def output_graph_store(self)-> Graph:
+        return self._output_graph_store
+    @output_graph_store.setter
+    def output_graph_store(self, value: Graph):
+        self._output_graph_store = value
 
-    def start_process(self, process: BBOProcess):
-        # Find the start activity/event for the process
-        self.current_activity = self._find_start_activity(process)
-        print(f"Starting process: {process.graph_node}")
-        self._execute_activity(self.current_activity)
+    @property
+    def app_state(self)-> ApplicationState:
+        return self._app_state
+    @app_state.setter
+    def app_state(self, value: ApplicationState):
+        self._app_state = value
 
-
-    def processReceivedClientData(self, frontend_state : AppExchangeFrontEndData):
+    def process_received_client_data(self, frontend_state : AppExchangeFrontEndData):
         """
         Processes the data received from the frontend.
         """
@@ -43,54 +59,191 @@ class ProcessEngine:
         if frontend_state.message_type == "initiate_exchange":
             # The frontend has sent the data to start the first data exchange with the application
             # This activates the start event in the applicaation control flow
-            # which is the StartEvent in the BBOFlow
+            # which is the BBOStartEvent in the BBOFlow
+            self.move_token()
             return True
         elif frontend_state.message_type == "action":
             self.action_processor(frontend_state.message_content)
                 
-
         # The backend is wating to send data to the frontend in the next 
         # appExchange_get request
-        self.app_state.setAppExchangeWaitingToSendData()
+        self.move_token()
         return True
+
+    def move_token(self):
+        """
+        Moves the token in the control flow of the BPM engine and the application.
+        The token is moved to the next flow element in the control flow.
+        1. If the current flow element is a StartEvent, the token is moved to
+           the next flow element in the control flow.
+        2. If the current flow element is an EndEvent in the main process, the token is moved to
+           the end of the application.
+        3. If the current flow element is an EndEvent in a subprocess, the token is moved to
+           the next flow element in the super process.
+        4. If the current flow element is a ScriptTask, the corresponding action is executed
+           and the token is moved within the called function 
+           to the next flow element in the control flow 
+        5. If the current flow element is a UserTask, the token is
+         immediately moved to the next flow element
+            
+        """
+        logger.debug(f"Move_token with the current flow element \
+            {self.app_state.current_flow_element.graph_node}")
+
+        if self.app_state.app_finished or self.app_state.is_waiting_for_form_data:
+            return
+        if self.app_state.current_flow_element is None:
+            logger.error("The current flow element is None. The application is not running.")
+            self.output_message = AppExchangeGetOutput(
+                message_type = "error",
+                layout_type = "message_box",
+                message_content = {"message" : "The application is not running."}, 
+                output_knowledge_graph=self.output_knowledge_graph
+                )
+            return 
+        elif isinstance(self.app_state.current_flow_element, BBOProcessStartEvent) \
+            or isinstance(self.app_state.current_flow_element, BBOSubProcessStartEvent):
+            logger.debug("The current flow element is the start event.")
+            # The application is at the start event and has to be found the flow that
+            # starts with the start event  
+            self.update_current_flow_element()
+            self.move_token()
+        elif isinstance(self.app_state.current_flow_element, BBOEndEvent) and \
+            self.app_state.current_flow_element_container == self.internal_app_static_model.main_bbo_process:
+              # The application execution is finished  
+            self.output_message = AppExchangeGetOutput(
+            message_type = "notification",
+            layout_type = "notification",
+            message_content = "The application has finished.")
+            self.app_state.app_finished = True
+        elif isinstance(self.app_state.current_flow_element, BBOEndEvent) \
+            and self.app_state.current_flow_element_container != self.internal_app_static_model.main_bbo_process and isinstance(
+                self.app_state.current_flow_element_container, BBOSubProcess):
+            # If the token reached the end of the subprocess, it has to
+            # move to the next flow element in the super process 
+            self.app_state.current_flow_element =self.app_state.current_flow_element_container 
+            self.move_token()
+        elif isinstance(self.app_state.current_flow_element, BBOScriptTask):
+            # If the current flow element is a script task, the correspoinging action 
+            # has to be executed and the next step is generated
+            self.execute_script_task(self.app_state.current_flow_element)
+            self.update_current_flow_element()
+            self.move_token()
+        elif isinstance(self.app_state.current_flow_element, BBOUserTask):
+            if self.app_state.is_waiting_to_send_data:
+                logger.debug("Waiting to send data")
+            elif self.app_state.is_waiting_for_form_data:
+                self.move_token()
+
+    def update_current_flow_element(self):
+        next_flow: BBOFlowElement = next(
+            (f for f in self.app_state.current_flow_element_container.flow_elements
+             if (isinstance(f, BBONormalSequenceFlow) ) and 
+                f.source_ref.graph_node == self.app_state.current_flow_element.graph_node),
+            None)
+        if next_flow is None:  
+            logger.error(f"No next flow element has been found for the element {str(self.app_state.current_flow_element.graph_node)}")
+            return False
+        else:
+            logger.debug(f"Next flow found for the current event is {str(next_flow.target_ref.graph_node)}")
+            # The token is moved to the next flow element in the control flow
+            self.app_state.current_flow_element = next_flow.target_ref
  
+    def execute_script_task(self, script_task: BBOScriptTask):
+        """
+        Executes the script task in the control flow of the application.
+        This is used to execute the action that is associated with the script task.
+        """
+        logger.debug(f"Executing script task {self.app_state.current_flow_element.graph_node}")
+        # The script task has to be executed and the next step is generated
+        if script_task.obop_action.type == "generate_json_form":
+            self.execute_generate_json_form_action(script_task)
+
+        elif script_task.obop_action.type == "submit":
+            self.execute_submit_action(script_task)
+     
+
+    def execute_generate_json_form_action(self, script_task:BBOScriptTask):
+        logger.debug(f"Double-check the script task {str(script_task.graph_node)} and it's actions in the knowledge graph")
+        related_obop_action = f"""
+            PREFIX obop: <http://purl.org/net/obop/>
+            PREFIX bbo: <https://www.irit.fr/recherches/MELODI/ontologies/BBO#>
+            SELECT DISTINCT ?action  ?container ?block
+            WHERE {{
+                <{str(script_task.graph_node)}> bbo:has_container ?container . 
+                ?container a ?containerClass .
+                ?containerClass rdfs:subClassOf* bbo:FlowElementsContainer .
+                <{str(script_task.graph_node)}> obop:executesAction  ?action .
+                ?action a obop:GenerateJSONForm .
+                ?action obop:actionInBlock ?block .
+            }}"""
+        try:
+            result_generator =  self.internal_app_static_model.rdf_pellet_reasoning_world. \
+            sparql(related_obop_action)
+
+            form_object:Form = None
+
+            for row in result_generator:
+                (action, container, block ) = row
+                logger.debug(f"The OBOP action {action.iri}  for the block {block.iri} is found in the current script task which is in turn incorporated in the container {container.iri},")
+                if action.iri == str(script_task.obop_action.graph_node):   
+                    form_object = next((c for c in self.internal_app_static_model.forms if str(c.graph_node) == block.iri ),None)
+                else:
+                    logger.error("The OBOP action doesn't correspond to the BBO task")
+
+            if form_object is not None:
+                json_form:FunctionalJSONForm = form_object. \
+                create_functional_json_form_schemas(self.app_state) 
+                # Speicifying that the form is being sent to the frontend 
+                # and the backend is waiting for the form data to be sent back
+                active_form = ActiveForm(form_object)
+                self.app_state.list_of_active_forms.append(active_form)
+                logger.debug(f"New active form created for {active_form.graph_node}")
+                # The backend is waiting to send data to the frontend
+                # and the JSON Form representation is stored in the current state
+                self.app_state.json_form = json_form
+                logger.debug("Generated a new JSONForm")
+                self.app_state.is_waiting_to_send_data = True
+
+        except Exception as e:
+            logger.error(f"Problem with the relation of OBOP actions with BBO tasks: {e}")
+            logger.exception("Problem with the relation of OBOP actions with BBO tasks")
+
+
+    def execute_submit_action(script_task:BBOScriptTask):
+        pass
+
     def generate_layout(self)-> AppExchangeGetOutput:
         """
         Generates the next layout in the control flow of the application
         A layout is, for example, a description of an HTML form block that contains a 
         list of actions that can be performed on the form.
+        or it can be just a message box to preview a notification
         """
-        if self.app_state.current_form_index == -1:
-            # Checking if we are at the start of the application execution
-            self.app_state.current_form_index = 0
-        # TODO: This should be changed to a more sophisticated 
-        #  way of checking the end of the application execution
+        
         data = self.output_graph_store.serialize(format="turtle")
         logger.debug(f"Output graph store has the data:\n {data}")
-        if self.app_state.current_form_index >= len(self.inner_app_static_model.forms):
-            output_message = AppExchangeGetOutput(
-                message_type = "error",
-                layout_type = "notification",
-                message_content = "The application has finished.",
-                output_knowledge_graph = data)
-            return  output_message
-        else:
-            form_object : Form = self.inner_app_static_model.forms[self.app_state.current_form_index]
-            json_form:FunctionalJSONForm = form_object.create_functional_json_form_schemas(self.app_state) 
-            # Speicifyin that the form ia being sent to the frontend 
-            # and the backend is waiting for the form data to be sent back
-            active_form = ActiveForm(form_object)
-            self.app_state.list_of_active_forms.append(active_form)
-            logger.debug(f"New active form created for {active_form.graph_node}")
+        if isinstance(self.app_state.current_flow_element,BBOUserTask) and \
+            self.app_state.is_waiting_to_send_data:
+            # The backend is waiting to send data to the frontend
 
-            logger.debug(f" Created form is {jsonpickle.encode(json_form, indent=2)}")
+            # return AppExchangeGetOutput(
+            #     message_type = "notification",
+            #     layout_type = "message_box",
+            #     message_content = {"message" : "The application is waiting to send data to the frontend."})
+        
             output_message = AppExchangeGetOutput(
                 message_type = "layout",
                 layout_type = "form",
-                message_content = json_form,
+                message_content = self.app_state.json_form,
                 output_knowledge_graph = data)
-            self.app_state.is_waiting_for_form_data = True 
+            logger.debug(f" Created response including the form is {jsonpickle.encode(output_message, indent=2)}")
+            self.app_state.is_waiting_to_send_data = False
+            self.app_state.is_waiting_for_form_data = True
             return output_message
+        else:
+            pass
+            logger.debug("The application is not waiting to send data to the frontend.")
 
     def action_processor(self, action_message: dict):
         """
@@ -103,12 +256,12 @@ class ProcessEngine:
             form_graph_node = action_message["form_graph_node"]
             form_data = action_message["form_data"]
             logger.debug(f"Form data from the frontend is:\n {form_data}")
-            action : Action = next(filter(lambda x: x.graph_node == action_node, self.inner_app_static_model.actions),None)
+            action : OBOPAction = next(filter(lambda x: x.graph_node == action_node, self.internal_app_static_model.actions),None)
             if action is None:
                 logger.error(f"Action with graph node {action_node} not found in the application model.")
                 return
             
-            form:Form = next((form for form in self.inner_app_static_model.forms \
+            form:Form = next((form for form in self.internal_app_static_model.forms \
                 if str(form.graph_node) == form_graph_node),None)
             if form is not None:
                 # The form has been submitted, so we can move to the next form
@@ -140,7 +293,7 @@ class ProcessEngine:
                     element_graph_node_uri = next(( k for k, v in self.app_state.  
                         current_json_form_name_mapping.items() if v == key), None)
                     logger.debug(f"Graph node URI of the element for the key {key} is {element_graph_node_uri}")
-                    for data_property in self.inner_app_static_model.rdf_graph_rdflib.objects(
+                    for data_property in self.internal_app_static_model.rdf_graph_rdflib.objects(
                         URIRef(element_graph_node_uri), OBOP.containsDatatype):
                         logger.debug(f"Data property found for the element {element_graph_node_uri}: {data_property}")
                         # Add the data to the output graph store
@@ -153,32 +306,6 @@ class ProcessEngine:
         elif action_message.action_type == "cancel":
 
             pass
-
-    def processExecutionNextStep(self):
-        """
-        Processes the next step in the application execution according to the control flow.
-        """
-        if self.app_state.current_control_flow_pointer.type == "StartEvent":
-            logger.debug("The application is at the start event. Generating the first layout.")
-            # The application is at the start event and can be found the process flow that 
-            # starts with the start event 
-            next_flow: BBO = next(
-                (flow for flow in self.inner_app_static_model.bbo_flows
-                 if flow.start_event.graph_node == self.app_state.current_control_flow_pointer.graph_node),
-                None
-            )
-            target_reference : BBOEvent | BBOActivity = next_flow.target_event 
-
-            return self.generate_layout()
-
-        if self.app_state.is_waiting_for_form_data:
-            # The application is waiting for the form data to be sent back from the frontend
-            # We can generate the next layout in the control flow of the application
-            self.app_state.is_waiting_for_form_data = False
-            return self.generate_layout()
-        else:
-            logger.debug("The application is not waiting for form data.")
-            return None
     
     def validateOutputGraphStore(self):
         """
@@ -186,8 +313,8 @@ class ProcessEngine:
         This is used to ensure that the data in the output graph store is consistent with the application model.
         """
         result = validate(self.output_graph_store,
-                    shacl_graph=self.inner_app_static_model.shacl_graph,
-                    ont_graph=self.inner_app_static_model.rdf_graph_rdflib,
+                    shacl_graph=self.internal_app_static_model.shacl_graph,
+                    ont_graph=self.internal_app_static_model.rdf_graph_rdflib,
                     inference='rdfs',
                     abort_on_first=False,
                     allow_infos=False,
@@ -198,101 +325,3 @@ class ProcessEngine:
                     debug=False)
         
 
-class ApplicationState:
-    def __init__(self):
-        self._current_form_index = -1 # The index of the current form
-        self._is_waiting_for_form_data = False
-        self._running_initiated = False
-        self._app_exchange_waiting_to_send_data = False
-        self._current_json_form_name_mapping : JSONFormNameMapping = {}
-        self.__list_of_active_forms: list[ActiveForm]= []  # List of forms sent to the frontend for editing
-        #This list of forms is used to keep track of named individuaals
-        # that are created during the previous form exchanges
-        # If a form has a named individual here it means that properties are only being
-        # changed and shouldn't be created again. 
-        self._current_control_flow_pointer : dict = None  # The current control flow pointer is 
-        # used to keep track of the current control flow in the application   
-
-    @property
-    def current_form_index(self):
-        return self._current_form_index
-    
-    @current_form_index.setter
-    def current_form_index(self, value):
-        self._current_form_index = value
-
-    @property
-    def is_waiting_for_form_data(self):
-        return self._is_waiting_for_form_data
-
-    @is_waiting_for_form_data.setter
-    def is_waiting_for_form_data(self, value):
-        self._is_waiting_for_form_data = value
-
-    @property
-    def current_json_form_name_mapping(self):
-        return self._current_json_form_name_mapping
-
-    @current_json_form_name_mapping.setter
-    def current_json_form_name_mapping(self, value):
-        self._current_json_form_name_mapping = value
-
-    @property
-    def list_of_active_forms(self):
-        return self.__list_of_active_forms
-
-    @list_of_active_forms.setter
-    def list_of_active_forms(self, value: list["ActiveForm"]):
-        self.__list_of_active_forms = value
-
-    @property
-    def current_control_flow_pointer(self):
-        return self._current_control_flow_pointer
-    @current_control_flow_pointer.setter
-    def current_control_flow_pointer(self, value: dict):
-        self._current_control_flow_pointer = value  
-    
-    def setRunningInitiated(self):
-        self._running_initiated = True
-
-    def setAppExchangeWaitingToSendData(self):
-        self._app_exchange_waiting_to_send_data = True
-    
-    def setAppExchangeWaitingToSendDataFalse(self):
-        self._app_exchange_waiting_to_send_data = False
-
-
-class JSONFormNameMapping(Mapping):
-    """ 
-    This dictionary stores the temporary mapping of property 
-    names for the JSONForm generation.
-    After the frontend returns inserted form data this mapping is 
-    used to identify correct Ontology concepts such as an individual 
-    of a specific Ontology class.
-    The reason for this mapping is that the form names such as 
-    "http://example.org/logicinterface/testing/field_1" are not
-    allowed in a JSONForm schema.
-    """
-    def __init__(self, name_mapping: dict):
-        super().__init__()
-        self._name_mapping = name_mapping
-    def __getitem__(self, key):
-        if key not in self and len(key) > 1:
-            raise KeyError(key)
-        return self._name_mapping(key)
-    def __setitem__(self, key, value):
-        self._name_mapping[key] = value
-    def __iter__(self):
-            return iter(self._name_mapping)
-    def __len__(self):
-        return len(self._name_mapping) 
-
-class ActiveForm:
-    """
-    This class represents a form that is currently active in the application.
-    It is used to keep track of the forms that are being edited by the user.
-    """
-    def __init__(self, form: Form):
-        self.has_stored_instances = False  # Indicates if the form is already has a stored instance in the output graph store
-        self.stored_instance_graph_node = None  # The graph node of the stored instance in the output graph store
-        self.graph_node = form.graph_node  # The graph node of the form
