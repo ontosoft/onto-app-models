@@ -5,7 +5,8 @@ from .obop_action import OBOPAction
 from .bbo_elements import BBOFlowElementsContainer,  \
     BBOEvent, BBOActivity, BBOProcessStartEvent, BBOFlowElement, \
     BBOSubProcessStartEvent, BBONormalSequenceFlow, BBOConditionalSequenceFlow, \
-    BBOEndEvent, BBOScriptTask, BBOSubProcess, BBOUserTask
+    BBOEndEvent, BBOScriptTask, BBOSubProcess, BBOUserTask, \
+    BBOExclusiveGateway
 from .app_state import ApplicationState
 from .forms import ActiveForm
 
@@ -50,25 +51,39 @@ class ProcessEngine:
     def app_state(self, value: ApplicationState):
         self._app_state = value
 
-    def process_received_client_data(self, frontend_state : AppExchangeFrontEndData):
+    def process_received_client_data(self, frontend_message : AppExchangeFrontEndData):
         """
         Processes the data received from the frontend.
         """
-        logger.debug(f"Message from the frontend has the type:\n {frontend_state.message_type}")
-        logger.debug(f"Message from the frontend has the content:\n {frontend_state.message_content}") 
-        if frontend_state.message_type == "initiate_exchange":
+        logger.debug(f"Message from the frontend has the type:\n {frontend_message.message_type}")
+        logger.debug(f"Message from the frontend has the content:\n {frontend_message.message_content}") 
+        self.app_state.frontend_message = frontend_message
+        if frontend_message.message_type == "initiate_exchange":
             # The frontend has sent the data to start the first data exchange with the application
             # This activates the start event in the applicaation control flow
             # which is the BBOStartEvent in the BBOFlow
             self.move_token()
-            return True
-        elif frontend_state.message_type == "action":
-            self.action_processor(frontend_state.message_content)
-                
-        # The backend is wating to send data to the frontend in the next 
-        # appExchange_get request
-        self.move_token()
-        return True
+        elif frontend_message.message_type == "action":
+
+            action_node:URIRef = URIRef(frontend_message.message_content["action_graph_node"])
+            action : OBOPAction = next( 
+                (f for f in self.internal_app_static_model.actions
+                 if f.graph_node == action_node),None)
+            if action is None:
+                logger.error(f"Action with graph node {action_node} not found in the application model.")
+                return
+            else:
+                self.app_state.received_action = action
+
+            if isinstance(self.app_state.current_flow_element, BBOUserTask) and  self.app_state.is_waiting_for_form_data: 
+                self.app_state.is_waiting_for_form_data=False
+                self.app_state.is_waiting_to_process_front_end_data = True
+                #move the token from the BBOUserTask to the task where"
+                #should be decided what to do with the actions"
+                self.move_token()
+        if self.app_state.is_waiting_to_send_data:
+            return self.app_state.output_message
+             
 
     def move_token(self):
         """
@@ -90,7 +105,7 @@ class ProcessEngine:
         logger.debug(f"Move_token with the current flow element \
             {self.app_state.current_flow_element.graph_node}")
 
-        if self.app_state.app_finished or self.app_state.is_waiting_for_form_data:
+        if self.app_state.app_finished :
             return
         if self.app_state.current_flow_element is None:
             logger.error("The current flow element is None. The application is not running.")
@@ -133,22 +148,46 @@ class ProcessEngine:
             if self.app_state.is_waiting_to_send_data:
                 logger.debug("Waiting to send data")
             elif self.app_state.is_waiting_for_form_data:
+                logger.debug("Waiting to receive data")
+            else:
+                self.update_current_flow_element()
                 self.move_token()
+        elif isinstance(self.app_state.current_flow_element, BBOExclusiveGateway) and self.app_state.received_action is not None:
+            logger.debug(f"Choosing the correct next flow when the received action is {str(self.app_state.received_action.graph_node)}")
+            self.update_current_flow_element()
+            self.move_token()
+
 
     def update_current_flow_element(self):
+        """_summary_
+        Updates the current flow element in the control flow of the application. 
+        This function is goes through SequenceFlows and returns the
+        the next node
+        according to the current state. 
+        """
         next_flow: BBOFlowElement = next(
             (f for f in self.app_state.current_flow_element_container.flow_elements
-             if (isinstance(f, BBONormalSequenceFlow) ) and 
-                f.source_ref.graph_node == self.app_state.current_flow_element.graph_node),
+             if (isinstance(f, BBONormalSequenceFlow)  and 
+                 f.source_ref.graph_node == self.app_state.current_flow_element.graph_node) 
+                 or 
+                # If the next flow is a conditional flow, the condition has to be evaluated
+                # The condition is evaluated based on the action received from the frontend
+                 
+                (isinstance(f, BBOConditionalSequenceFlow) and
+                str(self.app_state.received_action.graph_node) == f.conditional_expression.expression and
+                f.source_ref.graph_node == self.app_state.current_flow_element.graph_node
+                   )),
             None)
+
         if next_flow is None:  
             logger.error(f"No next flow element has been found for the element {str(self.app_state.current_flow_element.graph_node)}")
-            return False
+            # TODO insert an additional checking whether the next_flow is
+            # only single element. This can be done in the model generator 
+            # using SPARQL queries
         else:
-            logger.debug(f"Next flow found for the current event is {str(next_flow.target_ref.graph_node)}")
             # The token is moved to the next flow element in the control flow
             self.app_state.current_flow_element = next_flow.target_ref
- 
+
     def execute_script_task(self, script_task: BBOScriptTask):
         """
         Executes the script task in the control flow of the application.
@@ -156,11 +195,14 @@ class ProcessEngine:
         """
         logger.debug(f"Executing script task {self.app_state.current_flow_element.graph_node}")
         # The script task has to be executed and the next step is generated
-        if script_task.obop_action.type == "generate_json_form":
+        if script_task.obop_action is None:
+            #If the action is not defined just skip the script
+            logger.debug(f"The script {self.app_state.current_flow_element.graph_node} has no action")
+            pass 
+        elif script_task.obop_action.type == "generate_json_form":
             self.execute_generate_json_form_action(script_task)
-
-        elif script_task.obop_action.type == "submit":
-            self.execute_submit_action(script_task)
+        elif script_task.obop_action.type == "submit" and self.app_state.is_waiting_to_process_front_end_data:
+                self.execute_submit_action()
      
 
     def execute_generate_json_form_action(self, script_task:BBOScriptTask):
@@ -210,8 +252,65 @@ class ProcessEngine:
             logger.exception("Problem with the relation of OBOP actions with BBO tasks")
 
 
-    def execute_submit_action(script_task:BBOScriptTask):
-        pass
+    def execute_submit_action(self):
+        """
+        The function carries out the submit acction on a form
+        Args:
+            action_message (dict): The action which is stored in the 
+            current state of the application
+        """
+        action_message : dict = self.app_state.frontend_message.message_content
+        logger.debug(f"Action data received from the frontend: {action_message}")
+        # The frontend has sent the data to process the action
+        if action_message["action_type"] == "submit" and \
+            self.app_state.is_waiting_to_process_front_end_data:
+            self.app_state.is_waiting_to_process_front_end_data = False
+            form_graph_node = action_message["form_graph_node"]
+            form_data = action_message["form_data"]
+            logger.debug(f"Form data from the frontend is:\n {form_data}")
+            
+            form:Form = next((form for form in self.internal_app_static_model.forms \
+                if str(form.graph_node) == form_graph_node),None)
+            if form is not None:
+                # The form has been submitted, so we can move to the next form
+                # It should be checked if there exists an instance in the outputGraphStore 
+                # corresponding to the current form 
+                #
+                active_form : ActiveForm = next((af for af in self.app_state.list_of_active_forms \
+                    if str(af.graph_node) == str(form_graph_node)), None) 
+                if active_form is None:
+                    logger.error(f"Active form with graph node {form_graph_node} not found in the application state.")
+                if not active_form.has_stored_instances:
+                    # If the form has no store instances, we create those instances 
+                    # and change the active form state
+                    named_individual_iri = BASE[str(uuid4())]
+                    logger.debug(f"New instance created for target classes has uri {named_individual_iri}")
+                    for target_class in form.target_classes:
+                        self.output_graph_store.add((named_individual_iri, RDF.type, target_class))
+                    active_form.has_stored_instances = True
+                    active_form.stored_instance_graph_node = named_individual_iri
+                    logger.debug(f"Active form {form_graph_node} has stored instances now.")
+                else:
+                    # If the form has already stored instances (named individuals), we use that existing instance
+                    named_individual_iri = active_form.stored_instance_graph_node
+                    logger.debug(f"Using existing instance {named_individual_iri} for the form {form_graph_node}")
+                
+                for key in form_data.keys():
+                    # find the element graph node iri for the data element in the array of mappings
+                    logger.debug(f"Mapping {self.app_state.current_json_form_name_mapping} is being searched ")
+                    element_graph_node_uri = next(( k for k, v in self.app_state.  
+                        current_json_form_name_mapping.items() if v == key), None)
+                    logger.debug(f"Graph node URI of the element for the key {key} is {element_graph_node_uri}")
+                    for data_property in self.internal_app_static_model.rdf_graph_rdflib.objects(
+                        URIRef(element_graph_node_uri), OBOP.containsDatatype):
+                        logger.debug(f"Data property found for the element {element_graph_node_uri}: {data_property}")
+                        # Add the data to the output graph store
+                        self.output_graph_store.add((named_individual_iri, data_property, Literal(form_data[key])))
+                        logger.debug(f"Added data {form_data[key]} for element {element_graph_node_uri} to the output store.")
+
+                # We have to decide what to do with other form elements that 
+                # are not inserted in the form data
+                # element = next((el for el in form.elements if str(el.graph_node) == str(element_graph_node_uri)), None) 
 
     def generate_layout(self)-> AppExchangeGetOutput:
         """
@@ -245,68 +344,7 @@ class ProcessEngine:
             pass
             logger.debug("The application is not waiting to send data to the frontend.")
 
-    def action_processor(self, action_message: dict):
-        """
-        Processes the action data received from the frontend.
-        """
-        logger.debug(f"Action data received from the frontend: {action_message}")
-        # The frontend has sent the data to process the action
-        action_node = action_message["action_graph_node"]
-        if action_message["action_type"] == "submit":
-            form_graph_node = action_message["form_graph_node"]
-            form_data = action_message["form_data"]
-            logger.debug(f"Form data from the frontend is:\n {form_data}")
-            action : OBOPAction = next(filter(lambda x: x.graph_node == action_node, self.internal_app_static_model.actions),None)
-            if action is None:
-                logger.error(f"Action with graph node {action_node} not found in the application model.")
-                return
-            
-            form:Form = next((form for form in self.internal_app_static_model.forms \
-                if str(form.graph_node) == form_graph_node),None)
-            if form is not None:
-                # The form has been submitted, so we can move to the next form
-                # It should be checked if there exists an instance in the outputGraphStore 
-                # corresponding to the current form 
-                #
-                active_form : ActiveForm = next((af for af in self.app_state.list_of_active_forms \
-                    if str(af.graph_node) == str(form_graph_node)), None) 
-                if active_form is None:
-                    logger.error(f"Active form with graph node {form_graph_node} not found in the application state.")
-                if not active_form.has_stored_instances:
-                    # If the form has no store instances, we create those instances 
-                    # and change the active form state
-                    named_individual_iri = BASE[str(uuid4())]
-                    logger.debug(f"New instance created for target classes has uri {named_individual_iri}")
-                    for target_class in form.target_classes:
-                        self.output_graph_store.add((named_individual_iri, RDF.type, target_class))
-                    active_form.has_stored_instances = True
-                    active_form.stored_instance_graph_node = named_individual_iri
-                    logger.debug(f"Active form {form_graph_node} has stored instances now.")
-                else:
-                    # If the form has already stored instances (named individuals), we use that existing instance
-                    named_individual_iri = active_form.stored_instance_graph_node
-                    logger.debug(f"Using existing instance {named_individual_iri} for the form {form_graph_node}")
-
-                for key in form_data.keys():
-                    # find the element graph node iri for the data element in the array of mappings
-                    logger.debug(f"Mapping {self.app_state.current_json_form_name_mapping} is being searched ")
-                    element_graph_node_uri = next(( k for k, v in self.app_state.  
-                        current_json_form_name_mapping.items() if v == key), None)
-                    logger.debug(f"Graph node URI of the element for the key {key} is {element_graph_node_uri}")
-                    for data_property in self.internal_app_static_model.rdf_graph_rdflib.objects(
-                        URIRef(element_graph_node_uri), OBOP.containsDatatype):
-                        logger.debug(f"Data property found for the element {element_graph_node_uri}: {data_property}")
-                        # Add the data to the output graph store
-                        self.output_graph_store.add((named_individual_iri, data_property, Literal(form_data[key])))
-                        logger.debug(f"Added data {form_data[key]} for element {element_graph_node_uri} to the output store.")
-                # We have to decide what to do with other form elements that 
-                # are not inserted in the form data
-                # element = next((el for el in form.elements if str(el.graph_node) == str(element_graph_node_uri)), None) 
- 
-        elif action_message.action_type == "cancel":
-
-            pass
-    
+   
     def validateOutputGraphStore(self):
         """
         Validates the output graph store against the application static model.

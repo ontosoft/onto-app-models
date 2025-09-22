@@ -510,6 +510,16 @@ This is an integer number that represents the ordinary position among all other 
     
 
 
+    <!-- http://purl.org/net/obop/hasText -->
+
+    <owl:DatatypeProperty rdf:about="http://purl.org/net/obop/hasText">
+        <rdfs:range rdf:resource="http://www.w3.org/2000/01/rdf-schema#Literal"/>
+        <rdfs:comment>The visible text displayed by an element in the user interface. For example, a label has a text that has to be presented in the UI element.</rdfs:comment>
+        <rdfs:label>has text</rdfs:label>
+    </owl:DatatypeProperty>
+    
+
+
     <!-- http://purl.org/net/obop/hasValue -->
 
     <owl:DatatypeProperty rdf:about="http://purl.org/net/obop/hasValue">

@@ -3,7 +3,6 @@ from .app_model_factory import AppStaticModelFactory
 from .app_model import AppInternalStaticModel
 from .communication import AppExchangeFrontEndData, AppExchangeGetOutput
 from pathlib import Path
-import jsonpickle
 import logging
 from config.settings import get_settings, Settings 
 

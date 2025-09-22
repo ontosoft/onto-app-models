@@ -4,7 +4,9 @@ from .forms import FunctionalJSONForm
 from .bbo_elements import BBOFlowElementsContainer, BBOFlowElement, BBOProcessStartEvent
 from .forms import ActiveForm
 from .forms import JSONFormNameMapping
+from .obop_action import OBOPAction
 from .communication import AppExchangeGetOutput
+from .communication import AppExchangeFrontEndData
 
 
 logger = logging.getLogger('ontoui_app')
@@ -27,6 +29,8 @@ class ApplicationState:
         # This flag indicates if the backend is waiting for form data from the frontend
         self._is_waiting_to_send_data = False
         # This flag indicates if the backend is waiting to send data to the frontend
+        self.is_waiting_to_process_front_end_data = False
+        # This flag indicates that the frontend data has to be processed
         self._running_initiated = False
         self._current_json_form_name_mapping : JSONFormNameMapping = {}
         self._json_form : FunctionalJSONForm = None
@@ -35,6 +39,8 @@ class ApplicationState:
         # that are created during the previous form exchanges
         # If a form has a named individual here it means that properties are only being
         # changed and shouldn't be created again. 
+        self._received_action : OBOPAction = None
+        self._frontend_message: AppExchangeFrontEndData
         self._output_messaage: AppExchangeGetOutput = None
         self._app_finished: bool = False
 
@@ -77,6 +83,14 @@ class ApplicationState:
         self._is_waiting_to_send_data = value
 
     @property
+    def is_waiting_to_process_front_end_data(self)-> bool:
+        return self._is_waiting_to_process_front_end_data
+
+    @is_waiting_to_process_front_end_data.setter
+    def is_waiting_to_process_front_end_data(self, value:bool):
+        self._is_waiting_to_process_front_end_data = value
+
+    @property
     def current_json_form_name_mapping(self):
         return self._current_json_form_name_mapping
 
@@ -101,6 +115,22 @@ class ApplicationState:
 
     def set_running_initiated(self):
         self._running_initiated = True
+
+    @property
+    def received_action(self)-> OBOPAction:
+        return self._received_action
+
+    @received_action.setter
+    def received_action(self, value: OBOPAction):
+        self._received_action = value
+
+    @property
+    def frontend_message(self)-> AppExchangeFrontEndData:
+        return self._frontend_message
+    
+    @frontend_message.setter
+    def frontend_message(self, value : AppExchangeFrontEndData):
+        self._frontend_message = value
     
     @property
     def output_message(self)-> AppExchangeGetOutput:

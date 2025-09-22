@@ -9,7 +9,7 @@ from .form_elements import OBOPElement, SHACLFormProperty, ActionPointer
 from .bbo_elements import (BBOProcess,  BBOFlowNode, BBOSubProcess,  
     BBOFlowElementsContainer, BBOProcessStartEvent, BBOExclusiveGateway,
     BBOEndEvent, BBOScriptTask, BBOUserTask, BBONormalSequenceFlow,
-    BBOSubProcessLoopCharacteristic, BBOConditionalSequenceFlow)
+    BBOConditionExpression, BBOConditionalSequenceFlow)
 from rdflib import RDFS
 from .app_model import OBOPAction
 from rdflib.namespace import SH, OWL
@@ -444,19 +444,23 @@ class AppStaticModelFactory:
         # Read BBO Conditional Sequence Flows
         conditional_sequence_flow_query = """   
         PREFIX bbo: <https://www.irit.fr/recherches/MELODI/ontologies/BBO#> 
-        SELECT DISTINCT ?bbo_sequence_flow ?source ?target ?container
+        SELECT DISTINCT ?bbo_sequence_flow ?source ?target ?condition_expression ?container
         WHERE {
             ?bbo_sequence_flow a bbo:ConditionalSequenceFlow .
             ?bbo_sequence_flow bbo:has_sourceRef ?source .   
             ?bbo_sequence_flow bbo:has_targetRef ?target .
+            ?bbo_sequence_flow bbo:has_conditionExpression ?condition_expression .
             ?bbo_sequence_flow bbo:has_container ?container .
         }"""
         try:  
             results = internal_app_static_model.rdf_pellet_reasoning_world.sparql( 
                 conditional_sequence_flow_query)
             for row in results: 
-                (bbo_sequence_flow, source, target, container) = row
-                logger.info(f"Reading BBO Conditional Sequence Flow Element: {bbo_sequence_flow.iri}, Source: {source.iri}, Target: {target.iri}, Container: {container.iri}")
+                (bbo_sequence_flow, source, target, condition_expression, container) = row
+                logger.info(f"Reading BBO Conditional Sequence Flow Element: {bbo_sequence_flow.iri}, Source: {source.iri}, Target: {target.iri}, Container: {container.iri}, Conditional Expression: {condition_expression.iri} ")
+                # Find the condition expression
+                internal_condition_expression : BBOConditionExpression = BBOConditionExpression ( URIRef(condition_expression.iri),  internal_app_static_model.rdf_graph_rdflib.value(URIRef(condition_expression.iri),OBOP.selectedAction).toPython())
+
                 # Find the source and target flow elements in the internal application model
                 if container.iri == str(internal_app_static_model.main_bbo_process.graph_node):
                     # If the container is the main process, we can assume that the flow element is part of the main process
@@ -468,7 +472,12 @@ class AppStaticModelFactory:
 
                     # If the source and target elements are found, we can create a flow element
                     if source_element is not None and target_element is not None:
-                        flow_element = BBOConditionalSequenceFlow(URIRef(bbo_sequence_flow.iri), bbo_flow_container, source_element, target_element, 
+                        flow_element = BBOConditionalSequenceFlow(
+                            URIRef(bbo_sequence_flow.iri), 
+                            bbo_flow_container, 
+                            source_element, 
+                            target_element,
+                            internal_condition_expression, 
                             str(internal_app_static_model.rdf_graph_rdflib.value(URIRef(bbo_sequence_flow.iri), RDFS.comment)))
                         internal_app_static_model.main_bbo_process.flow_elements.append(flow_element)
                         logger.debug("Loaded BBO Conditional Sequence Flow Element") 
@@ -490,7 +499,12 @@ class AppStaticModelFactory:
                         target_element : BBOFlowNode = next((e for e in bbo_flow_container.flow_elements
                             if str(e.graph_node) == target.iri), None)
                         if source_element is not None and target_element is not None:
-                            flow_element = BBOConditionalSequenceFlow(URIRef(bbo_sequence_flow.iri), bbo_flow_container, source_element, target_element, 
+                            flow_element = BBOConditionalSequenceFlow(
+                                URIRef(bbo_sequence_flow.iri), 
+                                bbo_flow_container, 
+                                source_element, 
+                                target_element, 
+                                internal_condition_expression,
                                 str(internal_app_static_model.rdf_graph_rdflib.value(URIRef(bbo_sequence_flow.iri), RDFS.comment)))
                             bbo_flow_container.add_flow_element(flow_element)
                         else:
@@ -636,6 +650,8 @@ class AppStaticModelFactory:
         if element in rdf_graph_rdflib.subjects(
             OBOP.hasLabel, None):
             label = rdf_graph_rdflib.value(element, OBOP.hasLabel)
+        elif element in rdf_graph_rdflib.subjects( OBOP.hasText, None):
+            label = rdf_graph_rdflib.value(element, OBOP.hasText)
         if graph_position is None:
             logger.error(f"OBOP element {element} does not have a position number.")
         position = graph_position.toPython()
@@ -701,7 +717,7 @@ class AppStaticModelFactory:
             for row in all_actions_generator:
                 (graph_action, action_class) = row
                 logger.debug(f"Action  {graph_action.iri}  ")
-                action : OBOPAction = OBOPAction(graph_action.iri)
+                action : OBOPAction = OBOPAction(URIRef(graph_action.iri))
                 if (action_class.iri == str(OBOP.SubmitBlockAction)):
                     action.type = "submit"
                     action.isSubmit = True

@@ -44,6 +44,7 @@
     obop:executesAction :generateJSONFormAction . 
 
 
+
 ###  http://example.org/logicinterface/testing/generateJSONFormAction
 :generateJSONFormAction rdf:type owl:NamedIndividual ,
              obop:GenerateJSONForm ;
@@ -69,9 +70,10 @@
 
 ###  http://example.org/logicinterface/testing/save_data_insert
 :save_data_insert rdf:type owl:NamedIndividual ,
-                                     bbo:ScriptTask ;
-                            rdfs:comment "Save the entered data in the rdfstore" ;
-                            bbo:has_container :popule_single_form_knowledge_graph .
+        bbo:ScriptTask ;
+    rdfs:comment "Save the entered data in the rdfstore" ;
+    obop:executesAction :submit_action_1 ;
+    bbo:has_container :popule_single_form_knowledge_graph .
 
 
 ###  http://example.org/logicinterface/testing/abort_data_insert
@@ -81,14 +83,28 @@
                             bbo:has_container :popule_single_form_knowledge_graph .
 
 
-
 ###  http://example.org/logicinterface/testing/inserted_data_confirmation
 :inserted_data_confirmation rdf:type owl:NamedIndividual ,
-                                     bbo:ScriptTask ;
-                            rdfs:comment "Inserted Data Confirmation" ;
-                            bbo:has_container :popule_single_form_knowledge_graph .
+    bbo:ScriptTask ;
+    rdfs:comment "Generate the notification that data have been stored" ;
+    bbo:has_container :popule_single_form_knowledge_graph ;
+    obop:executesAction :generateJSONFormForNotification . 
 
-###  http://example.org/logicinterface/testing/data_insertion_completed
+
+###  http://example.org/logicinterface/testing/generateJSONFormForNotification
+:generateJSONFormForNotification rdf:type owl:NamedIndividual ,
+             obop:GenerateJSONForm ;
+             obop:actionInBlock :block_2 .
+
+###  http://example.org/logicinterface/testing/user_gets_notification
+:user_gets_notification rdf:type owl:NamedIndividual ,
+    bbo:UserTask ;
+    rdfs:comment "User entering data in the web form on the client side" ;
+    bbo:has_container :popule_single_form_knowledge_graph .
+
+
+
+###  http://example.org/logicinterface/testing/end_event_data_insertion_completed
 :end_event_data_insertion_completed rdf:type owl:NamedIndividual ,
              bbo:EndEvent ;
     rdfs:comment "Order Successfully Placed" ;
@@ -169,7 +185,7 @@
     rdfs:comment "Basic save of data in the knowledge graph" .
 
 
-###  http://example.org/logicinterface/testing/submit_action_1
+###  http://example.org/logicinterface/testing/cancel_action_1
 :cancel_action_1 rdf:type owl:NamedIndividual ,
              obop:SubmitBlockAction ;
     obop:actionInBlock :block_1 ;
@@ -177,11 +193,31 @@
     obop:hasLabel "Cancel" ;
     rdfs:comment "Basic cancel function" .
 
+###  http://example.org/logicinterface/testing/flow_6
+:flow_6 rdf:type owl:NamedIndividual ,
+    bbo:NormalSequenceFlow ;
+    bbo:has_container :popule_single_form_knowledge_graph ;
+    bbo:has_sourceRef :save_data_insert ;
+    bbo:has_targetRef :inserted_data_confirmation .
+
+###  http://example.org/logicinterface/testing/flow_7
+:flow_7 rdf:type owl:NamedIndividual ,
+    bbo:NormalSequenceFlow ;
+    bbo:has_container :popule_single_form_knowledge_graph ;
+    bbo:has_sourceRef :inserted_data_confirmation ;
+    bbo:has_targetRef :user_gets_notification .
+
+###  http://example.org/logicinterface/testing/flow_8
+:flow_8 rdf:type owl:NamedIndividual ,
+    bbo:NormalSequenceFlow ;
+    bbo:has_container :popule_single_form_knowledge_graph ;
+    bbo:has_sourceRef :user_gets_notification ;
+    bbo:has_targetRef :end_event_data_insertion_completed .
 
 ###  http://example.org/logicinterface/testing/block_1
 :block_1 rdf:type owl:NamedIndividual ,
              obop:Block ;
-    dc:title "block_1 - HTML Form"^^rdfs:Literal ;
+    rdfs:label "block_1 - HTML Form"^^rdfs:Literal ;
     obop:hasPositionNumber "0"^^xsd:int ;
     obop:targetClass obo:ENVO_01000934 ,
                      v1:BusinessEntity .
@@ -236,6 +272,31 @@
                    dc:title "Main vertical layout for the Form"^^rdfs:Literal ;
                    obop:belongsTo :block_1 ;
                    obop:hasPositionNumber "0"^^xsd:int .
+
+###  http://example.org/logicinterface/testing/block_2
+:block_2 rdf:type owl:NamedIndividual ,
+             obop:Block ;
+    rdfs:label "Data saved - Confirmation"^^rdfs:Literal ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+
+
+###  http://example.org/logicinterface/testing/vertical_layout_2
+:vertical_layout_2 rdf:type owl:NamedIndividual ,
+                            obop:VerticalLayout ;
+                   rdfs:label "Main vertical layout for the Notification"^^rdfs:Literal ;
+                   obop:belongsTo :block_2 ;
+                   obop:hasPositionNumber "0"^^xsd:int .
+
+###  http://example.org/logicinterface/testing/label_1
+:label_1 rdf:type owl:NamedIndividual ,
+                   obop:Label ;
+          obop:belongsTo :block_2 ;
+          obop:belongsToVisual :horizontal_layout_2 ;
+          obop:hasPositionNumber "0"^^xsd:int ;
+          obop:hasText "The data have been stored in the database."^^rdfs:Literal .
+
+
 
 
 ###  Generated by the OWL API (version 4.5.25.2023-02-15T19:15:49Z) https://github.com/owlcs/owlapi

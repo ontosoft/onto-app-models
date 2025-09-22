@@ -237,17 +237,41 @@ class BBONormalSequenceFlow(BBOSequenceFlow):
         parent_rep = super().__repr__() 
         return f"BBONormalSequenceFlow: {parent_rep}, Description: {self.description}"
 
+class BBOExpression():
+    def __init__(self, graph_node: URIRef):
+        self._graph_node : URIRef = graph_node
+
+    @property
+    def graph_node(self) -> URIRef:
+        return self._graph_node 
+    @graph_node.setter
+    def graph_node(self, value: URIRef):
+        self._graph_node = value
+ 
+class BBOConditionExpression(BBOExpression):
+    def __init__(self,graph_node: URIRef, expression : str):
+        super().__init__(graph_node)
+        self.expression : str = expression
+
+    def __repr__(self):
+        parent_rep = super().__repr__() 
+        exp = self.expression if self.expression is not None else ""
+        return f"BBOConditionalExpression: {parent_rep}, Expression: {exp}"
+
 
 class BBOConditionalSequenceFlow(BBOSequenceFlow):
     def __init__(self, graph_node: URIRef, 
                  container: BBOFlowElementsContainer,
                  source_ref: BBOFlowElement ,
                  target_ref: BBOFlowElement ,
+                 conditional_expression: BBOConditionExpression = None,
                  description: str = None):
         super().__init__(graph_node, container, source_ref, target_ref)
         self.description: None = description
+        self.conditional_expression = conditional_expression
 
     def __repr__(self):
         parent_rep = super().__repr__() 
         desc = self.description if self.description is not None else ""
-        return f"BBOConditionalSequenceFlow: {parent_rep}, Description: {desc}"
+        condition = self.conditional_expression.__repr__()
+        return f"BBOConditionalSequenceFlow: {parent_rep}, Description: {desc}, Conditional expression {condition}"

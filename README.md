@@ -1,11 +1,30 @@
 # Onto Application Models 
-This project is an implementation of the approach that combines data and the functionality to collect that data in knowledge graphs. The approach includes an implementation of the application generator that creates web-applications which collect data, i.e., generate knowledge graphs according to specified SHACL models. 
+
+This project is an implementation of the approach that combines data and the functionality to collect that data in knowledge graphs. The approach includes an implementation of the application generator that creates web-applications which collect data, i.e., generate knowledge graphs according to specified SHACL models.
+
+
+## Installation
+
+
+### Option1: Running with Docker
+
+The easiest way to run the whole system is with Docker. First step is to clone the repository.
+
+git clone https://github.com/ontosoft/onto-app-models.git
+cd onto-app-models
+
+Run the system using the command:
+docker-compose up
+
+The front-end of the application will be available at:
+http://localhost:3000/
 
 ## Architecture
 
 The project consists of two parts. The first one is the backend that processes the majority of functions and the second is the frontend that previews the GUI of the application. Models are written in the form of rdf knowledge graphs. The backend has a mechanism to keep state of the application and to execute functions according to the program specification in model files. The division of the project in frontend and backend is also caused by the fact that the libraries for working with rdf graphs implemented in JavaScript are not as well-developed as those using Python programming language. 
 
 ### Backend
+
 The backend is implemented using the Python programming language with the FastAPI framework and the uvicorn server. It includes three routes:
 
  1. /run_application - a REST api address for the first communication with the system.  
