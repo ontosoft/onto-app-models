@@ -248,8 +248,7 @@
              obop:Block ;
     rdfs:label "Block_1 - HTML Form"^^rdfs:Literal ;
     obop:hasPositionNumber "0"^^xsd:int ;
-    obop:targetClass obo:ENVO_01000934 ,
-                     v1:BusinessEntity .
+    obop:targetClass v1:BusinessEntity .
 
 
 ###  http://example.org/logicinterface/testing/button_1
