@@ -8,7 +8,7 @@ import  CustomButtonRenderer  from "./CustomButtonRenderer";
 import { JsonForms } from "@jsonforms/react";
 import { UISchemaElement } from "@jsonforms/core";
 import { updateCurrentJSONFormData } from "../data/modelSlice";
-import { useAppSelector, useAppDispatch } from "../app/hooks";
+import { useAppDispatch } from "../app/hooks";
 
 interface FormJSXProps {
   graph_node: string;

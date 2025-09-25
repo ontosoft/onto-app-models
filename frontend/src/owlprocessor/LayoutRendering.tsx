@@ -17,6 +17,10 @@ export const getLayout: React.FC<LayoutProps> = (layoutProps: LayoutProps) => {
       const formProps: FormJSXProps = layoutProps.message_content;
       console.log("The form props are", formProps);
       layout = React.createElement(FormComponent, { form: formProps });
+  } else if (layoutProps.layout_type === "message-box") {
+      const formProps: FormJSXProps = layoutProps.message_content;
+      console.log("The form props are", formProps);
+      layout = React.createElement(FormComponent, { form: formProps });
   } else {
     layout = getDefaultLayout(
     layoutProps.layout_type as

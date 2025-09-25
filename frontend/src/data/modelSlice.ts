@@ -100,6 +100,22 @@ export const triggerAction = createAsyncThunk('model/triggerAction',
           "action": "reset",
           "form_data": {}
         };
+      } else if (params.action.type === "shacl_validation"){
+        /* Validaation action is unique because it does not submit the form data but initiate validation of all 
+        enter data in the application*/
+        messageType = "action";
+        messageContent = {
+          "action_type": "shacl_validation",          
+          "action_graph_node": params.action.graph_node
+        };
+      } else if (params.action.type === "other"){
+        messageType = "action";
+        messageContent = {
+          "action_type": "other",          
+          "action_graph_node": params.action.graph_node,
+          "form_graph_node": params.form_graph_node
+        };
+ 
       }
       try {
         console.log("The message type:", messageType );

@@ -101,30 +101,17 @@ class FormElement:
                 "scope": '#/properties/' + encoded_name,
                 "label": encoded_name,
             }
+        elif self.type == OBOP.Label:
+            return {
+                "type": 'Label',
+                "text": self.label,
+            }
         return {
             "type": 'Control',
             "scope": '#/properties/' + encoded_name,
 
         }
  
-
-
-
-class FormElementEncoder(JSONEncoder):
-    def default(self, o):
-        form_element = {}
-        try:
-            if isinstance(o, FormElement):
-                form_element = {
-                    "type": o.type,
-                    "graph_node": o.graph_node,
-                    "position": o.position,
-                    "action_pointers": o.action_pointers
-                }
-        except Exception as e:
-            logger.error(f"Error in FormElementEncoder: {e}")
-        return form_element
-
 
 class SHACLFormProperty(FormElement):
     def __init__(

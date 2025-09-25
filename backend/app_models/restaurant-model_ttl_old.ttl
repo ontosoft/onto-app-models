@@ -19,35 +19,6 @@
 @prefix NCBITaxon: <http://purl.obolibrary.org/obo/NCBITaxon#> .
 @base <http://example.org/logicinterface/restaurant/> .
 
-<http://example.org/logicinterface/restaurant> rdf:type owl:Ontology ;
-                                                owl:imports <http://purl.org/goodrelations/v1> ,
-                                                            obop:v01 ,
-                                                            shacl: .
-
-#################################################################
-#    Annotation properties
-#################################################################
-
-###  http://purl.org/net/obop/activateNew
-obop:activateNew rdf:type owl:AnnotationProperty .
-
-
-###  http://purl.org/net/obop/hasBranch
-obop:hasBranch rdf:type owl:AnnotationProperty .
-
-
-###  http://www.w3.org/ns/shacl#targetClass
-shacl:targetClass rdf:type owl:AnnotationProperty .
-
-###  http://www.w3.org/ns/shacl#property
-shacl:property rdf:type owl:AnnotationProperty .
-
-###  http://www.w3.org/ns/shacl#path
-shacl:path rdf:type owl:AnnotationProperty .
-
-
-
-
 #################################################################
 #    Classes
 #################################################################

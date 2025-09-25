@@ -27,12 +27,17 @@ settings:Settings = get_settings()
 
 class AppStaticModelFactory:
         
-
     @staticmethod
     def rdf_graf_to_uimodel(rdf_model_file: Path = None, rdf_text_ttl: str = None ) -> AppInternalStaticModel:
         internal_app_static_model = AppInternalStaticModel()
+        # Read the SHACL shapes graph if it exists
+        # TODO this conversion should be done automatically
+        internal_app_static_model.rdf_graph_rdflib = \
+            AppStaticModelFactory.read_shacl_shapes_rdflib(rdf_model_file, rdf_text_ttl)
+        #The project uses both rdflib and owlready2 to read the RDF file. 
         internal_app_static_model.rdf_graph_rdflib = \
             AppStaticModelFactory.read_graph_rdflib(rdf_model_file, rdf_text_ttl)
+        #The owlready2 library is used to enable reasoning over the RDF graph. 
         internal_app_static_model.rdf_world_owlready, internal_app_static_model.rdf_ontology_owlready = \
             AppStaticModelFactory.read_graph_owlready(internal_app_static_model.rdf_graph_rdflib)
         internal_app_static_model.rdf_pellet_reasoning_world = \
@@ -49,14 +54,13 @@ class AppStaticModelFactory:
         AppStaticModelFactory.assignAdditionalParameters(internal_app_static_model, rdf_model_file, rdf_text_ttl)
         return internal_app_static_model
 
+
+
     @staticmethod
     def read_graph_rdflib( rdf_file_name:str = None, rdf_text_ttl:str = None) -> Graph:
         """
         Reads an RDF file and parses it into the graph objects.
-        The project uses both rdflib and owlready2 to read the RDF file. 
         The rdflib library is used to parse the RDF file and create a graph.
-        The owlready2 library is used to enable reasoning over the RDF graph. 
-
                 Args:
             rdf_file_name (str): The path to the RDF file.
             rdf_text (str): The RDF in the string form. 
@@ -75,6 +79,33 @@ class AppStaticModelFactory:
             # Reading the RDF graph in the string form using rdflib library
             rdf_graph_rdflib = Graph()
             rdf_graph_rdflib.parse(data = rdf_text_ttl, format="ttl")  
+            return rdf_graph_rdflib
+
+    @staticmethod
+    def read_shacl_shapes_rdflib( rdf_file_name:str = None, rdf_shapes_text_ttl:str = None) -> Graph:
+        """
+        Reads an RDF file with shacl_shapes and parses it into the graph objects.
+           rdf_file_name (str): The path to the RDF file.
+            rdf_text (str): The RDF in the string form. 
+        """
+        rdf_shapes_file_name: Path = None
+        if rdf_file_name is not None:
+            if Path(rdf_file_name).suffix == ".ttl":
+                base = Path(rdf_file_name).with_suffix('')  # Remove .ttl
+                rdf_shapes_file_name = Path(str(base) + '_shacl_shape.ttl')
+            else:
+                raise ValueError("The RDF file name must have the .ttl extension.")
+            # Reading the RDF graph from the file
+            logger.debug(f"Reading and parsing the SHACL file {rdf_shapes_file_name}")
+            rdf_graph_rdflib = Graph()
+            rdf_graph_rdflib.parse(rdf_shapes_file_name, format="ttl")
+            return rdf_graph_rdflib
+        else:
+            # Reading the RDF graph from the string
+            logger.debug("Reading and parsing the RDF string in ttl format.")
+            # Reading the RDF graph in the string form using rdflib library
+            rdf_graph_rdflib = Graph()
+            rdf_graph_rdflib.parse(data = rdf_shapes_text_ttl, format="ttl")  
             return rdf_graph_rdflib
 
     @staticmethod
@@ -676,11 +707,13 @@ class AppStaticModelFactory:
             # Checking the type of the action
             if action in rdf_graph_rdflib.subjects(RDF.type, OBOP.SubmitBlockAction):
                 action_type = "submit"
+            elif action in rdf_graph_rdflib.subjects(RDF.type, OBOP.SHACLValidation):
+                action_type = "shacl_validation"
             action_pointer = ActionPointer(str(action), action_type)
             # Reading action initiators which represent the form events 
             # that activate the action. For examle, a button click
             # can activate the submit action. 
-            # The ActionPointer  instances are (action, action_initiator)pairs 
+            # The ActionPointer  instances are (action, action_initiator) pairs 
             action_initiators = rdf_graph_rdflib.objects(action, OBOP.hasInitiator)
             for ai in action_initiators:
                 action_pointer.action_initiators.append(str(ai))
@@ -723,6 +756,10 @@ class AppStaticModelFactory:
                     action.isSubmit = True
                 elif(action_class.iri == str(OBOP.GenerateJSONForm)):
                     action.type = "generate_json_form"
+                elif(action_class.iri == str(OBOP.SHACLValidation)):
+                    action.type = "shacl_validation"
+                else:
+                    action.type = "other"
 
                 internal_app_static_model.actions.append(action)
 
@@ -891,19 +928,23 @@ class AppStaticModelFactory:
                         ?layout a ?c2 . 
                         ?c2 rdfs:subClassOf* obop:Layout .
                     }}"""
-
-                layouts = internal_app_static_model.rdf_pellet_reasoning_world. \
+                try:
+                    
+                    layouts = internal_app_static_model.rdf_pellet_reasoning_world. \
                     sparql(element_and_layout_sparql_query)
-                # Include the layout (element) in the list of elements of the layout 
+                    # Include the layout (element) in the list of elements of the layout 
                 
-                for row in layouts:
-                    (graph_layout,) = row
+                    for row in layouts:
+                        (graph_layout,) = row
  
-                    inner_parent_layout = next((layout for layout in internal_app_static_model.layouts \
+                        inner_parent_layout = next((layout for layout in internal_app_static_model.layouts \
                                if str(layout.graph_node) == str(graph_layout.iri)), None)
-                    # Assigning the element to the layout
-                    logger.debug(f"Element {element_iri} belongs to the layout :  {graph_layout.iri} ")
-                    inner_parent_layout.elements.append(element)
+                        # Assigning the element to the layout
+                        logger.debug(f"Element {element_iri} belongs to the layout :  {graph_layout.iri} ")
+                        inner_parent_layout.elements.append(element)
+                except Exception as e:
+                    logger.error(f"Error in assigning element {element_iri} to layout: {e}")    
+                    logger.exception(f"Error in assigning element {element_iri} to layout.")
 
         # Assigning nested layout to the parent layout
         for layout in internal_app_static_model.layouts:

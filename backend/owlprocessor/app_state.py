@@ -7,9 +7,11 @@ from .forms import JSONFormNameMapping
 from .obop_action import OBOPAction
 from .communication import AppExchangeGetOutput
 from .communication import AppExchangeFrontEndData
+from typing import Literal
 
 
 logger = logging.getLogger('ontoui_app')
+LayoutTypes = Literal["form", "message-box", ""]
 
 class ApplicationState:
     def __init__(self, inner_app_static_model: AppInternalStaticModel = None):
@@ -32,6 +34,9 @@ class ApplicationState:
         self.is_waiting_to_process_front_end_data = False
         # This flag indicates that the frontend data has to be processed
         self._running_initiated = False
+        self._layout_type : LayoutTypes = None
+        # The message type is used to specify what kind of message
+        # is sent to the frontend. 
         self._current_json_form_name_mapping : JSONFormNameMapping = {}
         self._json_form : FunctionalJSONForm = None
         self._list_of_active_forms: list[ActiveForm]= []  # List of forms sent to the frontend for editing
@@ -115,6 +120,14 @@ class ApplicationState:
 
     def set_running_initiated(self):
         self._running_initiated = True
+
+    @property
+    def layout_type(self)-> LayoutTypes:
+        return self._layout_type
+
+    @layout_type.setter
+    def layout_type(self, value: LayoutTypes):
+        self._layout_type = value
 
     @property
     def received_action(self)-> OBOPAction:

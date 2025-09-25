@@ -14,8 +14,6 @@
 @prefix schema: <http://schema.org/> .
 @base <http://example.org/logicinterface/testing/> .
 
-<http://example.org/logicinterface/testing> rdf:type owl:Ontology .
-
 ###  http://example.org/logicinterface/testing/simple_form_model
 :simple_form_model rdf:type owl:NamedIndividual ,
                            obop:Model ;

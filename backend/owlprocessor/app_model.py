@@ -12,7 +12,7 @@ class AppInternalStaticModel:
     """
     def __init__(self):
         self._model_file_name : str = None
-        self.is_loaded : bool = False
+        self._shacl_shapes_rdflib : Graph = None
         self._rdf_graph_rdflib : Graph = None
         self._rdf_world_owlready: World = None
         self._rdf_ontology_owlready: Ontology = None
@@ -41,6 +41,12 @@ class AppInternalStaticModel:
     @rdf_graph_rdflib.setter
     def rdf_graph_rdflib(self, value):
         self._rdf_graph_rdflib = value
+    @property
+    def shacl_shapes_rdflib(self)-> Graph:
+        return self._shacl_shapes_rdflib
+    @shacl_shapes_rdflib.setter
+    def shacl_shapes_rdflib(self, value: Graph):
+        self._shacl_shapes_rdflib = value
     @property
     def rdf_world_owlready(self)-> World:
         return self._rdf_world_owlready

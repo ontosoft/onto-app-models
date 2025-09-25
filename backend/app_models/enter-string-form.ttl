@@ -102,6 +102,14 @@
     rdfs:comment "User entering data in the web form on the client side" ;
     bbo:has_container :popule_single_form_knowledge_graph .
 
+###  http://example.org/logicinterface/testing/shacl_validation_task
+:shacl_validation_task rdf:type owl:NamedIndividual ,
+    bbo:ScriptTask ;
+    rdfs:comment "Validate the stored data using SHACL shapes" ;
+    bbo:has_container :popule_single_form_knowledge_graph ;
+    obop:executesAction :validate_action_1 . 
+
+
 
 
 ###  http://example.org/logicinterface/testing/end_event_data_insertion_completed
@@ -212,12 +220,33 @@
     bbo:NormalSequenceFlow ;
     bbo:has_container :popule_single_form_knowledge_graph ;
     bbo:has_sourceRef :user_gets_notification ;
+    bbo:has_targetRef :shacl_validation_task .
+
+###  http://example.org/logicinterface/testing/user_receives_validation_data
+:user_receives_validation_data rdf:type owl:NamedIndividual ,
+             bbo:UserTask ;
+    rdfs:comment "User entering data in the web form on the client side" ;
+    bbo:has_container :popule_single_form_knowledge_graph .
+
+###  http://example.org/logicinterface/testing/flow_9
+:flow_9 rdf:type owl:NamedIndividual ,
+    bbo:NormalSequenceFlow ;
+    bbo:has_container :popule_single_form_knowledge_graph ;
+    bbo:has_sourceRef :shacl_validation_task ;
+    bbo:has_targetRef :user_receives_validation_data .
+
+###  http://example.org/logicinterface/testing/flow_10
+:flow_10 rdf:type owl:NamedIndividual ,
+    bbo:NormalSequenceFlow ;
+    bbo:has_container :popule_single_form_knowledge_graph ;
+    bbo:has_sourceRef :user_receives_validation_data ;
     bbo:has_targetRef :end_event_data_insertion_completed .
+
 
 ###  http://example.org/logicinterface/testing/block_1
 :block_1 rdf:type owl:NamedIndividual ,
              obop:Block ;
-    rdfs:label "block_1 - HTML Form"^^rdfs:Literal ;
+    rdfs:label "Block_1 - HTML Form"^^rdfs:Literal ;
     obop:hasPositionNumber "0"^^xsd:int ;
     obop:targetClass obo:ENVO_01000934 ,
                      v1:BusinessEntity .
@@ -276,7 +305,7 @@
 ###  http://example.org/logicinterface/testing/block_2
 :block_2 rdf:type owl:NamedIndividual ,
              obop:Block ;
-    rdfs:label "Data saved - Confirmation"^^rdfs:Literal ;
+    rdfs:label "Data saved - Notification"^^rdfs:Literal ;
     obop:hasPositionNumber "0"^^xsd:int .
 
 
@@ -292,9 +321,32 @@
 :label_1 rdf:type owl:NamedIndividual ,
                    obop:Label ;
           obop:belongsTo :block_2 ;
-          obop:belongsToVisual :horizontal_layout_2 ;
+          obop:belongsToVisual :vertical_layout_2 ;
           obop:hasPositionNumber "0"^^xsd:int ;
           obop:hasText "The data have been stored in the database."^^rdfs:Literal .
+
+###  http://example.org/logicinterface/testing/vertical_layout_3
+:vertical_layout_3 rdf:type owl:NamedIndividual ,
+                            obop:VerticalLayout ;
+                   rdfs:label "The layout contains a single button to initiate validation of the created knowledge graph"^^rdfs:Literal ;
+                   obop:belongsToVisual :vertical_layout_2 ;
+                   obop:hasPositionNumber "1"^^xsd:int .
+
+###  http://example.org/logicinterface/testing/button_3
+:button_3 rdf:type owl:NamedIndividual ,
+                   obop:Button ;
+          obop:activatesAction :validate_action_1 ;
+          obop:belongsTo :block_2 ;
+          obop:belongsToVisual :vertical_layout_3 ;
+          obop:hasLabel "Validate" ;
+          obop:hasPositionNumber "0"^^xsd:int .
+
+###  http://example.org/logicinterface/testing/validate_action_1
+:validate_action_1 rdf:type owl:NamedIndividual ,
+             obop:SHACLValidation ;
+    obop:hasInitiator "onClick" ,
+                      "onEnter" ;
+    rdfs:comment "Validate stored data in the knowledge graph using SHACL file" .
 
 
 

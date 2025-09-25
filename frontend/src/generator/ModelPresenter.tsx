@@ -1,5 +1,5 @@
 import { useAppDispatch, useAppSelector } from "../app/hooks";
-import { KnowledgeGraphViewer } from "./KnowledgGraphViewer";
+import { KnowledgeGraphViewer } from "./KnowledgeGraphViewer";
 //import outputfile from "./output.owl";
 
 export function ModelPresenter() {

@@ -5,6 +5,7 @@ import logging
 from .form_elements import FormElement
 from typing import TypeAlias
 from collections.abc import Mapping
+from abc import abstractmethod
 
 if TYPE_CHECKING:
     from .app_model import AppInternalStaticModel
@@ -30,11 +31,11 @@ class Form:
         self.inner_app_static_model : AppInternalStaticModel = inner_app_static_model
 
     @property
-    def graph_node(self):
+    def graph_node(self)-> URIRef:
         return self._graph_node
 
     @graph_node.setter
-    def graph_node(self, value):
+    def graph_node(self, value: URIRef):
         self._graph_node = value
 
     @property
@@ -46,15 +47,11 @@ class Form:
         self._target_classes = value
 
     @property
-    def position(self):
-        return self.position
+    def position(self)-> int:
+        return self._position
 
     @position.setter
-    def position(self, value):
-        self._position = value
-
-    @position.setter
-    def position(self, value):
+    def position(self, value:int):
         self._position = value
 
     @property
@@ -107,7 +104,7 @@ class Form:
 
         """
 
-        if self._main_layout is None:
+        if self.main_layout is None:
             logger.error("The form does not have a main layout element.")
             raise ValueError("The form does not have a main layout element.")
            
@@ -118,8 +115,7 @@ class Form:
                 "properties": {
                 }
             },
-            "uischema": self._main_layout.create_jsonform_ui_schema        
-                (app_state),
+            "uischema": self.main_layout.create_jsonform_ui_schema(app_state),
             "data": {},
             }
         
@@ -163,6 +159,14 @@ class Layout:
     @owner_form.setter
     def owner_form(self, value: Form):
         self._owner_form = value
+
+    @abstractmethod
+    def create_jsonform_ui_schema(self, app_state:ApplicationState)-> dict:
+        """
+        Creates a JSONForms uischema for the layout.
+        This method must be implemented by subclasses.
+        """
+        pass    
 
 
 class VerticalLayout(Layout):
