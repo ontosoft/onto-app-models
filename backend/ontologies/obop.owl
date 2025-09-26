@@ -314,12 +314,12 @@
     
 
 
-    <!-- http://purl.org/net/obop/hasDestinationOfDependency -->
+    <!-- http://purl.org/net/obop/hasTargetOfDependency -->
 
-    <owl:ObjectProperty rdf:about="http://purl.org/net/obop/hasDestinationOfDependency">
+    <owl:ObjectProperty rdf:about="http://purl.org/net/obop/hasTargetOfDependency">
         <rdfs:domain rdf:resource="http://purl.org/net/obop/Dependency"/>
-        <rdfs:comment>This object property points to the object side of the dependecy statement. This is especially useful for expressing rdfs:subClassOf inference rules as this represents the object of  rdfs:subClassOf inference rule.</rdfs:comment>
-        <rdfs:seeAlso>hasDestinationOfDependency</rdfs:seeAlso>
+        <rdfs:comment>This object property points to the target side of the dependecy statement. This is especially useful for expressing rdfs:subClassOf inference rules as this represents the object of  rdfs:subClassOf inference rule.</rdfs:comment>
+        <rdfs:seeAlso>hasTargetOfDependency</rdfs:seeAlso>
     </owl:ObjectProperty>
     
 
@@ -907,7 +907,7 @@ This can be used to track the version of the interface used to populate the know
         <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/InferenceDependency"/>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://purl.org/net/obop/hasDestinationOfDependency"/>
+                <owl:onProperty rdf:resource="http://purl.org/net/obop/hasTargetOfDependency"/>
                 <owl:cardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:cardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
