@@ -46,7 +46,7 @@ class BBOSubProcessLoopCharacteristic:
         return f"BBOSubProcessLoopCharacteristic: {self.graph_node}, Type: {self.loop_type}, Compensation: {self.is_compensation_loop}"
 
 class BBOFlowElement:
-    def __init__(self, graph_node: URIRef, flow_element_container: BBOFlowElementsContainer):
+    def __init__(self, graph_node: URIRef, flow_element_container: BBOFlowElementsContainer = None):
         self.graph_node : URIRef = graph_node
         self.flow_element_container : BBOFlowElementsContainer = flow_element_container
 
@@ -55,7 +55,7 @@ class BBOFlowElement:
 
 class BBOFlowNode(BBOFlowElement):
     def __init__(self, graph_node: URIRef, 
-                 flow_elements_conatainer: BBOFlowElementsContainer):
+                 flow_elements_conatainer: BBOFlowElementsContainer = None):
         super().__init__(graph_node, flow_elements_conatainer)
 
     def __repr__(self):
@@ -64,7 +64,7 @@ class BBOFlowNode(BBOFlowElement):
 
 class BBOActivity(BBOFlowNode):
     def __init__(self, graph_node,  
-                flow_elements_conatainer: BBOFlowElementsContainer
+                flow_elements_conatainer: BBOFlowElementsContainer = None,
                 ):
         super().__init__(graph_node, flow_elements_conatainer)
 
@@ -103,9 +103,9 @@ class BBOUserTask(BBOTask):
         return f"BBOUserTask: {parent_rep}, Description: {self.description}"
 
 class BBOSubProcess(BBOFlowElementsContainer, BBOActivity):
-    def __init__(self, graph_node: URIRef, container: BBOFlowElementsContainer):
-        BBOFlowElementsContainer.__init__(graph_node )
-        BBOActivity.__init__(graph_node, container)
+    def __init__(self, graph_node: URIRef, container: BBOFlowElementsContainer = None):
+        BBOFlowElementsContainer.__init__(self, graph_node )
+        BBOActivity.__init__(self, graph_node, container)
         self.loop_characteristic : BBOSubProcessLoopCharacteristic = None
 
     def __str__(self):

@@ -78,10 +78,9 @@
 
 ###  http://example.org/logicinterface/testing/abort_data_insert
 :abort_data_insert rdf:type owl:NamedIndividual ,
-                                     bbo:ScriptTask ;
-                            rdfs:comment "Save the entered data in the rdfstore" ;
-                            bbo:has_container :popule_single_form_knowledge_graph .
-
+    bbo:ScriptTask ;
+    rdfs:comment "Save the entered data in the rdfstore" ;
+    bbo:has_container :popule_single_form_knowledge_graph .
 
 ###  http://example.org/logicinterface/testing/inserted_data_confirmation
 :inserted_data_confirmation rdf:type owl:NamedIndividual ,
@@ -89,7 +88,6 @@
     rdfs:comment "Generate the notification that data have been stored" ;
     bbo:has_container :popule_single_form_knowledge_graph ;
     obop:executesAction :generateJSONFormForNotification . 
-
 
 ###  http://example.org/logicinterface/testing/generateJSONFormForNotification
 :generateJSONFormForNotification rdf:type owl:NamedIndividual ,
@@ -108,9 +106,6 @@
     rdfs:comment "Validate the stored data using SHACL shapes" ;
     bbo:has_container :popule_single_form_knowledge_graph ;
     obop:executesAction :validate_action_1 . 
-
-
-
 
 ###  http://example.org/logicinterface/testing/end_event_data_insertion_completed
 :end_event_data_insertion_completed rdf:type owl:NamedIndividual ,

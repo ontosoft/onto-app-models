@@ -9,7 +9,8 @@ from .form_elements import OBOPElement, SHACLFormProperty, ActionPointer
 from .bbo_elements import (BBOProcess,  BBOFlowNode, BBOSubProcess,  
     BBOFlowElementsContainer, BBOProcessStartEvent, BBOExclusiveGateway,
     BBOEndEvent, BBOScriptTask, BBOUserTask, BBONormalSequenceFlow,
-    BBOConditionExpression, BBOConditionalSequenceFlow)
+    BBOConditionExpression, BBOConditionalSequenceFlow,
+    BBOSubProcessStartEvent)
 from rdflib import RDFS
 from .app_model import OBOPAction
 from rdflib.namespace import SH, OWL
@@ -195,12 +196,20 @@ class AppStaticModelFactory:
         rdflib_kg: Graph = internal_app_static_model.rdf_graph_rdflib
         # Read all BBO subprocesses and their super processes as containers
         for bbo_subprocess_uri in rdflib_kg.subjects(RDF.type, BBO.SubProcess):
+            # First we add all subprocesses to the internal model without the container
+            # to solve the problem of subprocesses that are part of other subprocesses
+            subprocess : BBOSubProcess = BBOSubProcess(URIRef(bbo_subprocess_uri), None)
+            internal_app_static_model.bbo_subprocesses.append(subprocess)
+            # Then we read the container of the subprocess and assign it to the subprocess
+            # or to the main process if the container is the main process
+            logger.info(f"BBO Subprocess: {str(bbo_subprocess_uri)} - reading attempt")
             subprocess_has_container_query = f"""
             PREFIX bbo: <https://www.irit.fr/recherches/MELODI/ontologies/BBO#>
             SELECT DISTINCT ?container
             WHERE {{
                 <{str(bbo_subprocess_uri)}> bbo:has_container ?container . 
-                ?container rdfs:subClassOf* bbo:FlowElementsContainer .
+                ?container a ?containerClass .
+                ?containerClass rdfs:subClassOf* bbo:FlowElementsContainer .
             }}"""
             try:
                 result_generator = internal_app_static_model.rdf_pellet_reasoning_world. \
@@ -212,26 +221,30 @@ class AppStaticModelFactory:
                         found_container = True
                         if str(internal_app_static_model.main_bbo_process.graph_node) == container.iri:
                             # If the container is of main process, we can assume that the subprocess is a part of the main process
-                            internal_app_static_model.main_bbo_process.bbo_subprocesses.append(
-                                BBOSubProcess(bbo_subprocess_uri, internal_app_static_model.main_bbo_process))
+                            subprocess.flow_element_container = internal_app_static_model.main_bbo_process
+                            internal_app_static_model.main_bbo_process.flow_elements.append(
+                                subprocess)
+                            logger.debug(f"BBO Subprocess: {str(bbo_subprocess_uri)} added to the main process.")
                         else:
                             # If the container is not of main process, we can assume that the subprocess is a part of other subprocess
-                            BBcontainer : BBOSubProcess = next((c for c in internal_app_static_model.bbo_subprocesses 
-                                    if c.graph_node == container), None)
-                            if BBcontainer is None:
-                                logger.error(f"Container {container.iri} not found in the BBO subprocess {bbo_subprocess_uri}.")
-                                internal_app_static_model.bbo_subprocesses.append(
-                                    BBOSubProcess(bbo_subprocess_uri)) 
-                            else: # container found in the list of subprocesses
-                                internal_app_static_model.bbo_subprocesses.append( 
-                                    BBOSubProcess(bbo_subprocess_uri, BBcontainer))
+                            # This could be a problem if the subprocess is a part of another subprocess that is not yet read
+                            subprocess_container : BBOSubProcess = next((c for c in internal_app_static_model.bbo_subprocesses 
+                                    if str(c.graph_node) == container.iri), None)
+                            if subprocess_container is None:
+                                logger.error(f"Container {container.iri} not found for the BBO subprocess {bbo_subprocess_uri}.")
+                            else: 
+                                # Container found in the list of subprocesses and the 
+                                # suprocess is added to the container and container is 
+                                #  assigned to the subprocess
+                                internal_app_static_model.bbo_subprocesses.append(subprocess)
+                                subprocess.flow_element_container = subprocess_container
+                                logger.debug(f"BBO Subprocess: {str(bbo_subprocess_uri)} added to the subprocess {str(subprocess_container.graph_node)}.")
                     else:
                         raise ValueError(
                             f"Multiple containers found for the BBO subprocess {bbo_subprocess_uri}.")
             except Exception as e:
                 logger.error(f"Error by reading subprocesses: {e}")    
                 logger.exception("Error by reading subprocesses.{bbo_subprocess_uri}")
-            logger.info(f"BBO Subprocess: {str(bbo_subprocess_uri)}")
 
        
     @staticmethod
@@ -291,6 +304,16 @@ class AppStaticModelFactory:
                         logger.error(f"BBO Process Start Event {bbo_event.iri} is not in the \
                              main process container.")
                         raise ValueError( f"BBOEvent {bbo_event.iri} is not correctly specified ." )
+                elif c1.iri == str(BBO.SubProcessStartEvent):
+                    internal_event_container = next((c for c in internal_app_static_model.bbo_subprocesses 
+                            if str(c.graph_node) == container.iri), None)
+
+                    if internal_event_container is not None:
+                        inner_event = BBOSubProcessStartEvent(URIRef(bbo_event.iri), internal_event_container, rdflib_kg.value(bbo_event, RDFS.comment))
+                        internal_event_container.add_flow_element(inner_event)
+                    else:
+                        logger.error(f"BBO SubProcessStartEvent {bbo_event.iri} is not in any subprocess container.")
+                        raise ValueError( f"BBOSubProcessStartEvent {bbo_event.iri} is not correctly specified ." )
                 elif c1.iri == str(BBO.EndEvent):
                     # If the event is an end event, we need to check if it is in the main process container or in a subprocess container
                     if container.iri == str(internal_app_static_model.main_bbo_process.graph_node):
