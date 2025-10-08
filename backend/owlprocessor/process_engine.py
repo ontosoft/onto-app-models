@@ -146,6 +146,19 @@ class ProcessEngine:
                 output_knowledge_graph=self.output_knowledge_graph,
             )
             return
+        elif isinstance(self.app_state.current_flow_element, BBOSubProcess):
+            logger.debug("The current flow element is the subprocess and the token has to be moved to its start event.")
+            subprocess_start_event = \
+                next((fe for fe in self.app_state.current_flow_element.flow_elements 
+                    if isinstance(fe, BBOSubProcessStartEvent)), None)
+            if subprocess_start_event is not None:
+                self.app_state.current_flow_element_container = self.app_state.current_flow_element
+                self.app_state.current_flow_element = subprocess_start_event
+
+                self.move_token()
+            else:
+                logger.error(f"The subprocess {str(self.app_state.current_flow_element.graph_node)} has no start event defined.")
+                raise ValueError(f"The subprocess {str(self.app_state.current_flow_element.graph_node)} has no start event defined.") 
         elif isinstance(
             self.app_state.current_flow_element, BBOProcessStartEvent
         ) or isinstance(self.app_state.current_flow_element, BBOSubProcessStartEvent):
@@ -167,6 +180,7 @@ class ProcessEngine:
             )
             self.app_state.app_finished = True
         elif (
+            ## Subprocess end event
             isinstance(self.app_state.current_flow_element, BBOEndEvent)
             and self.app_state.current_flow_element_container
             != self.internal_app_static_model.main_bbo_process

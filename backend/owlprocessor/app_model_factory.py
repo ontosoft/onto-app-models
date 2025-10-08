@@ -621,39 +621,37 @@ class AppStaticModelFactory:
     def readFormElements(form: Form, rdf_graph_rdflib: Graph):
         """
         This method reads a part of the model which corresponds to a given form.
-        That part of the model should produce an "implant" of rdf triples
-        with corresponding data properties. That implant is further inserted in the output knowledge graph
-        in the form submission during the app execution.
         It is implemented using SHACL shapes, DASH and other SHACL extensions.
 
         The method reads additional form element which are not only represented with SHACL shapes in the
         mode graph but with OBOP elements such as button, label and similar elements, These elements are
         so far related to the form using the obop:belongsTo property. Its different from the SHACL shapes.
         """
-        shapes = rdf_graph_rdflib.subjects(OBOP.modelBelongsTo, form.graph_node)
-        for s in shapes:
-            if (s, RDF.type, SH.NodeShape) in rdf_graph_rdflib:
-                shacl_node_shape = s  # TODO check if there is only one shape for a form
-                # Reading shapes that will be necessary to generate a set of triples
-                # (subgraph of the output graph) when the corresponding form is submitted in the UI
-                # The set of triples can be created using the add() method
-                form.target_classes = list(
-                    map(
-                        lambda item: str(item),
-                        rdf_graph_rdflib.objects(shacl_node_shape, SH.targetClass),
-                    )
-                )
-                logger.debug(
-                    f"Form target classes: {jsonpickle.encode(form.target_classes)}"
-                )
-                for shacl_property_instance in rdf_graph_rdflib.objects(
-                    shacl_node_shape, SH.property
-                ):
-                    # Reading SHACL properties that are represented with SHACL shapes
-                    # Those SHACL properties that don't have any further
-                    # properties are not considered as form elements
-                    if (shacl_property_instance, None, None) in rdf_graph_rdflib:
-                        AppStaticModelFactory.readShaclProperty(shacl_property_instance, form)
+        # Reading SHACL shapes that are related to the form is now skipped.
+        #shapes = rdf_graph_rdflib.subjects(OBOP.modelBelongsTo, form.graph_node)
+        # for s in shapes:
+        #     if (s, RDF.type, SH.NodeShape) in rdf_graph_rdflib:
+        #         shacl_node_shape = s  # TODO check if there is only one shape for a form
+        #         # Reading shapes that will be necessary to generate a set of triples
+        #         # (subgraph of the output graph) when the corresponding form is submitted in the UI
+        #         # The set of triples can be created using the add() method
+        #         form.target_classes = list(
+        #             map(
+        #                 lambda item: str(item),
+        #                 rdf_graph_rdflib.objects(shacl_node_shape, SH.targetClass),
+        #             )
+        #         )
+        #         logger.debug(
+        #             f"Form target classes: {jsonpickle.encode(form.target_classes)}"
+        #         )
+        #         for shacl_property_instance in rdf_graph_rdflib.objects(
+        #             shacl_node_shape, SH.property
+        #         ):
+        #             # Reading SHACL properties that are represented with SHACL shapes
+        #             # Those SHACL properties that don't have any further
+        #             # properties are not considered as form elements
+        #             if (shacl_property_instance, None, None) in rdf_graph_rdflib:
+        #                 AppStaticModelFactory.readShaclProperty(shacl_property_instance, form)
 
         # Reading other OBOP elements that are not represented with SHACL shapes
         other_obop_elements = rdf_graph_rdflib.subjects(OBOP.belongsTo, form.graph_node)
@@ -783,8 +781,9 @@ class AppStaticModelFactory:
                     action.type = "shacl_validation"
                 else:
                     action.type = "other"
-
+                    logger.error(f"Unknown action type: {action_class.iri}")
                 internal_app_static_model.actions.append(action)
+                logger.debug(f"Loaded action: {action.__repr__()}")
 
             # TODO: For other action types
             # if isHasConnection(quad[1]):
@@ -853,7 +852,8 @@ class AppStaticModelFactory:
                         # If the container is a subprocess, we can assume that the flow element is part of the subprocess
                         internal_bbo_script_task: BBOFlowNode = next((e for e in bbo_flow_container.flow_elements 
                             if str(e.graph_node) == bbo_script_task.iri), None)
-                        internal_obop_action : BBOFlowNode = next((e for e in bbo_flow_container.flow_elements
+                        internal_obop_action : OBOPAction = next((e for e in 
+                        internal_app_static_model.actions 
                             if str(e.graph_node) == action.iri), None)
 
                         if internal_bbo_script_task is not None and internal_obop_action is not None:

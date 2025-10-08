@@ -314,16 +314,6 @@
     
 
 
-    <!-- http://purl.org/net/obop/hasTargetOfDependency -->
-
-    <owl:ObjectProperty rdf:about="http://purl.org/net/obop/hasTargetOfDependency">
-        <rdfs:domain rdf:resource="http://purl.org/net/obop/Dependency"/>
-        <rdfs:comment>This object property points to the target side of the dependecy statement. This is especially useful for expressing rdfs:subClassOf inference rules as this represents the object of  rdfs:subClassOf inference rule.</rdfs:comment>
-        <rdfs:seeAlso>hasTargetOfDependency</rdfs:seeAlso>
-    </owl:ObjectProperty>
-    
-
-
     <!-- http://purl.org/net/obop/hasFieldValues -->
 
     <owl:ObjectProperty rdf:about="http://purl.org/net/obop/hasFieldValues">
@@ -361,6 +351,16 @@
         <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
         <rdfs:domain rdf:resource="http://purl.org/net/obop/Dependency"/>
         <rdfs:comment xml:lang="en">This object property points to the left side of the dependecy statement. This is especially useful for expressing rdfs:subClassOf inference rules as this represents the left side of  rdfs:subClassOf</rdfs:comment>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- http://purl.org/net/obop/hasTargetOfDependency -->
+
+    <owl:ObjectProperty rdf:about="http://purl.org/net/obop/hasTargetOfDependency">
+        <rdfs:domain rdf:resource="http://purl.org/net/obop/Dependency"/>
+        <rdfs:comment>This object property points to the target side of the dependecy statement. This is especially useful for expressing rdfs:subClassOf inference rules as this represents the object of  rdfs:subClassOf inference rule.</rdfs:comment>
+        <rdfs:seeAlso>hasTargetOfDependency</rdfs:seeAlso>
     </owl:ObjectProperty>
     
 
@@ -654,6 +654,15 @@ This can be used to track the version of the interface used to populate the know
     
 
 
+    <!-- http://purl.org/net/obop/CancelBlockAction -->
+
+    <owl:Class rdf:about="http://purl.org/net/obop/CancelBlockAction">
+        <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/BlockAction"/>
+        <rdfs:comment>This action type corresponds to the cancel button</rdfs:comment>
+    </owl:Class>
+    
+
+
     <!-- http://purl.org/net/obop/Collection -->
 
     <owl:Class rdf:about="http://purl.org/net/obop/Collection">
@@ -907,13 +916,13 @@ This can be used to track the version of the interface used to populate the know
         <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/InferenceDependency"/>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://purl.org/net/obop/hasTargetOfDependency"/>
+                <owl:onProperty rdf:resource="http://purl.org/net/obop/hasSourceOfDependency"/>
                 <owl:cardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:cardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
-                <owl:onProperty rdf:resource="http://purl.org/net/obop/hasSourceOfDependency"/>
+                <owl:onProperty rdf:resource="http://purl.org/net/obop/hasTargetOfDependency"/>
                 <owl:cardinality rdf:datatype="http://www.w3.org/2001/XMLSchema#nonNegativeInteger">1</owl:cardinality>
             </owl:Restriction>
         </rdfs:subClassOf>
@@ -937,6 +946,7 @@ This can be used to track the version of the interface used to populate the know
 
     <owl:Class rdf:about="http://purl.org/net/obop/SubmitBlockAction">
         <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/BlockAction"/>
+        <rdfs:comment>This action corresponds to the submit button.</rdfs:comment>
     </owl:Class>
     
 

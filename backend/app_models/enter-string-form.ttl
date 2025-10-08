@@ -190,7 +190,7 @@
 
 ###  http://example.org/logicinterface/testing/cancel_action_1
 :cancel_action_1 rdf:type owl:NamedIndividual ,
-             obop:SubmitBlockAction ;
+             obop:CancelBlockAction ;
     obop:actionInBlock :block_1 ;
     obop:hasInitiator "onClick" ;
     obop:hasLabel "Cancel" ;

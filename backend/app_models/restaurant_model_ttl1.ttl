@@ -110,13 +110,13 @@
 # 1. Generate first Form (Block 1)
 :generate_form_representation_restaurant_general rdf:type owl:NamedIndividual ,
     bbo:ScriptTask ;
-    rdfs:comment "Generate the form representation for :block_1 on the server side" ;
+    rdfs:comment "Generate the form representation for :general_data_block on the server side" ;
     bbo:has_container :insert_general_restaurant_data ;
     obop:executesAction :generateJSONFormAction1 .
 
 :generateJSONFormAction1 rdf:type owl:NamedIndividual ,
     obop:GenerateJSONForm ;
-    obop:actionInBlock :block_1 . # Links to Restaurant Block 1
+    obop:actionInBlock :general_data_block . # Links to Restaurant Block g
 
 # 2. User Enters Data
 :user_enters_general_data rdf:type owl:NamedIndividual ,
@@ -130,20 +130,36 @@
     rdfs:comment "Processing received data" ;
     bbo:has_container :insert_general_restaurant_data .
 
-# 4. Save Data (uses :action_1, the Save/Submit action from KG2)
+# 4. Save Data (uses , the Save/Submit action from KG2)
 :save_data_insert rdf:type owl:NamedIndividual ,
     bbo:ScriptTask ;
     rdfs:comment "Save the entered data in the rdfstore" ;
-    obop:executesAction :action_1 ;
-    bbo:has_container :insert_general_restaurant_data
- .
+    obop:executesAction :submit_action_general_restaurant_data ;
+    bbo:has_container :insert_general_restaurant_data .
+
+:submit_action_general_restaurant_data rdf:type owl:NamedIndividual ,
+             obop:SubmitBlockAction ;
+    obop:actionInBlock :general_data_block ;
+    obop:hasInitiator "onClick" ,
+                      "onEnter" ;
+    obop:hasLabel "Submit" ;
+    rdfs:comment "Basic save of data in the knowledge graph" .
+
+
 
 # 5. Abort Data (uses :action_2, the Cancel action from KG2)
 :abort_data_insert_task rdf:type owl:NamedIndividual ,
     bbo:ScriptTask ;
     rdfs:comment "Data insertion aborted (Executed by Cancel Action)" ;
-    obop:executesAction :action_2 ;
+    obop:executesAction :abort_general_data_insert_action ;
     bbo:has_container :insert_general_restaurant_data .
+    
+:abort_general_data_insert_action rdf:type owl:NamedIndividual ,
+             obop:CancelBlockAction ;
+    obop:actionInBlock :general_data_block ;
+    obop:hasInitiator "onClick" ;
+    obop:hasLabel "Cancel" ;
+    rdfs:comment "Basic cancel function" .
 
 # 6. Generate Notification (Block 3)
 :inserted_data_confirmation rdf:type owl:NamedIndividual ,
@@ -160,8 +176,7 @@
 :user_gets_notification_general_data rdf:type owl:NamedIndividual ,
     bbo:UserTask ;
     rdfs:comment "User views the data saved notification" ;
-    bbo:has_container :insert_general_restaurant_data
- .
+    bbo:has_container :insert_general_restaurant_data .
 
 # 8. SHACL Validation
 :shacl_validation_task rdf:type owl:NamedIndividual ,
@@ -193,7 +208,7 @@
 
 :submit_condition_expression_general_restaurant_data rdf:type owl:NamedIndividual ,
     bbo:ConditionExpression ;
-    obop:selectedAction :action_1 ; # Links to Submit action
+    obop:selectedAction :submit_action_general_restaurant_data ; # Links to Submit action
     rdfs:comment "The condition expression exists for the submit action." .
 
 # Decision Gateway after user data entry
@@ -222,19 +237,36 @@
 :flow_1_3 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ; 
     bbo:has_container :insert_general_restaurant_data ; 
     bbo:has_sourceRef :user_enters_general_data ; 
-    bbo:has_targetRef :processing_received_data .
+    bbo:has_targetRef :processing_received_general_restuaurant_data .
 
 :flow_1_4 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ; 
     bbo:has_container :insert_general_restaurant_data ; 
-    bbo:has_sourceRef :processing_received_data ; 
+    bbo:has_sourceRef :processing_received_general_restuaurant_data ; 
     bbo:has_targetRef :DecisionGateway1_1 .
+
+:flow_1_5_1 rdf:type owl:NamedIndividual , bbo:ConditionalSequenceFlow ; 
+    bbo:has_container :insert_general_restaurant_data ;
+    bbo:has_sourceRef :DecisionGateway1_1 ; 
+    bbo:has_targetRef :abort_data_insert_task ; 
+    bbo:has_conditionExpression :cancel_condition_expression .
+
+:flow_1_5_2 rdf:type owl:NamedIndividual , bbo:ConditionalSequenceFlow ; 
+    bbo:has_container :insert_general_restaurant_data ;
+    bbo:has_sourceRef :DecisionGateway1_1 ; 
+    bbo:has_targetRef :save_data_insert ; 
+    bbo:has_conditionExpression :submit_condition_expression_general_restaurant_data .  
+
+:flow_1_6 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_general_restaurant_data ;
+    bbo:has_sourceRef :save_data_insert ; 
+    bbo:has_targetRef :inserted_data_confirmation .
 
 
 ## OBOP Elements (Blocks, Actions, Buttons, Fields and similar ) for the first subprocess 
 ## (General restaurant data insertion)
 
-###  http://example.org/logicinterface/restaurant/block_1
-:block_1 rdf:type owl:NamedIndividual ,
+###  http://example.org/logicinterface/restaurant/general_data_block
+:general_data_block rdf:type owl:NamedIndividual ,
                   obop:Block ;
          obop:hasPositionNumber "0"^^xsd:int ;
          rdfs:label "General restaurant data"^^rdfs:Literal ;
@@ -243,8 +275,8 @@
 ###  http://example.org/logicinterface/testing/button_1
 :button_1 rdf:type owl:NamedIndividual ,
                    obop:Button ;
-          obop:activatesAction :submit_action_1 ;
-          obop:belongsTo :block_1 ;
+          obop:activatesAction :submit_action_general_restaurant_data ;
+          obop:belongsTo :general_data_block ;
           obop:belongsToVisual :horizontal_layout_1 ;
           obop:hasLabel "Submit" ;
           obop:hasPositionNumber "0"^^xsd:int .
@@ -254,7 +286,7 @@
 :button_2 rdf:type owl:NamedIndividual ,
                    obop:Button ;
           obop:activatesAction :cancel_action_1 ;
-          obop:belongsTo :block_1 ;
+          obop:belongsTo :general_data_block ;
           obop:belongsToVisual :horizontal_layout_1 ;
           obop:hasLabel "Cancel" ;
           obop:hasPositionNumber "1"^^xsd:int ;
@@ -262,24 +294,45 @@
 
 
 
-###  http://example.org/logicinterface/testing/field_1
-:field_1 rdf:type owl:NamedIndividual ,
+###  http://example.org/logicinterface/testing/field_rest_name
+:field_rest_name rdf:type owl:NamedIndividual ,
                   obop:Field ;
-         dc:title "field name" ;
-         obop:belongsTo :block_1 ;
+         rdfs:label "Restaurant name"^^rdfs:Literal ;
+         obop:belongsTo :general_data_block ;
          obop:belongsToVisual :vertical_layout_1 ;
          obop:containsDatatype gr:legalName ;
-         obop:hasLabel "Field 1" ;
+         obop:hasLabel "Name" ;
          obop:hasPositionNumber "0"^^xsd:int .
 
 
+###  http://example.org/logicinterface/restaurant/field_rest_address_street
+:field_rest_address_street rdf:type owl:NamedIndividual ,
+                    obop:Field ;
+           obop:belongsTo :general_data_block ;
+           obop:containsDatatype gr:legalName ;
+           obop:belongsToVisual :vertical_layout_1 ;
+           obop:isRelatedToTargetOntologyInstance :restaurantShape ;
+           obop:hasLabel "Address street" ;
+           obop:hasPositionNumber "1"^^xsd:int ;
+           rdfs:label "field_1_1_restaurant_name" .
+
+
+:field_rest_postal_code rdf:type owl:NamedIndividual ,
+                    obop:Field ;
+           obop:belongsTo :general_data_block ;
+           obop:containsDatatype gr:legalName ;
+           obop:belongsToVisual :vertical_layout_1 ;
+           obop:isRelatedToTargetOntologyInstance :restaurantShape ;
+           obop:hasLabel "Postal code" ;
+           obop:hasPositionNumber "2"^^xsd:int ;
+           rdfs:label "Postal code" .
 
 ###  http://example.org/logicinterface/testing/horizontal_layout_1
 :horizontal_layout_1 rdf:type owl:NamedIndividual ,
                               obop:HorizontalLayout ;
                      dc:title "Horizontal layout for submit and cancel buttons."^^rdfs:Literal ;
                      obop:belongsToVisual :vertical_layout_1 ;
-                     obop:hasPositionNumber "1"^^xsd:int .
+                     obop:hasPositionNumber "4"^^xsd:int .
 
 
 
@@ -287,7 +340,7 @@
 :vertical_layout_1 rdf:type owl:NamedIndividual ,
                             obop:VerticalLayout ;
                    dc:title "Main vertical layout for the Form"^^rdfs:Literal ;
-                   obop:belongsTo :block_1 ;
+                   obop:belongsTo :general_data_block ;
                    obop:hasPositionNumber "0"^^xsd:int .
 
 ###  http://example.org/logicinterface/testing/block_2
@@ -326,13 +379,13 @@
 # 1. Generate the second  form (Block 2)
 :generate_form_representation_restaurant_menus rdf:type owl:NamedIndividual ,
     bbo:ScriptTask ;
-    rdfs:comment "Generate the form representation for :block_1 on the server side" ;
+    rdfs:comment "Generate the form representation for :menu_block on the server side" ;
     bbo:has_container :insert_restaurant_menus ;
     obop:executesAction :generateJSONFormAction_main .
 
 :generateJSONFormAction_main rdf:type owl:NamedIndividual ,
     obop:GenerateJSONForm ;
-    obop:actionInBlock :block_1 . # Links to Restaurant Block 1
+    obop:actionInBlock :menu_block . # Links to Restaurant Block 1
 
 # 2. User Enters Data
 :user_enters_data_restaurant_menus rdf:type owl:NamedIndividual ,
@@ -350,14 +403,14 @@
 :save_data_insert_restaurant_menus rdf:type owl:NamedIndividual ,
     bbo:ScriptTask ;
     rdfs:comment "Save the entered data in the rdfstore" ;
-    obop:executesAction :action_1 ;
+    obop:executesAction :submit_action_restaurant_menu ;
     bbo:has_container :insert_restaurant_menus .
 
 # 5. Abort Data (uses :action_2, the Cancel action from KG2)
 :abort_data_insert_task_restaurant_menus rdf:type owl:NamedIndividual ,
     bbo:ScriptTask ;
     rdfs:comment "Data insertion aborted (Executed by Cancel Action)" ;
-    obop:executesAction :action_2 ;
+    obop:executesAction :abort_action_restaurant_menu ;
     bbo:has_container :insert_restaurant_menus .
 
 # 6. Generate Notification (Block 3)
@@ -452,7 +505,7 @@
 ###  http://example.org/logicinterface/restaurant/restaurantShape
 :restaurantShape rdf:type owl:NamedIndividual ,
                           shacl:NodeShape ;
-                 obop:modelBelongsTo :block_1 ;
+                 obop:modelBelongsTo :general_data_block ;
                  shacl:property _:genid1 ,
                                 _:genid2 ,
                                 _:genid3 ;
@@ -468,7 +521,7 @@ _:genid1 shacl:datatype xsd:string ;
 ###  http://example.org/logicinterface/restaurant/field_1_1
 :field_1_1 rdf:type owl:NamedIndividual ,
                     obop:Field ;
-           obop:belongsTo :block_1 ;
+           obop:belongsTo :general_data_block ;
            obop:containsDatatype gr:legalName ;
            obop:isRelatedToTargetOntologyInstance :restaurantShape ;
            obop:hasLabel "Restaurant name" ;
