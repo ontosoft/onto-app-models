@@ -48,7 +48,7 @@ def test_read_textual_field_model(caplog):
         :block_1 rdf:type owl:NamedIndividual ,
                           obop:Block ;
                  obop:hasPositionNumber "1"^^xsd:int ;
-                 dc:title "block_1 for Form"^^rdfs:Literal .
+                 dc:title "block_1 for Form"^^rdf:PlainLiteral .
 
 
         ###  http://example.org/logicinterface/testing/field_1
@@ -128,7 +128,7 @@ def test_form_with_two_fields_and_a_button(caplog):
         :block_1 rdf:type owl:NamedIndividual ,
                           obop:Block ;
                  obop:hasPositionNumber "1"^^xsd:int ;
-                 dc:title "block_1 for Form"^^rdfs:Literal .
+                 dc:title "block_1 for Form"^^rdf:PlainLiteral .
 
 
         ###  http://example.org/logicinterface/testing/field_1
@@ -225,14 +225,14 @@ def test_form_with_two_fields_and_vertical_layout(caplog):
         :block_1 rdf:type owl:NamedIndividual ,
                           obop:Block ;
                  obop:hasPositionNumber "0"^^xsd:int ;
-                 dc:title "block_1 for Form"^^rdfs:Literal .
+                 dc:title "block_1 for Form"^^rdf:PlainLiteral .
 
         ###  http://example.org/logicinterface/testing/vertical_layout_1
         :vertical_layout_1 rdf:type owl:NamedIndividual ,
                           obop:VerticalLayout ;
                  obop:belongsTo :block_1 ;
                  obop:hasPositionNumber "0"^^xsd:int ;
-                 dc:title "Main vertical layout for the Form"^^rdfs:Literal .
+                 dc:title "Main vertical layout for the Form"^^rdf:PlainLiteral .
 
                
 

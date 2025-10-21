@@ -32,7 +32,7 @@
 :block_1 rdf:type owl:NamedIndividual ,
                   obop:Block ;
          obop:hasPositionNumber "1"^^xsd:int ;
-         dc:title "block_1 for Form"^^rdfs:Literal .
+         dc:title "block_1 for Form"^^rdf:PlainLiteral .
 
 
 

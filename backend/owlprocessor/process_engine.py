@@ -310,7 +310,7 @@ class ProcessEngine:
             for row in result_generator:
                 (action, container, block) = row
                 logger.debug(
-                    f"The OBOP action {action.iri}  for the block {block.iri} is found in the current script task which is in turn incorporated in the container {container.iri},"
+                    f"The OBOP action {action.iri}  for the block {block.iri} is found in the current script task {str(script_task.graph_node)} which is in turn incorporated in the container {container.iri},"
                 )
                 if action.iri == str(script_task.obop_action.graph_node):
                     form_object = next(

@@ -16,9 +16,10 @@ from .app_model import OBOPAction
 from rdflib.namespace import SH, OWL
 from owlready2 import World, Ontology
 from config.settings import get_settings, Settings
-import jsonpickle
 from .app_model import AppInternalStaticModel
 from utilities.model_directory_functions import create_pellet_reasoning_graph 
+from utilities.model_directory_functions import create_hermit_reasoning_graph 
+
 
 OBOP = Namespace("http://purl.org/net/obop/")
 BBO = Namespace("https://www.irit.fr/recherches/MELODI/ontologies/BBO#")
@@ -44,6 +45,9 @@ class AppStaticModelFactory:
         internal_app_static_model.rdf_pellet_reasoning_world = \
             create_pellet_reasoning_graph(
                 internal_app_static_model.rdf_world_owlready)           
+        internal_app_static_model.rdf_hermit_reasoning_world = \
+            create_hermit_reasoning_graph(
+                internal_app_static_model.rdf_world_owlready)
         AppStaticModelFactory.read_bbo_elements(internal_app_static_model)
         AppStaticModelFactory.readAllLayouts(internal_app_static_model)
         AppStaticModelFactory.readAllForms(internal_app_static_model)
@@ -131,7 +135,7 @@ class AppStaticModelFactory:
       
         graph_world :World = World()
         model_graph_owlready : Ontology = graph_world.get_ontology(str(filePath)).load()
-        logger.debug(f"Loading the obop ontology")
+        logger.debug("Loading the obop ontology")
         model_graph_with_obop : Ontology = graph_world. \
             get_ontology(str(settings.ONTOLOGIES_DIRECTORY/"obop.owl")).load()
         logger.debug(f"Loading the BPMN Based Ontology (BBO) ontology")

@@ -1,17 +1,19 @@
 from pathlib import Path
 from pydantic_settings import BaseSettings
 import os
-from functools import lru_cache
+from typing import ClassVar
 
 
 
 class Settings(BaseSettings):
-    APP_NAME: str = "Onto-UI Application Generator"
-    DEBUG: bool = "false"
+    app_name: str = "Onto-UI Application Generator"
+    debug: bool = "false"
     # Define the base directory as the project root
-    BASE_DIR : Path= Path(__file__).resolve().parent.parent
+    base_dir : Path= Path(__file__).resolve().parent.parent
 
-    TEMPORARY_MODELS_DIRECTORY: Path = BASE_DIR /"temporary_models"
+    TEMPORARY_MODELS_DIRECTORY: Path = base_dir /"temporary_models"
+    #HERMIT_PATH = BASE_DIR /"reasoners/org.semanticweb.HermiT.jar"
+    CURREN_JAVA_HOME: ClassVar[Path] = os.getenv("JAVA_HOME","/Library/Java/JavaVirtualMachines/adoptopenjdk-13.jdk/Contents/Home/")
     ENV: str 
     
     class Config:
@@ -20,20 +22,22 @@ class Settings(BaseSettings):
         case_sensitive = True
 
 class DevelopmentSettings(BaseSettings):
-    APP_NAME: str = "Onto-UI Application Generator"
-    DEBUG: bool = True
+    app_name: str = "Onto-UI Application Generator"
+    debug: bool = True
     BASE_DIR :Path= Path(__file__).resolve().parent.parent
-    TEMPORARY_MODELS_DIRECTORY : Path = BASE_DIR /"temporary_models"
-    MODEL_DIRECTORY : Path = BASE_DIR/"app_models"
-    ONTOLOGIES_DIRECTORY: Path = BASE_DIR/"ontologies"
+
+    TEMPORARY_MODELS_DIRECTORY : ClassVar[Path] = BASE_DIR /"temporary_models"
+    MODEL_DIRECTORY : ClassVar[Path] = BASE_DIR/"app_models"
+    ONTOLOGIES_DIRECTORY: ClassVar[Path] = BASE_DIR/"ontologies"
 
 class TestingSettings(BaseSettings):
     APP_NAME: str = "Onto-UI Application Generator - Testing"
     DEBUG: bool = True 
     BASE_DIR : Path = Path(__file__).resolve().parent.parent
-    TEMPORARY_MODELS_DIRECTORY: Path = BASE_DIR /"temporary_models"
-    MODEL_DIRECTORY: Path = BASE_DIR/"tests/test_models"
-    ONTOLOGIES_DIRECTORY: Path = BASE_DIR/"ontologies"
+
+    TEMPORARY_MODELS_DIRECTORY: ClassVar[Path] = BASE_DIR /"temporary_models"
+    MODEL_DIRECTORY: ClassVar[Path] = BASE_DIR/"tests/test_models"
+    ONTOLOGIES_DIRECTORY: ClassVar[Path] = BASE_DIR/"ontologies"
 
 
 

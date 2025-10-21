@@ -9,7 +9,7 @@ from routers.onto_app_router import router as model_router
 settings: Settings = get_settings()
 
 # Configure basic logging
-logging.basicConfig(level=logging.DEBUG if settings.DEBUG else logging.INFO,
+logging.basicConfig(level=logging.DEBUG if settings.debug else logging.INFO,
                  format='%(asctime)s - %(name)s - %(levelname)-2s [%(filename)s:%(lineno)d]  - %(message)s')
 
 app_logger = logging.getLogger("ontoui_app")
@@ -17,7 +17,7 @@ app_logger = logging.getLogger("ontoui_app")
  
 # Definition of origins
 origins = ["*"]
-app = FastAPI(debug=settings.DEBUG, title=settings.APP_NAME, version="0.1.0")   
+app = FastAPI(debug=settings.debug, title=settings.app_name, version="0.1.0")   
 
 
 # add CORS middleware

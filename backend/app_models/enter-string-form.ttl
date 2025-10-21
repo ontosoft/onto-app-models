@@ -241,7 +241,7 @@
 ###  http://example.org/logicinterface/testing/block_1
 :block_1 rdf:type owl:NamedIndividual ,
              obop:Block ;
-    rdfs:label "Block_1 - HTML Form"^^rdfs:Literal ;
+    rdfs:label "Block_1 - HTML Form"^^rdf:PlainLiteral ;
     obop:hasPositionNumber "0"^^xsd:int ;
     obop:targetClass v1:BusinessEntity .
 
@@ -283,7 +283,7 @@
 ###  http://example.org/logicinterface/testing/horizontal_layout_1
 :horizontal_layout_1 rdf:type owl:NamedIndividual ,
                               obop:HorizontalLayout ;
-                     dc:title "Horizontal layout for submit and cancel buttons."^^rdfs:Literal ;
+                     dc:title "Horizontal layout for submit and cancel buttons."^^rdf:PlainLiteral ;
                      obop:belongsToVisual :vertical_layout_1 ;
                      obop:hasPositionNumber "1"^^xsd:int .
 
@@ -292,14 +292,14 @@
 ###  http://example.org/logicinterface/testing/vertical_layout_1
 :vertical_layout_1 rdf:type owl:NamedIndividual ,
                             obop:VerticalLayout ;
-                   dc:title "Main vertical layout for the Form"^^rdfs:Literal ;
+                   dc:title "Main vertical layout for the Form"^^rdf:PlainLiteral ;
                    obop:belongsTo :block_1 ;
                    obop:hasPositionNumber "0"^^xsd:int .
 
 ###  http://example.org/logicinterface/testing/block_2
 :block_2 rdf:type owl:NamedIndividual ,
              obop:Block ;
-    rdfs:label "Data saved - Notification"^^rdfs:Literal ;
+    rdfs:label "Data saved - Notification"^^rdf:PlainLiteral ;
     obop:hasPositionNumber "0"^^xsd:int .
 
 
@@ -307,7 +307,7 @@
 ###  http://example.org/logicinterface/testing/vertical_layout_2
 :vertical_layout_2 rdf:type owl:NamedIndividual ,
                             obop:VerticalLayout ;
-                   rdfs:label "Main vertical layout for the Notification"^^rdfs:Literal ;
+                   rdfs:label "Main vertical layout for the Notification"^^rdf:PlainLiteral ;
                    obop:belongsTo :block_2 ;
                    obop:hasPositionNumber "0"^^xsd:int .
 
@@ -317,12 +317,12 @@
           obop:belongsTo :block_2 ;
           obop:belongsToVisual :vertical_layout_2 ;
           obop:hasPositionNumber "0"^^xsd:int ;
-          obop:hasText "The data have been stored in the database."^^rdfs:Literal .
+          obop:hasText "The data have been stored in the database."^^rdf:PlainLiteral .
 
 ###  http://example.org/logicinterface/testing/vertical_layout_3
 :vertical_layout_3 rdf:type owl:NamedIndividual ,
                             obop:VerticalLayout ;
-                   rdfs:label "The layout contains a single button to initiate validation of the created knowledge graph"^^rdfs:Literal ;
+                   rdfs:label "The layout contains a single button to initiate validation of the created knowledge graph"^^rdf:PlainLiteral ;
                    obop:belongsToVisual :vertical_layout_2 ;
                    obop:hasPositionNumber "1"^^xsd:int .
 

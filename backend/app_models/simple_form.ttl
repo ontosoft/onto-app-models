@@ -33,7 +33,7 @@
 :block_1 rdf:type owl:NamedIndividual ,
                   obop:Block ;
          obop:hasPositionNumber "1"^^xsd:int ;
-         dc:title "block_1 for Form"^^rdfs:Literal .
+         dc:title "block_1 for Form"^^rdf:PlainLiteral .
 
 
 ###  http://example.org/logicinterface/testing/field_1
@@ -52,4 +52,4 @@
                   obop:VerticalLayout ;
          obop:belongsTo :block_1 ;
          obop:hasPositionNumber "0"^^xsd:int ;
-         dc:title "Main vertical layout for the Form"^^rdfs:Literal .
+         dc:title "Main vertical layout for the Form"^^rdf:PlainLiteral .

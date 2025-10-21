@@ -17,6 +17,7 @@ class AppInternalStaticModel:
         self._rdf_world_owlready: World = None
         self._rdf_ontology_owlready: Ontology = None
         self._rdf_pellet_reasoning_world: World = None
+        self._rdf_hermit_reasoning_world: World = None
         self._bbo_flow_elements_containers : list[BBOFlowElementsContainer] = []
         self._bbo_flows : list[BBOFlowNode] = []
         self._main_bbo_process : BBOProcess = None
@@ -67,6 +68,14 @@ class AppInternalStaticModel:
     @rdf_pellet_reasoning_world.setter
     def rdf_pellet_reasoning_world(self, value):
         self._rdf_pellet_reasoning_world = value
+    
+    @property
+    def rdf_hermit_reasoning_world(self)-> World:
+        return self._rdf_hermit_reasoning_world
+
+    @rdf_hermit_reasoning_world.setter
+    def rdf_hermit_reasoning_world(self, value: World):
+        self._rdf_hermit_reasoning_world = value
 
     @property
     def main_bbo_process(self):

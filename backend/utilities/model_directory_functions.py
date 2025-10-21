@@ -3,9 +3,9 @@ import json
 import logging
 import tempfile
 from rdflib import Graph, RDF, Namespace
-from owlready2 import get_ontology
 from rdflib.plugins.sparql import prepareQuery
 from owlready2 import World, sync_reasoner_pellet
+from owlready2 import sync_reasoner_hermit
 from pathlib import Path
 from config.settings import Settings, get_settings
 
@@ -15,9 +15,8 @@ ontoui_logger.error(os.environ)
 settings: Settings = get_settings()
 
 if "JAVA_HOME" not in os.environ:
-    os.environ["JAVA_HOME"] = (
-        "/Library/Java/JavaVirtualMachines/adoptopenjdk-13.jdk/Contents/Home/"
-    )
+    os.environ["JAVA_HOME"] = settings.CURREN_JAVA_HOME
+    ontoui_logger.debug(f"JAVA_HOME not set. Setting it to {settings.CURREN_JAVA_HOME}")
 
 OBOP = Namespace("http://purl.org/net/obop/")
 
@@ -93,7 +92,7 @@ def print_triples_in_graph(graph_world: World):
 
 def create_pellet_reasoning_graph(graph_world: World) -> World:
     """
-    Runs a SPARQL query on the given graph using the pellet reasoner and returns the results.
+    The function applies the pellet reasoner and returns results.
     The graph world is first cloned in order to avoid modifying the original graph.
     """
 
@@ -129,4 +128,44 @@ def create_pellet_reasoning_graph(graph_world: World) -> World:
         raise
     except Exception as e:
         ontoui_logger.error(f"Error during clonning or Pellet reasoning: {e}")
+        raise
+
+
+def create_hermit_reasoning_graph(graph_world: World) -> World:
+    """
+    The function applies the pellet reasoner and returns results.
+    """
+    try:
+        temporary_location: Path = settings.TEMPORARY_MODELS_DIRECTORY
+        graph_world.save(
+            file=str(temporary_location / "before_hermit.owl"), format="rdfxml"
+        )
+        # Clone the graph world to avoid modifying the original graph
+        cloned_world = World()
+        # Step 1: Save the original world to a temporary file
+        with tempfile.NamedTemporaryFile(suffix=".owl") as tmp:
+            graph_world.save(tmp.name)
+
+            # Step 2: Load the saved data into the cloned world
+            ontology = cloned_world.get_ontology(tmp.name).load()
+
+        # Step 3: Apply Pellet reasoning
+
+        cloned_world.save(
+            file=str(temporary_location / "after_cloning.owl"), format="rdfxml"
+        )
+        with cloned_world:
+            sync_reasoner_hermit(
+                cloned_world,
+                infer_property_values=True
+            )
+        cloned_world.save(
+            file=str(temporary_location / "after_hermit_applied.owl"), format="rdfxml"
+        )
+        return cloned_world
+    except FileNotFoundError as e:
+        ontoui_logger.error(f"File not found: {e}")
+        raise
+    except Exception as e:
+        ontoui_logger.error(f"Error during clonning or Hermit reasoning: {e}")
         raise

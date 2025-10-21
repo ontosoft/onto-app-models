@@ -60,14 +60,14 @@ shacl:NodeShape rdf:type owl:Class .
 :block_1 rdf:type owl:NamedIndividual ,
                   obop:Block ;
          obop:hasPositionNumber "1"^^xsd:int ;
-         dc:title "block_1 restaurant"^^rdfs:Literal .
+         dc:title "block_1 restaurant"^^rdf:PlainLiteral .
 
 
 ###  http://example.org/logicinterface/restaurant/block_2
 :block_2 rdf:type owl:NamedIndividual ,
                   obop:Block ;
          obop:belongsTo :loop_1 ;
-         dc:title "block_2 menus"^^rdfs:Literal .
+         dc:title "block_2 menus"^^rdf:PlainLiteral .
 
 
 ###  http://example.org/logicinterface/restaurant/block_3
@@ -117,7 +117,7 @@ shacl:NodeShape rdf:type owl:Class .
 ###  http://example.org/logicinterface/restaurant/condition_3_1_1
 :condition_3_1_1 rdf:type owl:NamedIndividual ,
                           obop:Condition ;
-                 obop:hasValue "Main course"^^rdfs:Literal .
+                 obop:hasValue "Main course"^^rdf:PlainLiteral .
 
 
 ###  http://example.org/logicinterface/restaurant/conn_1
@@ -178,7 +178,7 @@ shacl:NodeShape rdf:type owl:Class .
 :ingredient_1 rdf:type owl:NamedIndividual ,
                        <https://www.bbc.co.uk/ontologies/foIngredient> ;
               obop:modelBelongsTo :block_3 ;
-              terms:title "chicken"^^rdfs:Literal .
+              terms:title "chicken"^^rdf:PlainLiteral .
 
 
 ###  http://example.org/logicinterface/restaurant/ingredients_1

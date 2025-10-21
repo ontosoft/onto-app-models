@@ -47,19 +47,19 @@
 :block_1 rdf:type owl:NamedIndividual ,
                   obop:Block ;
          obop:hasPositionNumber "1"^^xsd:int ;
-         dc:title "block_1 for Form"^^rdfs:Literal .
+         dc:title "block_1 for Form"^^rdf:PlainLiteral .
 
 ###  http://example.org/logicinterface/testing/vertical_layout_1
 :vertical_layout_1 rdf:type obop:VerticalLayout ;
          obop:hasPositionNumber "1"^^xsd:int ;
          obop:belongsTo :block_1 ;
-         dc:title "Vertical-Block1"^^rdfs:Literal .
+         dc:title "Vertical-Block1"^^rdf:PlainLiteral .
 
 ###  http://example.org/logicinterface/testing/horizontal_layout_1
 :horizontal_layout_1 rdf:type obop:HorizontalLayout ;
          obop:hasPositionNumber "1"^^xsd:int ;
          obop:belongsToVisual :vertical_layout_1 ;
-         dc:title "Horizontal-Layout"^^rdfs:Literal .
+         dc:title "Horizontal-Layout"^^rdf:PlainLiteral .
 
 
 

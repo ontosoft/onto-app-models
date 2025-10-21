@@ -29,7 +29,7 @@
                 obop:targetClass obo:ENVO_01000934 ,
                                    v1:BusinessEntity ;
          obop:hasPositionNumber "0"^^xsd:int ;
-         dc:title "block_1 - HTML Form"^^rdfs:Literal .
+         dc:title "block_1 - HTML Form"^^rdf:PlainLiteral .
 
 
 ###  http://example.org/logicinterface/testing/field_1
@@ -48,7 +48,7 @@
                   obop:VerticalLayout ;
          obop:belongsTo :block_1 ;
          obop:hasPositionNumber "0"^^xsd:int ;
-         dc:title "Main vertical layout for the Form"^^rdfs:Literal .
+         dc:title "Main vertical layout for the Form"^^rdf:PlainLiteral .
 
 ###  http://example.org/logicinterface/testing/horizontal_layout_1
 :horizontal_layout_1 rdf:type owl:NamedIndividual ,
@@ -58,7 +58,7 @@
          # but a sublayout of the vertical layout
          obop:hasPositionNumber "1"^^xsd:int ;
          obop:belongsToVisual :vertical_layout_1 ;
-         dc:title "Horizontal layout for submit and cancel buttons."^^rdfs:Literal .
+         dc:title "Horizontal layout for submit and cancel buttons."^^rdf:PlainLiteral .
 
 ###  http://example.org/logicinterface/testing/button_1
 :button_1 rdf:type owl:NamedIndividual ,
