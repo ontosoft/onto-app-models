@@ -21,8 +21,6 @@ export const store = configureStore({
 
 
 
-//TODO: Do we need applyMiddleware here in configStore?
-
 export type AppDispatch = typeof store.dispatch;
 export type RootState = ReturnType<typeof store.getState>;
 export type AppThunk<ReturnType = void> = ThunkAction<

@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk, PayloadAction, } from "@reduxjs/toolkit"
 import { fetchListOfServerModels } from "./serverModelLoadingAPI";
 import { AppModelData } from "../app/communication";
 
+
 /*
    selectServerModelSlice has a function to choose among those 
    inner models (stored on the server) which has to be executed
@@ -9,6 +10,7 @@ import { AppModelData } from "../app/communication";
    with models 
 */
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || "";
 
 
 export interface ServerModelState {
@@ -43,7 +45,7 @@ export const loadInnerUIModel = createAsyncThunk('model/loadModel', async ({file
      * messige that the model is loaded
      */
     try {
-        const url = new URL("http://localhost:8089/load_inner_uimodel_from_server?");
+        const url = new URL(`${API_BASE_URL}/load_inner_uimodel_from_server?`);
         url.searchParams.append('filename', filename as string);
         if (force_load!== undefined && force_load!== null) {
             url.searchParams.append('force_load', String(force_load));
@@ -62,7 +64,7 @@ export const loadInnerUIModel = createAsyncThunk('model/loadModel', async ({file
 });
 
 export const selectedServerModelSlice = createSlice({
-    name: "selectedSeverModel",
+    name: "selectedServerModel",
     initialState,
     reducers: {
         selectModel: (state, action) => {
@@ -90,6 +92,7 @@ export const selectedServerModelSlice = createSlice({
         builder.addCase(readingListOfServerModels.fulfilled, (state, action: PayloadAction<AppModelData[]> ) => {
             state.loadingModelListStatus = 'succeeded';
             state.listOfServerModels = action.payload;
+            console.log("Payload im Slice:", action.payload);
         });
         builder.addCase(readingListOfServerModels.rejected, (state, action) => {
             state.loadingModelListStatus = 'failed';

@@ -1,20 +1,32 @@
-version: "3.9"
 services:
   backend-onto:
     container_name: ontomodel-backend
     build: 
         context: ./backend
-    image: ontomodel-backend
     ports:
         - '8089:8089'
     restart: always
 
   frontend-onto:
     container_name: ontomodel-react-front
-    build: ./frontend 
+    build: 
+        context: ./frontend
+        args:
+          - REACT_APP_API_URL=/app-generator-api  # React to use Nginx-Proxy
+    environment:
+      - WDS_SOCKET_PORT=80  # Change Standard-Port 3000 for WebSockets
+      - REACT_APP_API_URL=/app-generator-api
+    restart: always
     ports:
       - "3000:3000"
-    volumes:
-      - ./frontend:/react-onto-frontend
     depends_on:
         - "backend-onto"
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - frontend-onto

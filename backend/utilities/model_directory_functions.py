@@ -77,7 +77,7 @@ def read_model_files_from_directory(models_directory: str = "app_models"):
                 except Exception as e:
                     ontoui_logger.error(f"Error processing file {filename}: {e}")
                     continue  # Skip the file if there is an error
-    models_info_json = json.dumps(models_info)
+    models_info_json = models_info
     ontoui_logger.debug("Model description: %s", models_info_json)
     return models_info_json
 

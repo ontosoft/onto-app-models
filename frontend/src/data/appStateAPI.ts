@@ -4,8 +4,10 @@ import AppExchangeResponse  from "../owlprocessor/AppExchangeResponse";
  * Run tha applicaiton model on the server.
  * @returns A Promise that resolves to the response data.
  */
+const API_BASE_URL = process.env.REACT_APP_API_URL || "";
+
 export async function fetchRunModelOnServer(): Promise<any> {
-    const fetchRunning = fetch("http://localhost:8089/run_application", {
+    const fetchRunning = fetch(`${API_BASE_URL}/run_application`, {
        method: "GET",
        headers: {
            "Content-Type": "application/json",
@@ -24,7 +26,7 @@ export async function fetchRunModelOnServer(): Promise<any> {
  * @returns A Promise that resolves to the response data.
  */
 export async function fetchTerminateAppOnServer(): Promise<any> {
-    const fetchTerminating = fetch("http://localhost:8089/stop_application", {
+    const fetchTerminating = fetch(`${API_BASE_URL}/stop_application`, {
        method: "GET",
        headers: {
            "Content-Type": "application/json",
@@ -43,7 +45,7 @@ export async function fetchTerminateAppOnServer(): Promise<any> {
  * @returns 
  */
 export async function initiateAppExchangeAPI(sentData : any) : Promise<any> {
-    const fetchResult = fetch("http://localhost:8089/app_exchange_post", {
+    const fetchResult = fetch(`${API_BASE_URL}/app_exchange_post`, {
        method: "POST",
        headers: {
            "Content-Type": "application/json",
@@ -65,7 +67,7 @@ export async function initiateAppExchangeAPI(sentData : any) : Promise<any> {
  * @returns 
  */
 export async function appExchangeGetAPI() : Promise<any> {
-    const fetchResult = fetch("http://localhost:8089/app_exchange_get", {
+    const fetchResult = fetch(`${API_BASE_URL}/app_exchange_get`, {
        method: "GET",
        headers: {
            "Content-Type": "application/json",

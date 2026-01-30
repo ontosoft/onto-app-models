@@ -1,10 +1,12 @@
 FROM node:20.11.1-alpine3.18
 
-WORKDIR /react-onto-frontend/
+WORKDIR /app
 
-COPY public/ /react-onto-frontend/public
-COPY src/ /react-onto-frontend/src
-COPY package.json /react-onto-frontend/
+COPY package*.json ./
 
-RUN npm install
+RUN npm install --legacy-peer-deps
+
+COPY . .
+
+
 CMD ["npm", "start"]

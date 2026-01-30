@@ -1,0 +1,72 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for docker-vm-provision
+
+- name: Store variable
+  ansible.builtin.set_fact:
+    instance_name: "{{instance_name}}"
+- name: Create or find the OpenStack instance
+  openstack.cloud.server:
+    #cloud defined in your clouds.yaml
+    cloud: mystack
+    state: present
+    name: "{{ instance_name }}"
+    image: "{{ image_name }}"
+    flavor: "{{ flavor_name }}"
+    network: "{{ network_name }}"
+    key_name: "{{ key_pair_name }}"
+    security_groups:
+      - "default"
+      - "SsH"
+      - "http-https"
+    wait: yes
+    timeout: 600
+    userdata: |
+      #cloud-config
+      swap:
+        filename: /swapfile
+        size: 4294967296 # 4GB in Bytes
+        maxsize: 4294967296
+  register: vm_result
+
+# DEBUG-TASK 
+- name: DEBUG - Resusts of Provisioning-Tasks
+  ansible.builtin.debug:
+    var: vm_result
+    # Die Ausführung nur bei einem Fehler erzwingen, um die Ausgabe sauber zu halten
+  when: vm_result is failed
+
+- name: Get Floating IP from VM addresses
+  ansible.builtin.set_fact:
+    floating_ip: >
+      {{ vm_result.server.addresses.DHBW |
+         selectattr('OS-EXT-IPS:type', 'equalto', 'fixed') |
+         map(attribute='addr') |
+         first |
+         default(None)
+      }}
+  # Wir nutzen vorübergehend fixed als floating.
+  # Optional: Nur wenn eine Floating IP im Array gefunden wurde
+  when: vm_result.server.addresses.DHBW is defined
+
+- name: Add newly created host to inventory
+  ansible.builtin.add_host:
+    name: "{{ instance_name | trim }}"
+    ansible_host: "{{ floating_ip | trim }}"
+    ansible_user: ubuntu  # Standard user for Ubuntu cloud images
+    groups:
+      - newly_created_vms
+    # Ensure this key path matches where Ansible can find the private key
+    ansible_ssh_private_key_file: "~/.ssh/openstack-key"
+    ansible_ssh_common_args: "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null"
+  when: floating_ip is defined
+
+- name: Wait for SSH connection to become available
+  ansible.builtin.wait_for_connection:
+    timeout: 600
+  delegate_to: "{{ floating_ip }}"
+  vars:
+    ansible_user: ubuntu
+
+
+

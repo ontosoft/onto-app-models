@@ -1,0 +1,93 @@
+#Local Files: Your docker-compose.yml file must exist in the same directory as this playbook.
+
+#YAML
+---
+- name: Play 1. PROVISION OpenStack VM for Docker host 
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  roles: 
+    - role: docker-vm-provision
+      tags: [docker_host]
+
+# DEBUG PLAY: Dieser Play läuft lokal und schaut in die "Magic Variables" von Ansible
+- name: Inventory Check
+  hosts: localhost
+  tasks:
+    - name: "DEBUG: Neuer Host"
+      ansible.builtin.debug:
+        msg:
+          - "Host {{ ansible_facts['nodename'] }}"
+          # - "Host: {{ instance_name }}"
+          # The group name couldn't work newly_created_vms
+          - "Verbindungs-IP (ansible_host): {{  hostvars['docker-host']['ansible_host'] }}"
+          - "Zugeordnete Gruppen: {{ hostvars['docker-host']['group_names'] }}"
+
+- name: 1.5 WARTE AUF BEREITSCHAFT
+  hosts: newly_created_vms
+  gather_facts: no  # Ganz wichtig: Hier noch keine Facts sammeln!
+  tasks:
+    - name: Warten, bis SSH erreichbar ist
+      ansible.builtin.wait_for_connection:
+        delay: 5         # Warte 5 Sek. vor dem ersten Versuch
+        timeout: 300     # Maximal 5 Min. warten
+        connect_timeout: 5
+
+# PLAY 2: Runs against the VM created in Play 1
+# CONFIGURE Docker and Deploy Application
+- name: 2. CONFIGURE Docker and Deploy Application
+  hosts: newly_created_vms
+  become: yes
+  gather_facts: yes
+  
+  vars:
+    # Variablen für geerlingguy.docker
+    docker_users: ["ubuntu"]
+    docker_install_compose: true
+    
+    # Pfade für dein Projekt
+    project_root: "/home/ubuntu/app"
+    local_compose_path: "{{ playbook_dir }}/../"
+
+  pre_tasks:
+    - name: Warten auf SSH Verbindung
+      ansible.builtin.wait_for_connection:
+        timeout: 300
+    
+    - name: Verzeichnis für App erstellen
+      ansible.builtin.file:
+        path: "{{ project_root }}"
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: '0755'
+
+  roles:
+    - role: geerlingguy.docker
+      tags: [docker_install]
+
+  tasks:
+    - name: Docker-Compose Datei kopieren
+      ansible.posix.synchronize:
+        src: "{{ local_compose_path }}"
+        dest: "{{ project_root }}"
+        recursive: yes
+        delete: yes            # Löscht Dateien auf der VM, die lokal entfernt wurden
+        rsync_opts:
+          - "--exclude=.ssh"
+          - "--exclude=.git"
+          - "--exclude=node_modules"
+          - "--exclude=__pycache__"
+          - "--exclude=.venv"
+          - "--exclude=.DS_Store"         # Speziell für Mac-Nutzer
+          - "--exclude=*.pyc"
+
+    - name: Applikation mit Docker Compose starten
+      community.docker.docker_compose_v2:
+        project_src: "{{ project_root }}"
+        state: present
+      register: compose_output
+
+    - name: Status der Deployment anzeigen
+      ansible.builtin.debug:
+        var: compose_output

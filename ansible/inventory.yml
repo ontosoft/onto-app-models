@@ -1,0 +1,7 @@
+all:
+  children:
+    myhosts:
+      hosts:
+        kola-openstack:
+      vars:
+        ansible_user: ubuntu

@@ -1,0 +1,10 @@
+#SPDX-License-Identifier: MIT-0
+---
+# vars file for docker-vm-provision
+instance_name: "docker-host"
+image_name: "Ubuntu 22.04"  # Replace with your actual image name
+flavor_name: "m1.extra_large"    # Replace with your desired flavor
+network_name: "DHBW"    # Replace with your network name
+key_pair_name: "mac-schluessel" # Replace with your key pair name
+app_group_name: "new_docker_hosts"
+

@@ -19,21 +19,13 @@ import { AppModelData } from "../app/communication";
 const ServerModelSelector: React.FC = () => {
   const dispatch = useAppDispatch();
   
-  const [localInnerModelList, setLocalInnerModelList] = useState<
-    AppModelData[]
-  >([]);
   const listOfServerModels : AppModelData[] = useAppSelector(state => 
-    state.serverInnerModels.listOfServerModels);
-  const listInnerServerModels = () => {
-    setLocalInnerModelList(listOfServerModels);
-  };
+    state.serverInnerModels?.listOfServerModels || []
+  );
   
   const innerModelLoaded = useAppSelector(
     (state) => state.serverInnerModels.innerUIModelLoadingStatus
   );
-  useEffect(() => {
-      listInnerServerModels();
-  }, []);
 
   const initiateModelLoadingOnServer = (filename: string) => {
     dispatch(initiateSelectedInnerModelLoading(filename));
@@ -58,7 +50,7 @@ const ServerModelSelector: React.FC = () => {
           </tr>
         </thead>
         <tbody>
-          {localInnerModelList.map((model, index) => (
+          {listOfServerModels.map((model, index) => (
             <tr key={index}>
               <td>{model.filename}</td>
               <td>{model.model}</td>

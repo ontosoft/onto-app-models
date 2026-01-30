@@ -1,0 +1,12 @@
+# requirements.yml
+---
+# External Roles from Ansible Galaxy
+roles:
+  - name: geerlingguy.docker
+    version: 7.1.0  # It is a good practice to pin role versions for consistency 
+
+# External collections from Ansible Galaxy)
+collections:
+  - name: openstack.cloud
+  - name: community.docker
+  - name: ansible.posix  
