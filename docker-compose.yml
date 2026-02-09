@@ -1,4 +1,77 @@
 services:
+
+  model-downloader:
+    image: busybox
+    volumes:
+      - ./model_files:/model_files
+    command: >
+      sh -c '
+        if [ ! -f /model_files/mistral-7b-instruct-v0.1.Q2_K.gguf ]; then
+          echo "Downloading Mistral GGUF model...";
+          wget -O /model_files/mistral-7b-instruct-v0.1.Q2_K.gguf https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/resolve/main/mistral-7b-instruct-v0.1.Q2_K.gguf;
+        else
+          echo "Model already exists, skipping download.";
+        fi
+      '
+  # The AI Engine for model generation
+  ollama:
+    container_name: ollama
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./model_files:/model_files
+    depends_on:
+      model-downloader:
+        condition: service_completed_successfully
+    pull_policy: always
+    tty: true
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "/model_files/run_ollama.sh"] # Loading the finetuned Mistral with the GGUF file
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Uncomment below to run on GPU support
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: ${OLLAMA_GPU_DRIVER-nvidia}
+    #           count: ${OLLAMA_GPU_COUNT-1}
+    #           capabilities:
+    #             - gpu
+
+  ollama-webui:
+    image: ghcr.io/ollama-webui/ollama-webui:main
+    container_name: ollama-webui
+    ports: ["8080:8080"]
+    volumes:
+      - ollama-webui:/app/backend/data
+    depends_on:
+      - ollama
+    environment:
+      - 'OLLAMA_API_BASE_URL=http://ollama:11434/api'
+    restart: unless-stopped
+
+    
+  llm-model-generator-api:
+    container_name: llm-model-generator-api
+    build: 
+      context: .
+      dockerfile: ./llm-model-generator/Dockerfile
+    depends_on:
+      ollama:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    ports:
+        - '8090:8090'
+    restart: unless-stopped
+
   backend-onto:
     container_name: ontomodel-backend
     build: 
@@ -17,8 +90,10 @@ services:
       - WDS_SOCKET_PORT=80  # Change Standard-Port 3000 for WebSockets
       - REACT_APP_API_URL=/app-generator-api
     restart: always
-    ports:
-      - "3000:3000"
+    #ports:
+    #  - "3000:3000"
+    expose:
+      - "3000" # Expose port for Nginx Proxy
     depends_on:
         - "backend-onto"
 
@@ -30,3 +105,7 @@ services:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - frontend-onto
+
+volumes:
+  ollama: {}
+  ollama-webui: {}

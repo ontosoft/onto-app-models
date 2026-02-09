@@ -1,0 +1,4 @@
+FROM /model_files/mistral-7b-instruct-v0.1.Q2_K.gguf
+
+PARAMETER temperature 0.7
+PARAMETER num_ctx 4096
