@@ -2,7 +2,14 @@ import secrets
 from typing import Any, Annotated, Literal
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from pydantic import AnyUrl, BeforeValidator
+from pydantic import (
+    AnyUrl, 
+    BeforeValidator,
+    HttpUrl,
+    PostgresDsn,
+    computed_field,
+    model_validator
+)
 
 def parse_cors(v: Any) -> list[str] | str:
     if isinstance(v, str) and not v.startswith("["):
@@ -38,6 +45,25 @@ class Settings(BaseSettings):
         return [str(origin).rstrip("/") for origin in self.BACKEND_CORS_ORIGINS] + [
             self.FRONTEND_HOST
         ]
+    SENTRY_DSN: HttpUrl | None = None
+    POSTGRES_SERVER: str
+    POSTGRES_PORT: int = 5432
+    POSTGRES_USER: str
+    POSTGRES_PASSWORD: str = ""
+    POSTGRES_DB: str = ""
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def SQLALCHEMY_DATABASE_URI(self) -> PostgresDsn:
+        return PostgresDsn.build(
+            scheme="postgresql+psycopg",
+            username=self.POSTGRES_USER,
+            password=self.POSTGRES_PASSWORD,
+            host=self.POSTGRES_SERVER,
+            port=self.POSTGRES_PORT,
+            path=self.POSTGRES_DB,
+        )
+
     NEO4J_URI: str
     NEO4J_USERNAME: str
     NEO4J_PASSWORD: str

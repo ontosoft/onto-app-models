@@ -5,3 +5,4 @@
 #.env.sh
 .history
 model_files/mistral-7b-instruct-v0.1.Q2_K.gguf
+node_modules

@@ -11,8 +11,8 @@ export default class App extends Component {
     return (
       <>
         <Navbar />
-        <div className="container-fluid">
-          <div className="row">
+        <div className="w-full px-4">
+          <div className="flex flex-wrap">
             <ModelNavigator />
             <GeneratorViewport />
           </div>

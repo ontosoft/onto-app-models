@@ -14,8 +14,3 @@ async def llama_streamer(prompt: str):
 @router.get("/stream")
 async def stream_ai(prompt: str):
     return StreamingResponse(llama_streamer(prompt), media_type="text/plain")
-
-@router.get("/")
-def health():
-    return {"status": "uv-powered backend active"}
-

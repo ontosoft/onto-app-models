@@ -1,68 +1,54 @@
 {
   "name": "frontend",
-  "version": "0.1.0",
   "private": true,
-  "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.0",
-    "@jsonforms/core": "^3.5.1",
-    "@jsonforms/examples": "^3.5.1",
-    "@jsonforms/material-renderers": "^3.5.1",
-    "@jsonforms/react": "^3.5.1",
-    "@mui/icons-material": "^6.4.7",
-    "@mui/material": "^6.4.7",
-    "@mui/x-date-pickers": "^7.27.3",
-    "@reduxjs/toolkit": "^1.9.7",
-    "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^14.5.2",
-    "@types/jest": "^27.5.2",
-    "@types/node": "^17.0.45",
-    "@types/react": "^18.2.63",
-    "@types/react-dom": "^18.2.20",
-    "@types/react-redux": "^7.1.33",
-    "bootstrap": "^5.3.3",
-    "cytoscape": "^3.32.0",
-    "node-polyfill-webpack-plugin": "^3.0.0",
-    "rdflib": "^2.2.34-1",
-    "react": "^18.2.0",
-    "react-bootstrap": "^2.10.3",
-    "react-cytoscapejs": "^2.0.0",
-    "react-dom": "^18.2.0",
-    "react-redux": "^8.1.3",
-    "react-router-dom": "^6.22.3",
-    "react-scripts": "5.0.1",
-    "react18-json-view": "^0.2.8",
-    "redux-logger": "^3.0.6",
-    "typescript": "^4.9.5",
-    "web-vitals": "^2.1.4",
-    "zod": "^3.24.2"
-  },
+  "sideEffects": false,
+  "type": "module",
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "dev": "vite dev",
+    "build": "vite build && tsc --noEmit",
+    "lint": "biome check --write --unsafe --no-errors-on-unmatched --files-ignore-unknown=true ./",
+    "preview": "vite preview",
+    "start": "node .output/server/index.mjs",
+    "generate-client": "openapi-ts"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+  "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
+    "@radix-ui/react-avatar": "^1.1.11",
+    "@radix-ui/react-label": "^2.1.8",
+    "@radix-ui/react-slot": "^1.2.4",
+    "@tanstack/react-query": "^5.90.21",
+    "@tanstack/react-router": "^1.159.5",
+    "@tanstack/react-router-devtools": "^1.159.5",
+    "@tanstack/react-start": "^1.159.5",
+    "@tanstack/react-table": "^8.21.3",
+    "axios": "^1.13.5",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.564.0",
+    "next-themes": "^0.4.6",
+    "radix-ui": "^1.4.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-hook-form": "^7.71.1",
+    "react-icons": "^5.5.0",
+    "sonner": "^2.0.7",
+    "tailwind-merge": "^3.4.1",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/cytoscape": "^3.21.9"
+    "@biomejs/biome": "2.4.2",
+    "@hey-api/openapi-ts": "0.73.0",
+    "@tailwindcss/vite": "^4.1.18",
+    "@types/node": "^22.5.4",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "@vitejs/plugin-react": "^4.6.0",
+    "nitro": "3.0.1-alpha.2",
+    "shadcn": "^3.8.4",
+    "tailwindcss": "^4.1.18",
+    "tw-animate-css": "^1.4.0",
+    "typescript": "^5.7.2",
+    "vite": "^7.3.1",
+    "vite-tsconfig-paths": "^5.1.4"
   }
 }

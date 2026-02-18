@@ -1,0 +1,15 @@
+[2026-02-16T12:26:29.221Z] Error: Error opening file "/Users/petkorutesic/developement/onto-app-models/frontend/openapi.json" 
+ENOENT: no such file or directory, open '/Users/petkorutesic/developement/onto-app-models/frontend/openapi.json'
+Stack:
+ResolverError: Error opening file "/Users/petkorutesic/developement/onto-app-models/frontend/openapi.json" 
+ENOENT: no such file or directory, open '/Users/petkorutesic/developement/onto-app-models/frontend/openapi.json'
+    at Object.handler (file:///Users/petkorutesic/developement/onto-app-models/frontend/node_modules/@hey-api/json-schema-ref-parser/dist/index.mjs:1418:9)
+    at async $RefParser.parse (file:///Users/petkorutesic/developement/onto-app-models/frontend/node_modules/@hey-api/json-schema-ref-parser/dist/index.mjs:1680:5)
+    at async $RefParser.bundle (file:///Users/petkorutesic/developement/onto-app-models/frontend/node_modules/@hey-api/json-schema-ref-parser/dist/index.mjs:1627:3)
+    at async createClient$1 (file:///Users/petkorutesic/developement/onto-app-models/frontend/node_modules/@hey-api/openapi-ts/dist/src-BqiDMJko.mjs:79:8)
+    at async file:///Users/petkorutesic/developement/onto-app-models/frontend/node_modules/@hey-api/openapi-ts/dist/src-BqiDMJko.mjs:182:12
+    at async Promise.all (index 0)
+    at async createClient (file:///Users/petkorutesic/developement/onto-app-models/frontend/node_modules/@hey-api/openapi-ts/dist/src-BqiDMJko.mjs:180:21)
+    at async Command.<anonymous> (file:///Users/petkorutesic/developement/onto-app-models/frontend/node_modules/@hey-api/openapi-ts/dist/run.mjs:38:8)
+    at async Command.parseAsync (/Users/petkorutesic/developement/onto-app-models/frontend/node_modules/commander/lib/command.js:1122:5)
+    at async runCli (file:///Users/petkorutesic/developement/onto-app-models/frontend/node_modules/@hey-api/openapi-ts/dist/run.mjs:42:3)
