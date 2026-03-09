@@ -144,7 +144,7 @@ class AppStaticModelFactory:
         # DataProperty http://BPMNbasedOntology#processType belongs to more than one entity types: [owl.ObjectProperty, owl.DatatypeProperty]; I'm trying to fix it...
         # The first change was to remove the owl:ObjectProperty from the bbo.owl file
         # The second change was to remove the owl:DatatypeProperty from the bbo.owl ware 
-        # removin the line :
+        # removing the line :
         # <owl:imports rdf:resource="http://purl.obolibrary.org/obo/uo/releases/2018-05-20/uo.owl"/>
         # this is because the BBO ontology import was not possible to be resolved
         model_graph_with_bbo : Ontology = graph_world. \

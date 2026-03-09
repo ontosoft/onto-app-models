@@ -1,6 +1,9 @@
 import secrets
 from typing import Any, Annotated, Literal
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pathlib import Path
+from typing import ClassVar
+import os
 
 from pydantic import (
     AnyUrl, 
@@ -69,6 +72,15 @@ class Settings(BaseSettings):
     NEO4J_PASSWORD: str
 
     OPENAI_API_KEY: str
+
+    debug: bool = True
+    BASE_DIR :Path= Path(__file__).resolve().parent.parent
+
+    TEMPORARY_MODELS_DIRECTORY : ClassVar[Path] = BASE_DIR /"temporary_models"
+    MODEL_DIRECTORY : ClassVar[Path] = BASE_DIR/"app_models"
+    ONTOLOGIES_DIRECTORY: ClassVar[Path] = BASE_DIR/"ontologies"
+    CURRENT_JAVA_HOME: ClassVar[str] = os.getenv("JAVA_HOME", "/Library/Java/JavaVirtualMachines/adoptopenjdk-13.jdk/Contents/Home/")
+
 
 
 settings = Settings()

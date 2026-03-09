@@ -1,0 +1,159 @@
+@prefix : <http://example.org/logicinterface/testing/> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix v1: <http://purl.org/goodrelations/v1#> .
+@prefix obo: <http://purl.obolibrary.org/obo/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dash: <http://datashapes.org/dash#> .
+@prefix obop: <http://purl.org/net/obop/> .
+@prefix bbo: <https://www.irit.fr/recherches/MELODI/ontologies/BBO#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix chebi: <http://purl.obolibrary.org/obo/chebi/> .
+@prefix shacl: <http://www.w3.org/ns/shacl#> .
+@prefix schema: <http://schema.org/> .
+@base <http://example.org/logicinterface/testing/> .
+
+<http://example.org/logicinterface/testing> rdf:type owl:Ontology .
+
+###  http://example.org/logicinterface/testing/one_simple_form_model
+:one_simple_form_model rdf:type owl:NamedIndividual ,
+                           obop:Model ;
+                  obop:modelDescription "The form consists of a single imput field, submit and cancel button."@en .
+
+
+###  http://example.org/logicinterface/testing/block_1
+:block_1 rdf:type owl:NamedIndividual ,
+                obop:Block ;
+                obop:targetClass obo:ENVO_01000934 ,
+                                   v1:BusinessEntity ;
+         obop:hasPositionNumber "0"^^xsd:int ;
+         dc:title "block_1 - HTML Form"^^rdf:PlainLiteral .
+
+
+###  http://example.org/logicinterface/testing/field_1
+
+:field_1 rdf:type owl:NamedIndividual ,
+                    obop:Field ;
+           obop:belongsTo :block_1 ;
+           obop:containsDatatype v1:legalName ;
+           obop:hasLabel "Field 1" ;
+           obop:belongsToVisual :vertical_layout_1 ;
+           obop:hasPositionNumber "0"^^xsd:int ;
+           dc:title "field name" .
+
+###  http://example.org/logicinterface/testing/vertical_layout_1
+:vertical_layout_1 rdf:type owl:NamedIndividual ,
+                  obop:VerticalLayout ;
+         obop:belongsTo :block_1 ;
+         obop:hasPositionNumber "0"^^xsd:int ;
+         dc:title "Main vertical layout for the Form"^^rdf:PlainLiteral .
+
+###  http://example.org/logicinterface/testing/horizontal_layout_1
+:horizontal_layout_1 rdf:type owl:NamedIndividual ,
+                  obop:HorizontalLayout ;
+         # It will be wrong here to write obop:belongsTo :block_1 ;
+         #because the horizontal layout is not a main layout
+         # but a sublayout of the vertical layout
+         obop:hasPositionNumber "1"^^xsd:int ;
+         obop:belongsToVisual :vertical_layout_1 ;
+         dc:title "Horizontal layout for submit and cancel buttons."^^rdf:PlainLiteral .
+
+###  http://example.org/logicinterface/testing/button_1
+:button_1 rdf:type owl:NamedIndividual ,
+                   obop:Button ;
+          obop:activatesAction :action_1 ;
+          obop:belongsTo :block_1 ;
+          obop:belongsToVisual :horizontal_layout_1 ;
+          obop:hasLabel "Submit" ;
+          obop:hasPositionNumber "0"^^xsd:int .
+
+
+###  http://example.org/logicinterface/testing/button_2
+:button_2 rdf:type owl:NamedIndividual ,
+                   obop:Button ;
+          obop:activatesAction :action_2 ;
+          obop:belongsTo :block_1 ;
+          obop:hasLabel "Cancel" ;
+          obop:belongsToVisual :horizontal_layout_1 ;
+          obop:hasPositionNumber "1"^^xsd:int ;
+          rdfs:comment "This is a cancel button that is used for canceling function and going back in the application workflow." .
+
+###  http://example.org/logicinterface/testing/action_1
+:action_1 rdf:type owl:NamedIndividual ,
+                   obop:SubmitBlockAction ;
+          obop:actionInBlock :block_1 ;
+          obop:hasInitiator "onClick";
+          obop:hasInitiator "onEnter";
+          obop:hasLabel "Submit" ;
+          obop:hasPositionNumber "0"^^xsd:int .
+
+### The overall process that is being modeled
+###  http://example.org/logicinterface/testing/populating_simple_knowledge_graph
+:populating_simple_knowledge_graph rdf:type owl:NamedIndividual ,
+                   bbo:Process ;
+          rdfs:label "Process: Enter data in one form field"@en ;
+          bbo:hasStartEvent :generate_start_form ;
+          bbo:hasEndEvent :data_insert_completed ;
+          obop:hasLabel "Submit activity" .
+
+# --- Events ---
+###  http://example.org/logicinterface/testing/generate_start_form
+:generate_start_form a owl:NamedIndividual,
+                 bbo:StartEvent ;
+    rdfs:label "The input form is presented to the user." .
+
+###  http://example.org/logicinterface/testing/clicking_submit_button
+:clicking_submit_button a owl:NamedIndividual,
+                        bbo:Event ;
+    rdfs:label "User clicking the submit button" .
+
+###  http://example.org/logicinterface/testing/data_insertion_completed
+:data_insertion_completed a owl:NamedIndividual,
+                        bbo:EndEvent ;
+    rdfs:label "Order Successfully Placed" .
+    
+###  http://example.org/logicinterface/testing/insert_data_task
+:insert_data_task a bbo:Task ;
+    rdfs:label "Inserting data in the HTML form" .
+
+###  http://example.org/logicinterface/testing/inserted_data_confirmation
+:inserted_data_confirmation a bbo:Task ;
+    rdfs:label "Inserted Data Confirmation" .
+
+# --- 4. Events ---
+
+###  http://example.org/logicinterface/testing/generate_start_form
+:generate_start_form a bbo:StartEvent ,
+                 owl:NamedIndividual ;
+    rdfs:label "User previewing the form" .
+
+# --- 5. Sequence Flows ---
+# Initial flow
+###  http://example.org/logicinterface/testing/flow_1
+:flow_1 a bbo:SequenceFlow ,
+            owl:NamedIndividual;
+    bbo:has_sourceRef :generate_start_form ;
+    bbo:has_targetRef :clicking_submit_button .
+
+# Flow from the task to the end event
+###  http://example.org/logicinterface/testing/flow_3
+:flow_2 a bbo:SequenceFlow ;
+    bbo:has_sourceRef :clicking_submit_button ;
+    bbo:has_targetRef :waiting_for_frontend_response .
+
+
+
+# Flow from the task to the end event
+###  http://example.org/logicinterface/testing/flow_2
+:flow_2 a bbo:SequenceFlow ;
+    bbo:has_sourceRef :clicking_submit_button ;
+    bbo:has_targetRef :data_insert_completed .
+
+
+
+# --- Agents (Participants) ---
+ex:User
+    a bbo:HumanResource ;
+    rdfs:label "Human App User"@en 

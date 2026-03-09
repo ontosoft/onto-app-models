@@ -565,6 +565,155 @@
         }
       }
     },
+    "/api/v1/generator/upload_rdf_file": {
+      "post": {
+        "tags": ["onto_model_generator"],
+        "summary": "Upload Model File",
+        "description": "Uploads a new model file and reads it into the inner application model.",
+        "operationId": "onto_model_generator-upload_model_file",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_onto_model_generator-upload_model_file"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Upload new model file",
+            "content": { "application/json": { "schema": {} } }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/generator/run_application": {
+      "get": {
+        "tags": ["onto_model_generator"],
+        "summary": "Run Application",
+        "description": "Runs the application by creating an instance of the ProcessEngine.\nIf the application was already run before, it displays a message \nindicating that the application is running.",
+        "operationId": "onto_model_generator-run_application",
+        "responses": {
+          "200": {
+            "description": "Run the application",
+            "content": { "application/json": { "schema": {} } }
+          }
+        }
+      }
+    },
+    "/api/v1/generator/stop_application": {
+      "get": {
+        "tags": ["onto_model_generator"],
+        "summary": "Stop Application",
+        "description": "This function stops the application if it is already running.",
+        "operationId": "onto_model_generator-stop_application",
+        "responses": {
+          "200": {
+            "description": "Shut down the running application",
+            "content": { "application/json": { "schema": {} } }
+          }
+        }
+      }
+    },
+    "/api/v1/generator/app_exchange_post": {
+      "post": {
+        "tags": ["onto_model_generator"],
+        "summary": "Process Data Sent From Frontend",
+        "description": "Receiving the current data form the frontend (e.g. UI page). This method is called\nbefore reading the data from the interactive model and then is used the method \napp_exchange_get are used to complete data exchange between the frontend and the backend.",
+        "operationId": "onto_model_generator-process_data_sent_from_frontend",
+        "responses": {
+          "200": {
+            "description": "Process the data sent from the frontend",
+            "content": { "application/json": { "schema": {} } }
+          }
+        }
+      }
+    },
+    "/api/v1/generator/app_exchange_get": {
+      "get": {
+        "tags": ["onto_model_generator"],
+        "summary": "Read Current App Data From Model",
+        "description": "Reading the data from the the interactive model (e.g. UI page) and \nreturns it in the json format to the frontend. This route is called after \nprocessing the data sent from the frontend and both methods are used to \nmake data exchange between the frontend and the backend.",
+        "operationId": "onto_model_generator-read_current_app_data_from_model",
+        "responses": {
+          "200": {
+            "description": "Get current UI page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppExchangeGetOutput"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/generator/read_inner_server_models": {
+      "get": {
+        "tags": ["onto_model_generator"],
+        "summary": "Read The List Of App Models",
+        "description": "Reads the current list of inner model files in the folder 'app_models' into\njson format.",
+        "operationId": "onto_model_generator-read_the_list_of_app_models",
+        "responses": {
+          "200": {
+            "description": "Get current list of inner UI models on the server",
+            "content": { "application/json": { "schema": {} } }
+          }
+        }
+      }
+    },
+    "/api/v1/generator/load_inner_uimodel_from_server": {
+      "get": {
+        "tags": ["onto_model_generator"],
+        "summary": "Load Inner Server Model",
+        "description": "Load the chosen inner UI model from the server.\n\nArgs:\n    filename (str): The name of the UI model file to be loaded.\n    This file is stored in the 'app_models' folder as RDF file",
+        "operationId": "onto_model_generator-load_inner_server_model",
+        "parameters": [
+          {
+            "name": "filename",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "title": "Filename" }
+          },
+          {
+            "name": "force_load",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "boolean" }, { "type": "null" }],
+              "description": "Force reload the model",
+              "title": "Force Load"
+            },
+            "description": "Force reload the model"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Load the chosen app model on the server",
+            "content": { "application/json": { "schema": {} } }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/private/users/": {
       "post": {
         "tags": ["private"],
@@ -602,6 +751,38 @@
   },
   "components": {
     "schemas": {
+      "AppExchangeGetOutput": {
+        "properties": {
+          "message_type": {
+            "type": "string",
+            "enum": ["layout", "notification", "information", "error"],
+            "title": "Message Type"
+          },
+          "layout_type": {
+            "type": "string",
+            "enum": ["form", "message-box", ""],
+            "title": "Layout Type"
+          },
+          "message_content": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Message Content"
+          },
+          "output_knowledge_graph": {
+            "type": "string",
+            "title": "Output Knowledge Graph"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message_type",
+          "layout_type",
+          "message_content",
+          "output_knowledge_graph"
+        ],
+        "title": "AppExchangeGetOutput",
+        "description": "This class represents the data which is sent from the backend\nto the frontend. If the frontend has to show the form then\nan object of this class contains JSONForm elements to \ncreate that form."
+      },
       "Body_login-login_access_token": {
         "properties": {
           "grant_type": {
@@ -631,6 +812,14 @@
         "type": "object",
         "required": ["username", "password"],
         "title": "Body_login-login_access_token"
+      },
+      "Body_onto_model_generator-upload_model_file": {
+        "properties": {
+          "file": { "type": "string", "format": "binary", "title": "File" }
+        },
+        "type": "object",
+        "required": ["file"],
+        "title": "Body_onto_model_generator-upload_model_file"
       },
       "HTTPValidationError": {
         "properties": {

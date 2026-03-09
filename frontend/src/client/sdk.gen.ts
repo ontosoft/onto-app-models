@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, PrivateCreateUserData, PrivateCreateUserResponse, StreamStreamAiData, StreamStreamAiResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, OntoModelGeneratorUploadModelFileData, OntoModelGeneratorUploadModelFileResponse, OntoModelGeneratorRunApplicationResponse, OntoModelGeneratorStopApplicationResponse, OntoModelGeneratorProcessDataSentFromFrontendResponse, OntoModelGeneratorReadCurrentAppDataFromModelResponse, OntoModelGeneratorReadTheListOfAppModelsResponse, OntoModelGeneratorLoadInnerServerModelData, OntoModelGeneratorLoadInnerServerModelResponse, PrivateCreateUserData, PrivateCreateUserResponse, StreamStreamAiData, StreamStreamAiResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
 
 export class LoginService {
     /**
@@ -94,6 +94,128 @@ export class LoginService {
             url: '/api/v1/password-recovery-html-content/{email}',
             path: {
                 email: data.email
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
+export class OntoModelGeneratorService {
+    /**
+     * Upload Model File
+     * Uploads a new model file and reads it into the inner application model.
+     * @param data The data for the request.
+     * @param data.formData
+     * @returns unknown Upload new model file
+     * @throws ApiError
+     */
+    public static uploadModelFile(data: OntoModelGeneratorUploadModelFileData): CancelablePromise<OntoModelGeneratorUploadModelFileResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/generator/upload_rdf_file',
+            formData: data.formData,
+            mediaType: 'multipart/form-data',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Run Application
+     * Runs the application by creating an instance of the ProcessEngine.
+     * If the application was already run before, it displays a message
+     * indicating that the application is running.
+     * @returns unknown Run the application
+     * @throws ApiError
+     */
+    public static runApplication(): CancelablePromise<OntoModelGeneratorRunApplicationResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/generator/run_application'
+        });
+    }
+    
+    /**
+     * Stop Application
+     * This function stops the application if it is already running.
+     * @returns unknown Shut down the running application
+     * @throws ApiError
+     */
+    public static stopApplication(): CancelablePromise<OntoModelGeneratorStopApplicationResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/generator/stop_application'
+        });
+    }
+    
+    /**
+     * Process Data Sent From Frontend
+     * Receiving the current data form the frontend (e.g. UI page). This method is called
+     * before reading the data from the interactive model and then is used the method
+     * app_exchange_get are used to complete data exchange between the frontend and the backend.
+     * @returns unknown Process the data sent from the frontend
+     * @throws ApiError
+     */
+    public static processDataSentFromFrontend(): CancelablePromise<OntoModelGeneratorProcessDataSentFromFrontendResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/generator/app_exchange_post'
+        });
+    }
+    
+    /**
+     * Read Current App Data From Model
+     * Reading the data from the the interactive model (e.g. UI page) and
+     * returns it in the json format to the frontend. This route is called after
+     * processing the data sent from the frontend and both methods are used to
+     * make data exchange between the frontend and the backend.
+     * @returns AppExchangeGetOutput Get current UI page
+     * @throws ApiError
+     */
+    public static readCurrentAppDataFromModel(): CancelablePromise<OntoModelGeneratorReadCurrentAppDataFromModelResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/generator/app_exchange_get'
+        });
+    }
+    
+    /**
+     * Read The List Of App Models
+     * Reads the current list of inner model files in the folder 'app_models' into
+     * json format.
+     * @returns unknown Get current list of inner UI models on the server
+     * @throws ApiError
+     */
+    public static readTheListOfAppModels(): CancelablePromise<OntoModelGeneratorReadTheListOfAppModelsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/generator/read_inner_server_models'
+        });
+    }
+    
+    /**
+     * Load Inner Server Model
+     * Load the chosen inner UI model from the server.
+     *
+     * Args:
+     * filename (str): The name of the UI model file to be loaded.
+     * This file is stored in the 'app_models' folder as RDF file
+     * @param data The data for the request.
+     * @param data.filename
+     * @param data.forceLoad Force reload the model
+     * @returns unknown Load the chosen app model on the server
+     * @throws ApiError
+     */
+    public static loadInnerServerModel(data: OntoModelGeneratorLoadInnerServerModelData): CancelablePromise<OntoModelGeneratorLoadInnerServerModelResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/generator/load_inner_uimodel_from_server',
+            query: {
+                filename: data.filename,
+                force_load: data.forceLoad
             },
             errors: {
                 422: 'Validation Error'

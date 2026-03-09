@@ -20,6 +20,26 @@ WORKDIR /app/
 # Ref: https://docs.astral.sh/uv/guides/integration/docker/#using-the-environment
 ENV PATH="/app/.venv/bin:$PATH"
 
+# Install Java (OpenJDK) - these three steps are necessary to ensure Java 25 is installed and available in the environment for the purpose of running the Pellet and HermiT reasoners, using Owlready2, 
+# TODO This has to be tested
+
+RUN apt-get update && apt-get install -y \
+    wget \
+    gnupg \
+    && apt-get clean
+# Manual install of Java 25 (Reliable for version 25 specifically)
+RUN wget https://download.oracle.com/java/25/latest/jdk-25_linux-x64_bin.tar.gz && \
+    mkdir -p /usr/lib/jvm/java-25-openjdk-amd64 && \
+    tar -xzf jdk-25_linux-x64_bin.tar.gz -C /usr/lib/jvm/java-25-openjdk-amd64 --strip-components=1 && \
+    rm jdk-25_linux-x64_bin.tar.gz
+
+# Set the JAVA_HOME to the new Java 25 path
+ENV JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64
+ENV PATH="$JAVA_HOME/bin:$PATH"
+
+# Verify Java version during build
+RUN java -version
+
 # Install dependencies
 # Ref: https://docs.astral.sh/uv/guides/integration/docker/#intermediate-layers
 RUN --mount=type=cache,target=/root/.cache/uv \
@@ -43,5 +63,3 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 WORKDIR /app/llm-model-generator/
 
 CMD ["fastapi", "run", "--workers", "4", "app/main.py"]
-
-#CMD [ "python", "main.py" ]

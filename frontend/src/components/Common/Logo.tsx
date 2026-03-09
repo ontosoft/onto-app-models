@@ -4,8 +4,8 @@ import { useTheme } from "~/components/theme-provider"
 import { cn } from "~/lib/utils"
 import icon from "/assets/images/fastapi-icon.svg"
 import iconLight from "/assets/images/fastapi-icon-light.svg"
-import logo from "/assets/images/fastapi-logo.svg"
-import logoLight from "/assets/images/fastapi-logo-light.svg"
+import logo from "/assets/images/ontoui-logo.svg"
+import logoLight from "/assets/images/ontoui-logo-light.svg"
 
 interface LogoProps {
   variant?: "full" | "icon" | "responsive"
