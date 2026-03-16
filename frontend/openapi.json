@@ -536,6 +536,189 @@
         }
       }
     },
+    "/api/v1/appmodels/": {
+      "get": {
+        "tags": ["appmodels"],
+        "summary": "Read App Models",
+        "description": "Retrieve app models.",
+        "operationId": "appmodels-read_app_models",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 0, "title": "Skip" }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 100, "title": "Limit" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AppModelsPublic" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["appmodels"],
+        "summary": "Create App Model",
+        "description": "Create new app model.",
+        "operationId": "appmodels-create_app_model",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AppModelCreate" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AppModelPublic" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/appmodels/{id}": {
+      "get": {
+        "tags": ["appmodels"],
+        "summary": "Read App Model",
+        "description": "Get app model by ID.",
+        "operationId": "appmodels-read_app_model",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid", "title": "Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AppModelPublic" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["appmodels"],
+        "summary": "Update App Model",
+        "description": "Update an app model.",
+        "operationId": "appmodels-update_app_model",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid", "title": "Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AppModelUpdate" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AppModelPublic" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["appmodels"],
+        "summary": "Delete App Model",
+        "description": "Delete an app model.",
+        "operationId": "appmodels-delete_app_model",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid", "title": "Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Message" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/stream/stream": {
       "get": {
         "tags": ["stream"],
@@ -747,6 +930,40 @@
           }
         }
       }
+    },
+    "/api/v1/processing/text/word-count": {
+      "post": {
+        "tags": ["text-processing"],
+        "summary": "Get Word Count",
+        "description": "Receives a text payload and returns the word count.",
+        "operationId": "text-processing-get_word_count",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TextProcessRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/WordCountResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -782,6 +999,98 @@
         ],
         "title": "AppExchangeGetOutput",
         "description": "This class represents the data which is sent from the backend\nto the frontend. If the frontend has to show the form then\nan object of this class contains JSONForm elements to \ncreate that form."
+      },
+      "AppModelCreate": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              { "type": "string", "maxLength": 1024 },
+              { "type": "null" }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": ["title"],
+        "title": "AppModelCreate"
+      },
+      "AppModelPublic": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              { "type": "string", "maxLength": 1024 },
+              { "type": "null" }
+            ],
+            "title": "Description"
+          },
+          "id": { "type": "string", "format": "uuid", "title": "Id" },
+          "owner_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Owner Id"
+          },
+          "created_at": {
+            "anyOf": [
+              { "type": "string", "format": "date-time" },
+              { "type": "null" }
+            ],
+            "title": "Created At"
+          },
+          "definition": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Definition",
+            "default": {}
+          }
+        },
+        "type": "object",
+        "required": ["title", "id", "owner_id"],
+        "title": "AppModelPublic"
+      },
+      "AppModelUpdate": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              { "type": "string", "maxLength": 255, "minLength": 1 },
+              { "type": "null" }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              { "type": "string", "maxLength": 1024 },
+              { "type": "null" }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "title": "AppModelUpdate"
+      },
+      "AppModelsPublic": {
+        "properties": {
+          "data": {
+            "items": { "$ref": "#/components/schemas/AppModelPublic" },
+            "type": "array",
+            "title": "Data"
+          },
+          "count": { "type": "integer", "title": "Count" }
+        },
+        "type": "object",
+        "required": ["data", "count"],
+        "title": "AppModelsPublic"
       },
       "Body_login-login_access_token": {
         "properties": {
@@ -866,6 +1175,19 @@
         "type": "object",
         "required": ["email", "password", "full_name"],
         "title": "PrivateUserCreate"
+      },
+      "TextProcessRequest": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Text",
+            "description": "The text to be processed."
+          }
+        },
+        "type": "object",
+        "required": ["text"],
+        "title": "TextProcessRequest"
       },
       "Token": {
         "properties": {
@@ -1075,6 +1397,16 @@
         "type": "object",
         "required": ["loc", "msg", "type"],
         "title": "ValidationError"
+      },
+      "WordCountResponse": {
+        "properties": {
+          "word_count": { "type": "integer", "title": "Word Count" },
+          "text_length": { "type": "integer", "title": "Text Length" },
+          "message": { "type": "string", "title": "Message" }
+        },
+        "type": "object",
+        "required": ["word_count", "text_length", "message"],
+        "title": "WordCountResponse"
       }
     },
     "securitySchemes": {

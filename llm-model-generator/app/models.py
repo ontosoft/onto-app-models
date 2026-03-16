@@ -1,8 +1,15 @@
 import uuid
+from datetime import datetime, timezone
 
 from pydantic import EmailStr
-from sqlmodel import Field,  SQLModel
+from typing import Dict, Any
+from sqlalchemy import DateTime, Column
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlmodel import Field,  SQLModel, Relationship
 
+
+def get_datetime_utc() -> datetime:
+    return datetime.now(timezone.utc)
 
 # Shared properties
 class UserBase(SQLModel):
@@ -43,6 +50,11 @@ class UpdatePassword(SQLModel):
 class User(UserBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     hashed_password: str
+    created_at: datetime | None = Field(
+        default_factory=get_datetime_utc,
+        sa_type=DateTime(timezone=True),  # type: ignore
+    )
+    appmodels: list["AppModel"] = Relationship(back_populates="owner")  
 
 # Properties to return via API, id is always required
 class UserPublic(UserBase):
@@ -53,6 +65,41 @@ class UsersPublic(SQLModel):
     data: list[UserPublic]
     count: int
 
+class AppModelBase(SQLModel):
+    title: str = Field(min_length=1, max_length=255)
+    description: str | None = Field(default=None, max_length=1024)
+
+
+# Properties to receive via API on creation
+class AppModelCreate(AppModelBase):
+    pass
+
+# Properties to receive via API on update, all are optional
+class AppModelUpdate(SQLModel):
+    title: str | None = Field(default=None, min_length=1, max_length=255)
+    description: str | None = Field(default=None, max_length=1024)
+
+class AppModel(AppModelBase, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    owner_id: uuid.UUID = Field(foreign_key="user.id", nullable=False)
+    owner: User = Relationship(back_populates="appmodels")  # type: ignore
+    created_at: datetime | None = Field(
+        default_factory=get_datetime_utc,
+        sa_type=DateTime(timezone=True),  # type: ignore
+    )
+    # Use sa_column to tell SQLAlchemy to use the Postgres JSONB for knowledge graph storage
+    definition: Dict[str, Any] = Field(default={}, sa_column=Column(JSONB))
+
+# Properties to return via API
+class AppModelPublic(AppModelBase):
+    id: uuid.UUID
+    owner_id: uuid.UUID
+    created_at: datetime | None = None
+    definition: Dict[str, Any] = Field(default={})
+
+class AppModelsPublic(SQLModel):
+    data: list[AppModelPublic]
+    count: int
 
 
 # Generic message

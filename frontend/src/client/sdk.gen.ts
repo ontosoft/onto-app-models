@@ -3,7 +3,118 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, OntoModelGeneratorUploadModelFileData, OntoModelGeneratorUploadModelFileResponse, OntoModelGeneratorRunApplicationResponse, OntoModelGeneratorStopApplicationResponse, OntoModelGeneratorProcessDataSentFromFrontendResponse, OntoModelGeneratorReadCurrentAppDataFromModelResponse, OntoModelGeneratorReadTheListOfAppModelsResponse, OntoModelGeneratorLoadInnerServerModelData, OntoModelGeneratorLoadInnerServerModelResponse, PrivateCreateUserData, PrivateCreateUserResponse, StreamStreamAiData, StreamStreamAiResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { AppmodelsReadAppModelsData, AppmodelsReadAppModelsResponse, AppmodelsCreateAppModelData, AppmodelsCreateAppModelResponse, AppmodelsReadAppModelData, AppmodelsReadAppModelResponse, AppmodelsUpdateAppModelData, AppmodelsUpdateAppModelResponse, AppmodelsDeleteAppModelData, AppmodelsDeleteAppModelResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, OntoModelGeneratorUploadModelFileData, OntoModelGeneratorUploadModelFileResponse, OntoModelGeneratorRunApplicationResponse, OntoModelGeneratorStopApplicationResponse, OntoModelGeneratorProcessDataSentFromFrontendResponse, OntoModelGeneratorReadCurrentAppDataFromModelResponse, OntoModelGeneratorReadTheListOfAppModelsResponse, OntoModelGeneratorLoadInnerServerModelData, OntoModelGeneratorLoadInnerServerModelResponse, PrivateCreateUserData, PrivateCreateUserResponse, StreamStreamAiData, StreamStreamAiResponse, TextProcessingGetWordCountData, TextProcessingGetWordCountResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+
+export class AppmodelsService {
+    /**
+     * Read App Models
+     * Retrieve app models.
+     * @param data The data for the request.
+     * @param data.skip
+     * @param data.limit
+     * @returns AppModelsPublic Successful Response
+     * @throws ApiError
+     */
+    public static readAppModels(data: AppmodelsReadAppModelsData = {}): CancelablePromise<AppmodelsReadAppModelsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/appmodels/',
+            query: {
+                skip: data.skip,
+                limit: data.limit
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Create App Model
+     * Create new app model.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns AppModelPublic Successful Response
+     * @throws ApiError
+     */
+    public static createAppModel(data: AppmodelsCreateAppModelData): CancelablePromise<AppmodelsCreateAppModelResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/appmodels/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read App Model
+     * Get app model by ID.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns AppModelPublic Successful Response
+     * @throws ApiError
+     */
+    public static readAppModel(data: AppmodelsReadAppModelData): CancelablePromise<AppmodelsReadAppModelResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/appmodels/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Update App Model
+     * Update an app model.
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.requestBody
+     * @returns AppModelPublic Successful Response
+     * @throws ApiError
+     */
+    public static updateAppModel(data: AppmodelsUpdateAppModelData): CancelablePromise<AppmodelsUpdateAppModelResponse> {
+        return __request(OpenAPI, {
+            method: 'PUT',
+            url: '/api/v1/appmodels/{id}',
+            path: {
+                id: data.id
+            },
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete App Model
+     * Delete an app model.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteAppModel(data: AppmodelsDeleteAppModelData): CancelablePromise<AppmodelsDeleteAppModelResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/appmodels/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
 
 export class LoginService {
     /**
@@ -261,6 +372,28 @@ export class StreamService {
             query: {
                 prompt: data.prompt
             },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
+export class TextProcessingService {
+    /**
+     * Get Word Count
+     * Receives a text payload and returns the word count.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns WordCountResponse Successful Response
+     * @throws ApiError
+     */
+    public static getWordCount(data: TextProcessingGetWordCountData): CancelablePromise<TextProcessingGetWordCountResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/processing/text/word-count',
+            body: data.requestBody,
+            mediaType: 'application/json',
             errors: {
                 422: 'Validation Error'
             }

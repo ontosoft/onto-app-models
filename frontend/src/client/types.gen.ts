@@ -19,6 +19,32 @@ export type message_type = 'layout' | 'notification' | 'information' | 'error';
 
 export type layout_type = 'form' | 'message-box' | '';
 
+export type AppModelCreate = {
+    title: string;
+    description?: (string | null);
+};
+
+export type AppModelPublic = {
+    title: string;
+    description?: (string | null);
+    id: string;
+    owner_id: string;
+    created_at?: (string | null);
+    definition?: {
+        [key: string]: unknown;
+    };
+};
+
+export type AppModelsPublic = {
+    data: Array<AppModelPublic>;
+    count: number;
+};
+
+export type AppModelUpdate = {
+    title?: (string | null);
+    description?: (string | null);
+};
+
 export type Body_login_login_access_token = {
     grant_type?: (string | null);
     username: string;
@@ -50,6 +76,13 @@ export type PrivateUserCreate = {
     password: string;
     full_name: string;
     is_verified?: boolean;
+};
+
+export type TextProcessRequest = {
+    /**
+     * The text to be processed.
+     */
+    text: string;
 };
 
 export type Token = {
@@ -107,6 +140,44 @@ export type ValidationError = {
     msg: string;
     type: string;
 };
+
+export type WordCountResponse = {
+    word_count: number;
+    text_length: number;
+    message: string;
+};
+
+export type AppmodelsReadAppModelsData = {
+    limit?: number;
+    skip?: number;
+};
+
+export type AppmodelsReadAppModelsResponse = (AppModelsPublic);
+
+export type AppmodelsCreateAppModelData = {
+    requestBody: AppModelCreate;
+};
+
+export type AppmodelsCreateAppModelResponse = (AppModelPublic);
+
+export type AppmodelsReadAppModelData = {
+    id: string;
+};
+
+export type AppmodelsReadAppModelResponse = (AppModelPublic);
+
+export type AppmodelsUpdateAppModelData = {
+    id: string;
+    requestBody: AppModelUpdate;
+};
+
+export type AppmodelsUpdateAppModelResponse = (AppModelPublic);
+
+export type AppmodelsDeleteAppModelData = {
+    id: string;
+};
+
+export type AppmodelsDeleteAppModelResponse = (Message);
 
 export type LoginLoginAccessTokenData = {
     formData: Body_login_login_access_token;
@@ -171,6 +242,12 @@ export type StreamStreamAiData = {
 };
 
 export type StreamStreamAiResponse = (unknown);
+
+export type TextProcessingGetWordCountData = {
+    requestBody: TextProcessRequest;
+};
+
+export type TextProcessingGetWordCountResponse = (WordCountResponse);
 
 export type UsersReadUsersData = {
     limit?: number;

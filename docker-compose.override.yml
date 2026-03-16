@@ -45,6 +45,12 @@ services:
       - traefik-public
       - default
 
+  ollama-webui:
+    restart: "no"
+    ports:
+      - "8035:8000"
+
+
   db:
     restart: "no"
     ports:
@@ -58,21 +64,16 @@ services:
   backend-onto:
     restart: "no"
     ports:
-      - "8000:8000"
+      - "8089:8089"
     build:
       context: .
       dockerfile: backend/Dockerfile
     # command: sleep infinity  # Infinite loop to keep container alive doing nothing
-    command:
-      - fastapi
-      - run
-      - --reload
-      - "app/main.py"
     develop:
       watch:
         - path: ./backend
           action: sync
-          target: /app/backend
+          target: /app/
           ignore:
             - ./backend/venv
             - venv
@@ -93,17 +94,17 @@ services:
       - "app/main.py"
     develop:
       watch:
-        - path: ./backend
+        - path: ./llm-model-generator
           action: sync
-          target: /app/backend
+          target: /app/llm-model-generator
           ignore:
-            - ./backend/.venv
+            - ./llm-model-generator/.venv
             - .venv
-        - path: ./backend/pyproject.toml
+        - path: ./llm-model-generator/pyproject.toml
           action: rebuild
     # TODO: remove once coverage is done locally
     volumes:
-      - ./backend/htmlcov:/app/backend/htmlcov
+      - ./llm-model-generator/htmlcov:/app/llm-model-generator/htmlcov
     environment:
       SMTP_HOST: "mailcatcher"
       SMTP_PORT: "1025"
@@ -126,6 +127,34 @@ services:
       args:
         - VITE_API_URL=http://localhost:8000
         - NODE_ENV=development
+
+    # In the case that docker compose watch function is used, the command in the Dockerfile is overridden to run the development server, and the source code is synced with the container. This allows for hot reloading of the frontend code during development.
+    # for the development 
+    # ports:
+    #   - "5173:5173"
+    # build:
+    #   context: .
+    #   dockerfile: frontend/Dockerfile
+    #   target: build-stage
+    #   args:
+    #     - VITE_API_URL=http://localhost:8000
+    #     - NODE_ENV=development
+    # command: bun run dev -- --host --port 5173
+    # develop:
+    #   watch:
+    #     - path: ./frontend
+    #       action: sync
+    #       target: /app/frontend
+    #       ignore:
+    #         - node_modules
+
+  frontend-onto:
+    restart: "no"
+    ports:
+      - "3000:3000"
+    build:
+      context: .
+      dockerfile: frontend1/Dockerfile
 
   playwright:
     build:
