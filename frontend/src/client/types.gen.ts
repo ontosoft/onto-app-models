@@ -22,6 +22,7 @@ export type layout_type = 'form' | 'message-box' | '';
 export type AppModelCreate = {
     title: string;
     description?: (string | null);
+    rdf_content: string;
 };
 
 export type AppModelPublic = {
@@ -30,9 +31,7 @@ export type AppModelPublic = {
     id: string;
     owner_id: string;
     created_at?: (string | null);
-    definition?: {
-        [key: string]: unknown;
-    };
+    knowledge_graph?: unknown;
 };
 
 export type AppModelsPublic = {
@@ -43,6 +42,7 @@ export type AppModelsPublic = {
 export type AppModelUpdate = {
     title?: (string | null);
     description?: (string | null);
+    rdf_content?: (string | null);
 };
 
 export type Body_login_login_access_token = {

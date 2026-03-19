@@ -50,10 +50,14 @@ export const AppModelCreateSchema = {
                 }
             ],
             title: 'Description'
+        },
+        rdf_content: {
+            type: 'string',
+            title: 'Rdf Content'
         }
     },
     type: 'object',
-    required: ['title'],
+    required: ['title', 'rdf_content'],
     title: 'AppModelCreate'
 } as const;
 
@@ -99,10 +103,8 @@ export const AppModelPublicSchema = {
             ],
             title: 'Created At'
         },
-        definition: {
-            additionalProperties: true,
-            type: 'object',
-            title: 'Definition',
+        knowledge_graph: {
+            title: 'Knowledge Graph',
             default: {}
         }
     },
@@ -137,6 +139,17 @@ export const AppModelUpdateSchema = {
                 }
             ],
             title: 'Description'
+        },
+        rdf_content: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Rdf Content'
         }
     },
     type: 'object',

@@ -2,8 +2,8 @@ import uuid
 from datetime import datetime, timezone
 
 from pydantic import EmailStr
-from typing import Dict, Any
-from sqlalchemy import DateTime, Column
+from typing import Any, Dict
+from sqlalchemy import DateTime, Column, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field,  SQLModel, Relationship
 
@@ -72,12 +72,13 @@ class AppModelBase(SQLModel):
 
 # Properties to receive via API on creation
 class AppModelCreate(AppModelBase):
-    pass
+    rdf_content: str = Field(min_length=1)
 
 # Properties to receive via API on update, all are optional
 class AppModelUpdate(SQLModel):
     title: str | None = Field(default=None, min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=1024)
+    rdf_content: str = Field(min_length=1)  # type: ignore
 
 class AppModel(AppModelBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
@@ -88,14 +89,15 @@ class AppModel(AppModelBase, table=True):
         sa_type=DateTime(timezone=True),  # type: ignore
     )
     # Use sa_column to tell SQLAlchemy to use the Postgres JSONB for knowledge graph storage
-    definition: Dict[str, Any] = Field(default={}, sa_column=Column(JSONB))
+    knowledge_graph : Any = Field(default={}, sa_column=Column(JSONB))
+    rdf_content: str = Field(default=None, sa_column=Column(Text))
 
 # Properties to return via API
 class AppModelPublic(AppModelBase):
     id: uuid.UUID
     owner_id: uuid.UUID
     created_at: datetime | None = None
-    definition: Dict[str, Any] = Field(default={})
+    knowledge_graph: Any = Field(default={})
 
 class AppModelsPublic(SQLModel):
     data: list[AppModelPublic]

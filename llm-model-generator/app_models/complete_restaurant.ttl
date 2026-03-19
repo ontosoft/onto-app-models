@@ -11,7 +11,7 @@
 
 # --- RestaurantShape ---
 ex:RestaurantShape rdf:type shacl:NodeShape ;
-    obop:modelBelongsTo :Block1 ; # This seems like an application-specific property
+    obop:modelBelongsTo ex:Block1 ; # This seems like an application-specific property
     shacl:targetClass env:ENVO_01000934, schema:FoodEstablishment, gr:BusinessEntity ;
     shacl:property [ # Property for legal name
         shacl:path gr:legalName ;
@@ -19,7 +19,7 @@ ex:RestaurantShape rdf:type shacl:NodeShape ;
         shacl:minCount 1 ;
         shacl:maxCount 1 ;
         dash:singleLine true ; # Use xsd:boolean directly
-        obop:specifiedBy :Field1 ;
+        obop:specifiedBy ex:Field1 ;
     ] ;
     shacl:property [ # Property for menus using schema:hasMenu
         shacl:path schema:hasMenu ;

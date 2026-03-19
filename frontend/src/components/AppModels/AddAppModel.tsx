@@ -27,12 +27,16 @@ import {
 } from "~/components/ui/form"
 import { Input } from "~/components/ui/input"
 import { LoadingButton } from "~/components/ui/loading-button"
+import { Textarea } from "~/components/ui/textarea"
 import useCustomToast from "~/hooks/useCustomToast"
 import { handleError } from "~/utils"
 
 const formSchema = z.object({
   title: z.string().min(1, { message: "Title is required" }),
   description: z.string().optional(),
+  rdf_content: z
+    .string()
+    .min(1, { message: "Knowledge Graph content is required" }),
 })
 
 type FormData = z.infer<typeof formSchema>
@@ -49,6 +53,7 @@ const AddAppModel = () => {
     defaultValues: {
       title: "",
       description: "",
+      rdf_content: "",
     },
   })
 
@@ -116,6 +121,27 @@ const AddAppModel = () => {
                     <FormLabel>Description</FormLabel>
                     <FormControl>
                       <Input placeholder="Description" type="text" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="rdf_content"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Knowledge Graph (RDF/Turtle){" "}
+                      <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Paste your RDF Turtle content here..."
+                        className="min-h-[100px]"
+                        {...field}
+                        required
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

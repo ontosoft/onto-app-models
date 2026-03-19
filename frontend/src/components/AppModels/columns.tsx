@@ -1,14 +1,14 @@
-import { ColumnDef } from "@tanstack/react-table";
-import { Check, Copy } from "lucide-react";
-import { useCopyToClipboard } from "~/hooks/useCopyToClipboard";
-import { Button } from "~/components/ui/button";
-import { AppModelPublic } from "~/client";
-import { cn } from "~/lib/utils";
-import { AppModelActionsMenu } from "./AppModelActionsMenu";
+import type { ColumnDef } from "@tanstack/react-table"
+import { Check, Copy } from "lucide-react"
+import type { AppModelPublic } from "~/client"
+import { Button } from "~/components/ui/button"
+import { useCopyToClipboard } from "~/hooks/useCopyToClipboard"
+import { cn } from "~/lib/utils"
+import { AppModelActionsMenu } from "./AppModelActionsMenu"
 
 function CopyId({ id }: { id: string }) {
-  const [copiedText, copy] = useCopyToClipboard();
-  const isCopied = copiedText === id;
+  const [copiedText, copy] = useCopyToClipboard()
+  const isCopied = copiedText === id
 
   return (
     <div className="flex items-center gap-1.5 group">
@@ -27,7 +27,7 @@ function CopyId({ id }: { id: string }) {
         <span className="sr-only">Copy ID</span>
       </Button>
     </div>
-  );
+  )
 }
 
 export const columns: ColumnDef<AppModelPublic>[] = [
@@ -54,7 +54,7 @@ export const columns: ColumnDef<AppModelPublic>[] = [
     accessorKey: "description",
     header: "Description",
     cell: ({ row }) => {
-      const description = row.original.description;
+      const description = row.original.description
       return (
         <span
           className={cn(
@@ -64,7 +64,7 @@ export const columns: ColumnDef<AppModelPublic>[] = [
         >
           {description || "No description"}
         </span>
-      );
+      )
     },
   },
   {
@@ -76,4 +76,4 @@ export const columns: ColumnDef<AppModelPublic>[] = [
       </div>
     ),
   },
-];
+]

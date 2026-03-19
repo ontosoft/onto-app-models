@@ -7,8 +7,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
-import DeleteAppModel from "./DeleteAppModel";
+} from "~/components/ui/dropdown-menu"
+import DeleteAppModel from "./DeleteAppModel"
 import EditAppModel from "./EditAppModel"
 
 interface AppModelActionsMenuProps {

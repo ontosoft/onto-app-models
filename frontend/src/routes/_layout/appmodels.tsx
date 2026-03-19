@@ -1,20 +1,19 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { Suspense } from "react";
-import { Search } from "lucide-react";
+import { useSuspenseQuery } from "@tanstack/react-query"
+import { createFileRoute } from "@tanstack/react-router"
+import { Search } from "lucide-react"
+import { Suspense } from "react"
 
-import { AppmodelsService } from "~/client";
-import { DataTable } from "~/components/Common/DataTable";
-import { columns } from "~/components/AppModels/columns";
-import PendingAppModels from "~/components/Pending/PendingAppModels";
-
-import AddAppModel from "~/components/AppModels/AddAppModel";
+import { AppmodelsService } from "~/client"
+import AddAppModel from "~/components/AppModels/AddAppModel"
+import { columns } from "~/components/AppModels/columns"
+import { DataTable } from "~/components/Common/DataTable"
+import PendingAppModels from "~/components/Pending/PendingAppModels"
 
 function getAppModelsQueryOptions() {
   return {
     queryKey: ["appmodels"],
     queryFn: () => AppmodelsService.readAppModels({ skip: 0, limit: 100 }),
-  };
+  }
 }
 
 export const Route = createFileRoute("/_layout/appmodels")({
@@ -26,10 +25,10 @@ export const Route = createFileRoute("/_layout/appmodels")({
       },
     ],
   }),
-});
+})
 
 function AppModelsTableContent() {
-  const { data: appmodels } = useSuspenseQuery(getAppModelsQueryOptions());
+  const { data: appmodels } = useSuspenseQuery(getAppModelsQueryOptions())
   if (appmodels.data.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center text-center py-12">
@@ -44,9 +43,9 @@ function AppModelsTableContent() {
           Add a new application model to get started
         </p>
       </div>
-    );
+    )
   }
-  return <DataTable columns={columns} data={appmodels.data} />;
+  return <DataTable columns={columns} data={appmodels.data} />
 }
 
 function AppModelsTable() {
@@ -54,7 +53,7 @@ function AppModelsTable() {
     <Suspense fallback={<PendingAppModels />}>
       <AppModelsTableContent />
     </Suspense>
-  );
+  )
 }
 
 function AppModels() {
@@ -73,5 +72,5 @@ function AppModels() {
       </div>
       <AppModelsTable />
     </div>
-  );
+  )
 }

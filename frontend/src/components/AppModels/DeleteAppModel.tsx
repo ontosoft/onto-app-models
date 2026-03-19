@@ -66,8 +66,8 @@ const DeleteAppModel = ({ id, onSuccess }: DeleteAppModelProps) => {
           <DialogHeader>
             <DialogTitle>Delete Application Model</DialogTitle>
             <DialogDescription>
-              This application model will be permanently deleted. Are you sure? You will not
-              be able to undo this action.
+              This application model will be permanently deleted. Are you sure?
+              You will not be able to undo this action.
             </DialogDescription>
           </DialogHeader>
 

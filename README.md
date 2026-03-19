@@ -1,3 +1,10 @@
+<h1 align="center">
+  <img src="frontend/public/assets/images/ontoui-logo.svg" alt="OntoUI">
+
+  <a href="https://example.com">Documentation</a> |
+</h1>
+
+
 # Onto Application Models 
 
 This project is an implementation of the approach that combines data and the functionality to collect that data in knowledge graphs. The approach includes an implementation of the application generator that creates web-applications which collect data, i.e., generate knowledge graphs according to specified SHACL models.
@@ -53,3 +60,46 @@ The backend is implemented using the Python programming language with the FastAP
  After you run the application generator (OntoUI environment), you can click on "List server models" button to retrieve all application models which are currently stored internally.  
 
  One of the listed application models (RDF graphs) should be loaded and in the next step the application is run. After that the right pannel of the OntoUI screen is reserved for the generated application interface.  
+
+
+# Development Environment
+
+To run the application locally (without Docker containers), follow these steps:
+
+## 1. Install PostgreSQL
+
+Install PostgreSQL on your local machine and create the application database:
+
+```bash
+psql -U postgres -c "CREATE DATABASE app;"
+
+
+## 2. Load environment variables
+From the root directory of the project, run:
+
+set -a; source .env; set +a
+
+ This loads the .env file into your current shell's memory.
+
+## 3. Run backend prestart script
+Switch to the backend directory and execute:
+ 
+bash scripts/prestart.sh
+
+This command initializes the service and runs database migrations (Alembic).
+
+## 4. Start the backend
+
+From the same directory, run:
+
+fastapi dev app/main.py
+
+This starts the FastAPI backend.
+
+## 5. Start the frontend
+
+Navigate to the frontend directory and run:
+
+bun run dev
+
+This starts the frontend development server.

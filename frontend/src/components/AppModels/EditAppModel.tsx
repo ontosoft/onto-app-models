@@ -27,12 +27,14 @@ import {
 } from "~/components/ui/form"
 import { Input } from "~/components/ui/input"
 import { LoadingButton } from "~/components/ui/loading-button"
+import { Textarea } from "~/components/ui/textarea"
 import useCustomToast from "~/hooks/useCustomToast"
 import { handleError } from "~/utils"
 
 const formSchema = z.object({
   title: z.string().min(1, { message: "Title is required" }),
   description: z.string().optional(),
+  rdf_content: z.string().optional(),
 })
 
 type FormData = z.infer<typeof formSchema>
@@ -54,6 +56,7 @@ const EditAppModel = ({ appmodel, onSuccess }: EditAppModelProps) => {
     defaultValues: {
       title: appmodel.title,
       description: appmodel.description ?? undefined,
+      rdf_content: "",
     },
   })
 
@@ -90,7 +93,8 @@ const EditAppModel = ({ appmodel, onSuccess }: EditAppModelProps) => {
             <DialogHeader>
               <DialogTitle>Edit Application Model</DialogTitle>
               <DialogDescription>
-                Update the appmodel details below.
+                Update the details below. Pasting new RDF content will overwrite
+                the existing knowledge graph.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -118,6 +122,24 @@ const EditAppModel = ({ appmodel, onSuccess }: EditAppModelProps) => {
                     <FormLabel>Description</FormLabel>
                     <FormControl>
                       <Input placeholder="Description" type="text" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="rdf_content"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Knowledge Graph (RDF/Turtle)</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Paste new RDF Turtle content here to overwrite..."
+                        className="min-h-[100px]"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

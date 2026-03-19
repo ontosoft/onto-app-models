@@ -1014,10 +1014,11 @@
               { "type": "null" }
             ],
             "title": "Description"
-          }
+          },
+          "rdf_content": { "type": "string", "title": "Rdf Content" }
         },
         "type": "object",
-        "required": ["title"],
+        "required": ["title", "rdf_content"],
         "title": "AppModelCreate"
       },
       "AppModelPublic": {
@@ -1048,12 +1049,7 @@
             ],
             "title": "Created At"
           },
-          "definition": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Definition",
-            "default": {}
-          }
+          "knowledge_graph": { "title": "Knowledge Graph", "default": {} }
         },
         "type": "object",
         "required": ["title", "id", "owner_id"],
@@ -1074,6 +1070,10 @@
               { "type": "null" }
             ],
             "title": "Description"
+          },
+          "rdf_content": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Rdf Content"
           }
         },
         "type": "object",

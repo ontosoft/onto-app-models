@@ -1,5 +1,7 @@
 import uuid
+import json
 from typing import Any
+from rdflib import Graph
 
 from fastapi import APIRouter, HTTPException
 from sqlmodel import func, select
@@ -8,6 +10,17 @@ from app.api.deps import SessionDep, CurrentUser
 from app.models import AppModel, AppModelCreate, AppModelPublic, AppModelsPublic, AppModelUpdate, Message
 
 router = APIRouter(prefix="/appmodels", tags=["appmodels"])
+
+def convert_rdf_to_jsonld(rdf_str: str, rdf_format: str = "turtle") -> Any:
+    g = Graph()
+    try:
+        # 1. Validation & Parsing
+        g.parse(data=rdf_str, format=rdf_format)
+        # 2. Conversion: Serialize to JSON-LD string then load as python object
+        jsonld_str = g.serialize(format="json-ld")
+        return json.loads(jsonld_str)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid RDF data: {str(e)}")
 
 @router.get("/", response_model=AppModelsPublic)
 def read_app_models(
@@ -58,7 +71,14 @@ def create_app_model(
     """
     Create new app model.
     """
-    app_model = AppModel.model_validate(app_model_in, update={"owner_id": current_user.id})
+    app_model_data = app_model_in.model_dump(exclude={"rdf_content"})
+    
+    # Process RDF content
+    knowledge_graph = convert_rdf_to_jsonld(app_model_in.rdf_content)
+    
+    app_model_data["knowledge_graph"] = knowledge_graph
+    app_model = AppModel.model_validate(app_model_data, update={"owner_id": current_user.id})
+    
     session.add(app_model)
     session.commit()
     session.refresh(app_model)
@@ -80,7 +100,12 @@ def update_app_model(
         raise HTTPException(status_code=404, detail="App model not found")
     if not current_user.is_superuser and app_model.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
-    app_model_data = app_model_in.model_dump(exclude_unset=True)
+    
+    app_model_data = app_model_in.model_dump(exclude_unset=True, exclude={"rdf_content"})
+    
+    if app_model_in.rdf_content:
+        app_model.knowledge_graph = convert_rdf_to_jsonld(app_model_in.rdf_content)
+        
     app_model.sqlmodel_update(app_model_data)
     session.add(app_model)
     session.commit()
@@ -103,4 +128,3 @@ def delete_app_model(
     session.delete(app_model)
     session.commit()
     return Message(message="App model deleted successfully.")
-
