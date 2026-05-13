@@ -50,14 +50,10 @@ export const AppModelCreateSchema = {
                 }
             ],
             title: 'Description'
-        },
-        rdf_content: {
-            type: 'string',
-            title: 'Rdf Content'
         }
     },
     type: 'object',
-    required: ['title', 'rdf_content'],
+    required: ['title'],
     title: 'AppModelCreate'
 } as const;
 
@@ -103,13 +99,13 @@ export const AppModelPublicSchema = {
             ],
             title: 'Created At'
         },
-        knowledge_graph: {
-            title: 'Knowledge Graph',
-            default: {}
+        knowledge_graph_rdf: {
+            type: 'string',
+            title: 'Knowledge Graph Rdf'
         }
     },
     type: 'object',
-    required: ['title', 'id', 'owner_id'],
+    required: ['title', 'id', 'owner_id', 'knowledge_graph_rdf'],
     title: 'AppModelPublic'
 } as const;
 
@@ -140,19 +136,14 @@ export const AppModelUpdateSchema = {
             ],
             title: 'Description'
         },
-        rdf_content: {
-            anyOf: [
-                {
-                    type: 'string'
-                },
-                {
-                    type: 'null'
-                }
-            ],
-            title: 'Rdf Content'
+        knowledge_graph_rdf: {
+            type: 'string',
+            minLength: 2,
+            title: 'Knowledge Graph Rdf'
         }
     },
     type: 'object',
+    required: ['knowledge_graph_rdf'],
     title: 'AppModelUpdate'
 } as const;
 

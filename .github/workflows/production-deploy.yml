@@ -1,0 +1,73 @@
+name: CD - Production Deployment
+
+on:
+  # Manual trigger for production safety
+  workflow_dispatch:
+  # Trigger on specific release tags
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Production Deploy
+    runs-on: ubuntu-latest
+    environment: 
+      name: production
+    env:
+      OS_AUTH_URL: ${{ secrets.PRODUCTION_OS_AUTH_URL }}
+      OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.PRODUCTION_OS_APPLICATION_CREDENTIAL_ID }}
+      OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.PRODUCTION_OS_APPLICATION_CREDENTIAL_SECRET }}
+      OS_REGION_NAME: ${{ secrets.PRODUCTION_OS_REGION_NAME }}
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform Init & Apply
+        # Note the directory change to 'production'
+        working-directory: infrastructure/terraform/envs/production
+        run: |
+          terraform init
+          terraform apply -auto-approve
+
+      - name: Set up SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo '${{ secrets.SSH_PRIVATE_KEY }}' > ~/.ssh/openstack-key
+          chmod 600 ~/.ssh/openstack-key
+
+      - name: Install Ansible and Dependencies
+        run: |
+          sudo apt-get update
+          pip install ansible
+          # Ensure collections are installed for the current user or globally if needed
+          ansible-galaxy collection install community.general ansible.posix community.docker
+
+      - name: Run Ansible Playbook
+        working-directory: infrastructure/ansible
+        run: |
+          # Pass production inventory and extra vars
+          ansible-playbook -i production_inventory.yml site.yml \
+            --extra-vars "env=production"
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: 'False'
+          ANSIBLE_FORCE_COLOR: 'True'
+
+      - name: Cleanup Sensitive Files
+        if: always()
+        run: |
+          rm -f ~/.ssh/openstack-key
+          # Clear terraform cache to prevent state leakage on self-hosted runner
+          rm -rf infrastructure/terraform/envs/production/.terraform
+          echo "Production deployment artifacts cleaned up."

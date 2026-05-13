@@ -1,0 +1,11 @@
+# Terraform local state and modules
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+
+# Sensitive variable files (contains passwords/keys)
+*.tfvars
+*.tfvars.json
+
+# Log files
+crash.log

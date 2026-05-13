@@ -68,17 +68,18 @@ class UsersPublic(SQLModel):
 class AppModelBase(SQLModel):
     title: str = Field(min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=1024)
+    knowledge_graph_rdf: str
 
 
 # Properties to receive via API on creation
 class AppModelCreate(AppModelBase):
-    rdf_content: str = Field(min_length=1)
+    pass
 
 # Properties to receive via API on update, all are optional
 class AppModelUpdate(SQLModel):
     title: str | None = Field(default=None, min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=1024)
-    rdf_content: str = Field(min_length=1)  # type: ignore
+    knowledge_graph_rdf: str = Field(min_length=2)  # type: ignore
 
 class AppModel(AppModelBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
@@ -88,16 +89,17 @@ class AppModel(AppModelBase, table=True):
         default_factory=get_datetime_utc,
         sa_type=DateTime(timezone=True),  # type: ignore
     )
-    # Use sa_column to tell SQLAlchemy to use the Postgres JSONB for knowledge graph storage
-    knowledge_graph : Any = Field(default={}, sa_column=Column(JSONB))
-    rdf_content: str = Field(default=None, sa_column=Column(Text))
+    # To avoid constant converting from JSON to RDF format both versions 
+    # are stored in the table. The user enters and  edits s the RDF graph
+    # while the system converts it to JSON-LD in order to make advanced search possible
+    knowledge_graph_json : Any = Field(default={}, sa_column=Column(JSONB))
+    knowledge_graph_rdf: str = Field(default=None, sa_column=Column(Text))
 
 # Properties to return via API
 class AppModelPublic(AppModelBase):
     id: uuid.UUID
     owner_id: uuid.UUID
     created_at: datetime | None = None
-    knowledge_graph: Any = Field(default={})
 
 class AppModelsPublic(SQLModel):
     data: list[AppModelPublic]

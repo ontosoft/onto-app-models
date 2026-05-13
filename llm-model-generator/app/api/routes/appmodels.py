@@ -6,6 +6,7 @@ from rdflib import Graph
 from fastapi import APIRouter, HTTPException
 from sqlmodel import func, select
 
+from app.api.routes.onto_app_router import app as app_engine
 from app.api.deps import SessionDep, CurrentUser
 from app.models import AppModel, AppModelCreate, AppModelPublic, AppModelsPublic, AppModelUpdate, Message
 
@@ -71,12 +72,14 @@ def create_app_model(
     """
     Create new app model.
     """
-    app_model_data = app_model_in.model_dump(exclude={"rdf_content"})
-    
+
     # Process RDF content
-    knowledge_graph = convert_rdf_to_jsonld(app_model_in.rdf_content)
+    app_model_data = app_model_in.model_dump()
     
-    app_model_data["knowledge_graph"] = knowledge_graph
+    knowledge_graph_json_data = convert_rdf_to_jsonld(app_model_in.knowledge_graph_rdf)
+    
+    # Add converted JSON-LD to the data for the new model
+    app_model_data["knowledge_graph_json"] = knowledge_graph_json_data
     app_model = AppModel.model_validate(app_model_data, update={"owner_id": current_user.id})
     
     session.add(app_model)
@@ -101,10 +104,9 @@ def update_app_model(
     if not current_user.is_superuser and app_model.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
     
-    app_model_data = app_model_in.model_dump(exclude_unset=True, exclude={"rdf_content"})
-    
-    if app_model_in.rdf_content:
-        app_model.knowledge_graph = convert_rdf_to_jsonld(app_model_in.rdf_content)
+    # Update the JSON-LD  field based on the new RDF input
+    app_model_data = app_model_in.model_dump()
+    app_model.knowledge_graph_json = convert_rdf_to_jsonld(app_model_in.knowledge_graph_rdf)
         
     app_model.sqlmodel_update(app_model_data)
     session.add(app_model)
@@ -128,3 +130,24 @@ def delete_app_model(
     session.delete(app_model)
     session.commit()
     return Message(message="App model deleted successfully.")
+
+@router.post("/run/{id}", response_model=Message)
+def run_app_model(
+    *, session: SessionDep, current_user: CurrentUser, id: uuid.UUID
+) -> Any:
+    """
+    Run an app model.
+    """
+    app_model = session.get(AppModel, id)
+    if not app_model:
+        raise HTTPException(status_code=404, detail="App model not found")
+    if not current_user.is_superuser and app_model.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    
+    try:
+        app_engine.load_inner_app_model(rdf_string=app_model.knowledge_graph_rdf)
+        app_engine.run_application()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to run application: {str(e)}")
+
+    return Message(message=f"App model '{app_model.title}' run successfully.")

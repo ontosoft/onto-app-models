@@ -1,6 +1,5 @@
 import { EllipsisVertical } from "lucide-react"
 import { useState } from "react"
-
 import type { AppModelPublic } from "~/client"
 import { Button } from "~/components/ui/button"
 import {
@@ -10,6 +9,7 @@ import {
 } from "~/components/ui/dropdown-menu"
 import DeleteAppModel from "./DeleteAppModel"
 import EditAppModel from "./EditAppModel"
+import RunAppModel from "./RunAppModel"
 
 interface AppModelActionsMenuProps {
   appmodel: AppModelPublic
@@ -26,6 +26,7 @@ export const AppModelActionsMenu = ({ appmodel }: AppModelActionsMenuProps) => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        <RunAppModel id={appmodel.id} onSuccess={() => setOpen(false)} />
         <EditAppModel appmodel={appmodel} onSuccess={() => setOpen(false)} />
         <DeleteAppModel id={appmodel.id} onSuccess={() => setOpen(false)} />
       </DropdownMenuContent>

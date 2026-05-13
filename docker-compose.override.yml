@@ -56,6 +56,10 @@ services:
     ports:
       - "5432:5432"
 
+  redis:
+    ports:
+      - "6379:6379"
+
   adminer:
     restart: "no"
     ports:

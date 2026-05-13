@@ -1,0 +1,6 @@
+---
+- name: Infrastructure Provisioning
+  ansible.builtin.import_playbook: provision.yml
+
+- name: Application Deployment
+  ansible.builtin.import_playbook: deploy.yml

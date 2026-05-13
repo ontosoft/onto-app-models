@@ -34,7 +34,7 @@ import { handleError } from "~/utils"
 const formSchema = z.object({
   title: z.string().min(1, { message: "Title is required" }),
   description: z.string().optional(),
-  rdf_content: z
+  knowledge_graph_rdf: z
     .string()
     .min(1, { message: "Knowledge Graph content is required" }),
 })
@@ -53,7 +53,7 @@ const AddAppModel = () => {
     defaultValues: {
       title: "",
       description: "",
-      rdf_content: "",
+      knowledge_graph_rdf: "",
     },
   })
 
@@ -128,7 +128,7 @@ const AddAppModel = () => {
               />
               <FormField
                 control={form.control}
-                name="rdf_content"
+                name="knowledge_graph_rdf"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>

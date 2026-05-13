@@ -2,6 +2,7 @@
   <img src="frontend/public/assets/images/ontoui-logo.svg" alt="OntoUI">
 
   <a href="https://example.com">Documentation</a> |
+  <a href="https://testing.example.com">Testing</a>
 </h1>
 
 
@@ -60,6 +61,10 @@ The backend is implemented using the Python programming language with the FastAP
  After you run the application generator (OntoUI environment), you can click on "List server models" button to retrieve all application models which are currently stored internally.  
 
  One of the listed application models (RDF graphs) should be loaded and in the next step the application is run. After that the right pannel of the OntoUI screen is reserved for the generated application interface.  
+
+# Deployment on an OpenStack machine
+
+   act --secret-file .secrets
 
 
 # Development Environment

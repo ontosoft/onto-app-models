@@ -1,0 +1,22 @@
+---
+- name: Play 1. PROVISION OpenStack VM for Docker host
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  roles:
+    - role: docker-vm-provision
+      tags: [docker_host]
+
+- name: 1.5 Wait for Readiness
+  hosts: newly_created_vms
+  gather_facts: no
+  tasks:
+    - name: Warten, bis SSH erreichbar ist
+      ansible.builtin.wait_for_connection:
+        delay: 5
+        timeout: 300
+        connect_timeout: 5
+
+    - name: "DEBUG: Connectivity Check"
+      ansible.builtin.debug:
+        msg: "Connected to {{ inventory_hostname }} at {{ ansible_host }}"

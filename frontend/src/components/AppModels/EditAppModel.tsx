@@ -34,7 +34,7 @@ import { handleError } from "~/utils"
 const formSchema = z.object({
   title: z.string().min(1, { message: "Title is required" }),
   description: z.string().optional(),
-  rdf_content: z.string().optional(),
+  knowledge_graph_rdf: z.string().optional(),
 })
 
 type FormData = z.infer<typeof formSchema>
@@ -56,7 +56,7 @@ const EditAppModel = ({ appmodel, onSuccess }: EditAppModelProps) => {
     defaultValues: {
       title: appmodel.title,
       description: appmodel.description ?? undefined,
-      rdf_content: "",
+      knowledge_graph_rdf: "",
     },
   })
 
@@ -130,7 +130,7 @@ const EditAppModel = ({ appmodel, onSuccess }: EditAppModelProps) => {
 
               <FormField
                 control={form.control}
-                name="rdf_content"
+                name="knowledge_graph_rdf"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Knowledge Graph (RDF/Turtle)</FormLabel>

@@ -1,0 +1,57 @@
+name: CD - Staging Deployment
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    name: Staging Deploy
+    runs-on: ubuntu-latest
+    env:
+      OS_AUTH_URL: ${{ secrets.STAGING_OS_AUTH_URL }}
+      OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.STAGING_OS_APPLICATION_CREDENTIAL_ID }}
+      OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.STAGING_OS_APPLICATION_CREDENTIAL_SECRET }}
+      OS_REGION_NAME: ${{ secrets.STAGING_OS_REGION_NAME }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform Init & Apply
+        working-directory: infrastructure/terraform/envs/staging
+        run: |
+          terraform init
+          terraform apply -auto-approve 
+
+      - name: Set up SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo '${{ secrets.SSH_PRIVATE_KEY }}' > ~/.ssh/openstack-key
+          chmod 600 ~/.ssh/openstack-key
+
+      - name: Install Ansible and Dependencies
+        run: |
+          sudo apt-get update
+          pip install ansible
+          # Ensure collections are installed for the current user or globally if needed
+          ansible-galaxy collection install community.general ansible.posix community.docker
+
+      - name: Run Ansible Playbook
+        working-directory: infrastructure/ansible
+        run: |
+          ansible-playbook -i terraform_inventory.yml site.yml
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: 'False'
+          ANSIBLE_FORCE_COLOR: 'True'
+
+      - name: Cleanup Sensitive Files
+        if: always()
+        run: |
+          rm -f ~/.ssh/openstack-key
+          echo "Sensitive deployment artifacts removed."
