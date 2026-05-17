@@ -1,5 +1,5 @@
---- This playbook is obsolete and should not be used. Please refer to the README for updated deployment instructions. ---
-- name: 2. CONFIGURE Docker and Deploy Application
+---
+- name: 2. CONFIGURE Docker and Deploy Application on Staging Environment
   hosts: docker_vm # Target the host group created by the Terraform inventory plugin
   become: yes
   gather_facts: yes
@@ -8,7 +8,7 @@
     docker_users: ["ubuntu"]
     docker_install_compose: true
     project_root: "/home/ubuntu/app"
-    local_compose_path: "{{ playbook_dir }}/../"
+    local_compose_path: "{{ playbook_dir }}/../../"
 
   pre_tasks:
     - name: Verzeichnis für App erstellen
@@ -33,15 +33,20 @@
         rsync_opts:
           - "--exclude=.ssh"
           - "--exclude=.git"
+          - "--exclude=.history"
+          - "--exclude=docker-compose.override.yml"
           - "--exclude=node_modules"
           - "--exclude=__pycache__"
           - "--exclude=.venv"
+          - "--exclude=.terraform"
+          - "--exclude=frontend/dist"
           - "--exclude=.DS_Store"
           - "--exclude=*.pyc"
 
-    - name: Applikation mit Docker Compose starten
+    - name: Start the application with Docker Compose
       community.docker.docker_compose_v2:
         project_src: "{{ project_root }}"
+        files: ["docker-compose.yml"]  # Specify the staging compose file
         state: present
       register: compose_output
 

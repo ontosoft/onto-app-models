@@ -1,4 +1,4 @@
----
+--- This playbook is obsolete and should not be used. Please refer to the README for updated deployment instructions. ---
 - name: Play 1. PROVISION OpenStack VM for Docker host
   hosts: localhost
   connection: local
