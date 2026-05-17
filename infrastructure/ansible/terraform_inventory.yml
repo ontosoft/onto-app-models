@@ -1,5 +1,0 @@
----
-# ansible/terraform_inventory.yml
-plugin: community.general.terraform
-# Adjust the path to your terraform.tfstate file relative to this inventory file
-path: ../terraform/terraform.tfstate

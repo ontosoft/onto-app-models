@@ -22,30 +22,62 @@ jobs:
         with:
           terraform_wrapper: false
 
-      - name: Terraform Init & Apply
-        working-directory: infrastructure/terraform/envs/staging
+      - name: Terraform Format Check
+        working-directory: infrastructure/terraform
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Security Scan (Trivy)
+        # Non-blocking for now: surfaces HIGH/CRITICAL IaC findings without
+        # failing the deploy. Flip to blocking by removing continue-on-error.
+        continue-on-error: true
         run: |
-          terraform init
-          terraform apply -auto-approve 
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin
+          trivy config --severity HIGH,CRITICAL infrastructure/terraform
 
       - name: Set up SSH Key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          echo '${{ secrets.SSH_PRIVATE_KEY }}' > ~/.ssh/openstack-key
+          # printf preserves the multi-line PEM newlines; quoting the env var
+          # keeps the key out of the rendered script text.
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/openstack-key
           chmod 600 ~/.ssh/openstack-key
+          # Derive the matching public key and hand it to Terraform so the
+          # OpenStack keypair always matches this private key.
+          ssh-keygen -y -f ~/.ssh/openstack-key > ~/.ssh/openstack-key.pub
+          echo "TF_VAR_ssh_public_key=$(cat ~/.ssh/openstack-key.pub)" >> "$GITHUB_ENV"
+
+      - name: Terraform Init, Validate, Plan & Apply
+        working-directory: infrastructure/terraform/envs/staging
+        run: |
+          terraform init
+          terraform validate
+          terraform plan -out=tfplan
+          terraform apply tfplan
+          echo "VM_IP=$(terraform output -raw vm_ip)" >> "$GITHUB_ENV"
 
       - name: Install Ansible and Dependencies
         run: |
           sudo apt-get update
           pip install ansible
-          # Ensure collections are installed for the current user or globally if needed
           ansible-galaxy collection install community.general ansible.posix community.docker
+
+      - name: Generate Ansible Inventory
+        working-directory: infrastructure/ansible
+        run: |
+          cat > inventory.ini <<EOF
+          [docker_vm]
+          ${VM_IP} ansible_user=ubuntu
+          EOF
+          echo "Inventory:" && cat inventory.ini
 
       - name: Run Ansible Playbook
         working-directory: infrastructure/ansible
         run: |
-          ansible-playbook -i terraform_inventory.yml site.yml
+          ansible-playbook -i inventory.ini \
+            --private-key ~/.ssh/openstack-key deploy_staging.yml
         env:
           ANSIBLE_HOST_KEY_CHECKING: 'False'
           ANSIBLE_FORCE_COLOR: 'True'
@@ -53,5 +85,6 @@ jobs:
       - name: Cleanup Sensitive Files
         if: always()
         run: |
-          rm -f ~/.ssh/openstack-key
+          rm -f ~/.ssh/openstack-key ~/.ssh/openstack-key.pub
+          rm -f infrastructure/ansible/inventory.ini
           echo "Sensitive deployment artifacts removed."
