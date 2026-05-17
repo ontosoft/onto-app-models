@@ -6,13 +6,20 @@ terraform {
   }
 }
 
+# Register the deploy public key as an OpenStack keypair. Only the public
+# half is sent to OpenStack; the private key never enters Terraform state.
+resource "openstack_compute_keypair_v2" "deploy" {
+  name       = "${var.name}-key"
+  public_key = var.public_key
+}
+
 resource "openstack_compute_instance_v2" "vm" {
   name        = var.name
   image_name  = var.image
   flavor_name = var.flavor
-  key_pair    = var.key_pair
+  key_pair    = openstack_compute_keypair_v2.deploy.name
 
-  user_data = var.user_data
+  user_data       = var.user_data
   security_groups = var.security_groups
 
   network {

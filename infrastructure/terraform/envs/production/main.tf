@@ -3,11 +3,11 @@
 module "vm" {
   source = "../../modules/openstack_vm"
 
-  name        = "prod-docker"
-  image       = "Ubuntu 22.04"
-  flavor      = "m1.medium"
-  key_pair    = "your-key"
-  network_name = "private"
+  name             = "prod-docker"
+  image            = "Ubuntu 22.04"
+  flavor           = "mb1.medium"
+  public_key       = var.ssh_public_key
+  network_name     = "private"
   floating_ip_pool = "public"
 
   security_groups = ["default", "ssh"]

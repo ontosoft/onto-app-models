@@ -5,3 +5,7 @@ output "vm_ip" {
 output "vm_name" {
   value = openstack_compute_instance_v2.vm.name
 }
+
+output "key_pair_name" {
+  value = openstack_compute_keypair_v2.deploy.name
+}
