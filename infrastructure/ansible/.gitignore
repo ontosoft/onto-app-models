@@ -1,3 +1,8 @@
 # Generated per-deploy by the CI workflow from `terraform output -raw vm_ip`.
 # Contains a live server IP; never commit it.
 inventory.ini
+
+# External Galaxy roles are fetched at deploy time from requirements.yml,
+# not vendored. Don't commit whatever ansible-galaxy installs here.
+roles_external/
+

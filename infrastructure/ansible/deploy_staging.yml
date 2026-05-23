@@ -40,6 +40,11 @@
           - "--exclude=.venv"
           - "--exclude=.terraform"
           - "--exclude=frontend/dist"
+          - "--exclude=frontend/test-results"
+          - "--exclude=frontend/blob-report"
+          # model_files/*.gguf is multi-GB; the docker-compose model-downloader
+          # service fetches the model on the VM, so we never ship it via rsync.
+          - "--exclude=model_files"
           - "--exclude=.DS_Store"
           - "--exclude=*.pyc"
 
@@ -47,6 +52,10 @@
       community.docker.docker_compose_v2:
         project_src: "{{ project_root }}"
         files: ["docker-compose.yml"]  # Specify the staging compose file
+        # Custom images (llm-model-generator-api, frontend, …) live only in
+        # the compose `build:` contexts — no registry — so pull always fails
+        # for them. `build: always` makes compose build them on the VM.
+        build: always
         state: present
       register: compose_output
 

@@ -1,3 +1,0 @@
----
-ansible_user: ubuntu # Or whatever user your OpenStack image uses
-ansible_ssh_private_key_file: "~/.ssh/openstack-key" # Path to your SSH private key

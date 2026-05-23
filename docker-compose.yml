@@ -215,7 +215,12 @@ services:
       - traefik-public
       - default
     build:
-      context: ./frontend
+      # Build context is the repo root (matches every other build: in this
+      # file). The Dockerfile expects to COPY ./frontend/* and ./bun.lock
+      # from there. The dev override used to set this; production needs it
+      # set in the base file too, since the override isn't applied on deploy.
+      context: .
+      dockerfile: frontend/Dockerfile
       args:
         - VITE_API_URL=https://api.${DOMAIN?Variable not set}
         - NODE_ENV=production

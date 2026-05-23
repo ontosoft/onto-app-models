@@ -46,7 +46,9 @@ jobs:
           chmod 600 ~/.ssh/openstack-key
           # Derive the matching public key and hand it to Terraform so the
           # OpenStack keypair always matches this private key.
-          ssh-keygen -y -f ~/.ssh/openstack-key > ~/.ssh/openstack-key.pub
+          # -P '' forces an empty passphrase: passphrase-protected keys fail
+          # fast with a clear error instead of hanging on /dev/tty in CI.
+          ssh-keygen -y -P '' -f ~/.ssh/openstack-key > ~/.ssh/openstack-key.pub
           echo "TF_VAR_ssh_public_key=$(cat ~/.ssh/openstack-key.pub)" >> "$GITHUB_ENV"
 
       - name: Terraform Init, Validate, Plan & Apply
@@ -60,9 +62,18 @@ jobs:
 
       - name: Install Ansible and Dependencies
         run: |
+          # Ubuntu 24.04 (noble) enforces PEP 668 — `pip install` system-wide
+          # is refused. Use apt for Ansible itself; galaxy collections are
+          # user-level and unaffected.
           sudo apt-get update
-          pip install ansible
-          ansible-galaxy collection install community.general ansible.posix community.docker
+          # rsync is required by ansible.posix.synchronize (used to ship the
+          # repo to the VM); not always present in catthehacker:act-latest.
+          sudo apt-get install -y ansible rsync
+          # Role + collections come from the pinned requirements file. The
+          # geerlingguy.docker role is installed into ./roles_external (which
+          # ansible.cfg's roles_path searches) since it is no longer vendored.
+          ansible-galaxy role install -r infrastructure/ansible/requirements.yml -p infrastructure/ansible/roles_external
+          ansible-galaxy collection install -r infrastructure/ansible/requirements.yml
 
       - name: Generate Ansible Inventory
         working-directory: infrastructure/ansible

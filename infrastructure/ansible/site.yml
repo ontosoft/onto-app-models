@@ -1,7 +1,0 @@
---- This staging is deprecated, the staging deployment workflow now directly runs the deploy_staging.yml playbook instead of the site.yml playbook which imported both provision and deploy playbooks. The staging deployment workflow is now focused solely on deploying the application to the staging environment, assuming that the infrastructure provisioning has already been handled separately. The site.yml playbook is no longer used in the staging deployment workflow, and the deploy_staging.yml playbook is executed directly to configure Docker and deploy the application on the staging environment. The same applies to the production deployment workflow where deploy_production.yml is executed directly instead of site.yml.
-
-- name: Infrastructure Provisioning
-  ansible.builtin.import_playbook: provision.yml
-
-- name: Application Deployment
-  ansible.builtin.import_playbook: deploy.yml

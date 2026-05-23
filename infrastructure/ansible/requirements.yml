@@ -1,12 +1,13 @@
-# requirements.yml
 ---
-# External Roles from Ansible Galaxy
+# External Ansible dependencies for the deploy playbooks. Installed in CI via
+# `ansible-galaxy ... -r requirements.yml`. The geerlingguy.docker role is NOT
+# vendored in the repo — it is fetched from Galaxy at deploy time, so this file
+# is the single source of truth. Pin versions for reproducibility.
+
 roles:
   - name: geerlingguy.docker
-    version: 7.1.0  # It is a good practice to pin role versions for consistency 
+    version: 7.1.0
 
-# External collections from Ansible Galaxy)
 collections:
-  - name: openstack.cloud
-  - name: community.docker
-  - name: ansible.posix  
+  - name: community.docker # docker_compose_v2
+  - name: ansible.posix    # synchronize
