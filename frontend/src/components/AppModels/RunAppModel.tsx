@@ -3,7 +3,6 @@ import { useNavigate } from "@tanstack/react-router"
 import { Play } from "lucide-react"
 import { useState } from "react"
 
-import { AppmodelsService } from "~/client"
 import { Button } from "~/components/ui/button"
 import {
   Dialog,
@@ -17,6 +16,7 @@ import {
 import { DropdownMenuItem } from "~/components/ui/dropdown-menu"
 import { LoadingButton } from "~/components/ui/loading-button"
 import useCustomToast from "~/hooks/useCustomToast"
+import { runAppModelById } from "~/lib/ontoRunnerApi"
 import { handleError } from "~/utils"
 
 interface RunAppModelProps {
@@ -30,7 +30,7 @@ const RunAppModel = ({ id, onSuccess }: RunAppModelProps) => {
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
   const mutation = useMutation({
-    mutationFn: () => AppmodelsService.runAppModel({ id }),
+    mutationFn: () => runAppModelById(id),
     onSuccess: () => {
       showSuccessToast("Application started successfully")
       setIsOpen(false)
@@ -53,7 +53,8 @@ const RunAppModel = ({ id, onSuccess }: RunAppModelProps) => {
         <DialogHeader>
           <DialogTitle>Run Application</DialogTitle>
           <DialogDescription>
-            Are you sure you want to run this application model? This might stop any currently running application.
+            Are you sure you want to run this application model? This might stop
+            any currently running application.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

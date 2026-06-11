@@ -100,6 +100,7 @@ class AppModelPublic(AppModelBase):
     id: uuid.UUID
     owner_id: uuid.UUID
     created_at: datetime | None = None
+    knowledge_graph_rdf: str | None = None
 
 class AppModelsPublic(SQLModel):
     data: list[AppModelPublic]

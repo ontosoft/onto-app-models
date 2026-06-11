@@ -242,58 +242,58 @@ services:
       # Enable redirection for HTTP and HTTPS
       - traefik.http.routers.${STACK_NAME?Variable not set}-frontend-http.middlewares=https-redirect
 
-  backend-onto:
-    container_name: ontomodel-backend
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
-    restart: always
-    networks:
-      - traefik-public
-      - default
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=traefik-public
-      - traefik.constraint-label=traefik-public
-      - traefik.http.services.ontomodel-backend.loadbalancer.server.port=8089
-      # Strip the /app-generator-api prefix before sending to backend, matching Nginx behavior
-      - traefik.http.middlewares.ontomodel-backend-strip.stripprefix.prefixes=/app-generator-api
-      - traefik.http.routers.ontomodel-backend-http.rule=Host(`ontomodel.${DOMAIN?Variable not set}`) && PathPrefix(`/app-generator-api`)
-      - traefik.http.routers.ontomodel-backend-http.entrypoints=http
-      - traefik.http.routers.ontomodel-backend-http.middlewares=ontomodel-backend-strip
-      - traefik.http.routers.ontomodel-backend-https.rule=Host(`ontomodel.${DOMAIN?Variable not set}`) && PathPrefix(`/app-generator-api`)
-      - traefik.http.routers.ontomodel-backend-https.entrypoints=https
-      - traefik.http.routers.ontomodel-backend-https.tls=true
-      - traefik.http.routers.ontomodel-backend-https.tls.certresolver=le
-      - traefik.http.routers.ontomodel-backend-https.middlewares=ontomodel-backend-strip
-
-  frontend-onto:
-    container_name: ontomodel-react-front
-    build:
-      context: .
-      dockerfile: frontend1/Dockerfile
-      args:
-        # Pass arguments to the Dockerfile at build time, using the VITE_ prefix
-        - VITE_API_URL=/app-generator-api
-    restart: always
-    networks:
-      - traefik-public
-      - default
-    depends_on:
-      - backend-onto
-    labels:
-      - traefik.enable=true
-      - traefik.docker.network=traefik-public
-      - traefik.constraint-label=traefik-public
-      - traefik.http.services.ontomodel-frontend.loadbalancer.server.port=3000
-      - traefik.http.routers.ontomodel-frontend-http.rule=Host(`ontomodel.${DOMAIN?Variable not set}`)
-      - traefik.http.routers.ontomodel-frontend-http.entrypoints=http
-      - traefik.http.routers.ontomodel-frontend-http.middlewares=https-redirect
-      - traefik.http.routers.ontomodel-frontend-https.rule=Host(`ontomodel.${DOMAIN?Variable not set}`)
-      - traefik.http.routers.ontomodel-frontend-https.entrypoints=https
-      - traefik.http.routers.ontomodel-frontend-https.tls=true
-      - traefik.http.routers.ontomodel-frontend-https.tls.certresolver=le
-
+#   backend-onto:
+#     container_name: ontomodel-backend
+#     build:
+#       context: .
+#       dockerfile: backend/Dockerfile
+#     restart: always
+#     networks:
+#       - traefik-public
+#       - default
+#     labels:
+#       - traefik.enable=true
+#       - traefik.docker.network=traefik-public
+#       - traefik.constraint-label=traefik-public
+#       - traefik.http.services.ontomodel-backend.loadbalancer.server.port=8089
+#       # Strip the /app-generator-api prefix before sending to backend, matching Nginx behavior
+#       - traefik.http.middlewares.ontomodel-backend-strip.stripprefix.prefixes=/app-generator-api
+#       - traefik.http.routers.ontomodel-backend-http.rule=Host(`ontomodel.${DOMAIN?Variable not set}`) && PathPrefix(`/app-generator-api`)
+#       - traefik.http.routers.ontomodel-backend-http.entrypoints=http
+#       - traefik.http.routers.ontomodel-backend-http.middlewares=ontomodel-backend-strip
+#       - traefik.http.routers.ontomodel-backend-https.rule=Host(`ontomodel.${DOMAIN?Variable not set}`) && PathPrefix(`/app-generator-api`)
+#       - traefik.http.routers.ontomodel-backend-https.entrypoints=https
+#       - traefik.http.routers.ontomodel-backend-https.tls=true
+#       - traefik.http.routers.ontomodel-backend-https.tls.certresolver=le
+#       - traefik.http.routers.ontomodel-backend-https.middlewares=ontomodel-backend-strip
+# 
+#   frontend-onto:
+#     container_name: ontomodel-react-front
+#     build:
+#       context: .
+#       dockerfile: frontend1/Dockerfile
+#       args:
+#         # Pass arguments to the Dockerfile at build time, using the VITE_ prefix
+#         - VITE_API_URL=/app-generator-api
+#     restart: always
+#     networks:
+#       - traefik-public
+#       - default
+#     depends_on:
+#       - backend-onto
+#     labels:
+#       - traefik.enable=true
+#       - traefik.docker.network=traefik-public
+#       - traefik.constraint-label=traefik-public
+#       - traefik.http.services.ontomodel-frontend.loadbalancer.server.port=3000
+#       - traefik.http.routers.ontomodel-frontend-http.rule=Host(`ontomodel.${DOMAIN?Variable not set}`)
+#       - traefik.http.routers.ontomodel-frontend-http.entrypoints=http
+#       - traefik.http.routers.ontomodel-frontend-http.middlewares=https-redirect
+#       - traefik.http.routers.ontomodel-frontend-https.rule=Host(`ontomodel.${DOMAIN?Variable not set}`)
+#       - traefik.http.routers.ontomodel-frontend-https.entrypoints=https
+#       - traefik.http.routers.ontomodel-frontend-https.tls=true
+#       - traefik.http.routers.ontomodel-frontend-https.tls.certresolver=le
+# 
 volumes:
   app-db-data:
   ollama: {}

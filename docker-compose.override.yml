@@ -65,24 +65,24 @@ services:
     ports:
       - "8080:8080"
 
-  backend-onto:
-    restart: "no"
-    ports:
-      - "8089:8089"
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
-    # command: sleep infinity  # Infinite loop to keep container alive doing nothing
-    develop:
-      watch:
-        - path: ./backend
-          action: sync
-          target: /app/
-          ignore:
-            - ./backend/venv
-            - venv
-
-
+#   backend-onto:
+#     restart: "no"
+#     ports:
+#       - "8089:8089"
+#     build:
+#       context: .
+#       dockerfile: backend/Dockerfile
+#     # command: sleep infinity  # Infinite loop to keep container alive doing nothing
+#     develop:
+#       watch:
+#         - path: ./backend
+#           action: sync
+#           target: /app/
+#           ignore:
+#             - ./backend/venv
+#             - venv
+# 
+# 
   llm-model-generator-api:
     restart: "no"
     ports:
@@ -152,14 +152,14 @@ services:
     #       ignore:
     #         - node_modules
 
-  frontend-onto:
-    restart: "no"
-    ports:
-      - "3000:3000"
-    build:
-      context: .
-      dockerfile: frontend1/Dockerfile
-
+#   frontend-onto:
+#     restart: "no"
+#     ports:
+#       - "3000:3000"
+#     build:
+#       context: .
+#       dockerfile: frontend1/Dockerfile
+# 
   playwright:
     build:
       context: .

@@ -68,12 +68,7 @@ act -W .github/workflows/staging-deploy.yml --bind --secret-file .secrets \
 `geerlingguy.docker` is no longer vendored. Both workflows install it from the
 pinned `infrastructure/ansible/requirements.yml` into `roles_external/` (which
 `ansible.cfg`'s `roles_path` searches). For local runs:
-
-```bash
-cd infrastructure/ansible
-ansible-galaxy role install -r requirements.yml -p roles_external
-ansible-galaxy collection install -r requirements.yml
-```
+``
 
 ## 5. Terraform state decision
 
@@ -98,4 +93,5 @@ only record of the live VMs.
 4. [ ] Decide the state file (copy vs. fresh — step 5).
 5. [ ] `git status` shows **no** `tfstate`, `.terraform/`, `.secrets`,
        `inventory.ini`, or `roles_external/` staged.
+
 6. [ ] Dry run: `act -W .github/workflows/staging-deploy.yml --bind --secret-file .secrets -s SSH_PRIVATE_KEY="$(cat ~/.ssh/key)"`
