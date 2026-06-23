@@ -191,7 +191,10 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
       - SENTRY_DSN=${SENTRY_DSN}
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/utils/health-check/"]
+      # The api image has no curl, so a curl-based check always fails -> the
+      # container is marked unhealthy and Traefik drops its router (404 on
+      # api.<DOMAIN>). Use python (always present) to hit the health endpoint.
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/api/v1/utils/health-check/').status==200 else 1)"]
       interval: 10s
       timeout: 5s
       retries: 5
