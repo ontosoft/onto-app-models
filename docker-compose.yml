@@ -24,7 +24,7 @@ services:
     depends_on:
       model-downloader:
         condition: service_completed_successfully
-    pull_policy: always
+    pull_policy: if_not_present
     tty: true
     restart: unless-stopped
     entrypoint: ["/bin/sh", "/model_files/run_ollama.sh"] # Loading the finetuned Mistral with the GGUF file
@@ -33,6 +33,11 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      # First boot must import the multi-GB GGUF (ollama create), which takes
+      # several minutes. Without this grace period the healthcheck (5x10s=50s)
+      # marks ollama unhealthy before the import finishes and compose aborts the
+      # dependent services. start_period suppresses failures during the import.
+      start_period: 300s
     # Uncomment below to run on GPU support
     # deploy:
     #   resources:
@@ -87,7 +92,11 @@ services:
     environment:
       - ADMINER_DESIGN=pepa-linha-dark
     labels:
-      - traefik.enable=true
+      # Adminer is a DB-admin tool — not exposed publicly. traefik.enable=false
+      # makes Traefik ignore this service entirely (no router, no ACME cert
+      # attempt for adminer.<DOMAIN>). The router labels below are kept as a
+      # template; set this back to true (and add a DNS record) to expose it.
+      - traefik.enable=false
       - traefik.docker.network=traefik-public
       - traefik.constraint-label=traefik-public
       - traefik.http.routers.${STACK_NAME?Variable not set}-adminer-http.rule=Host(`adminer.${DOMAIN?Variable not set}`)

@@ -11,7 +11,7 @@
     local_compose_path: "{{ playbook_dir }}/../../"
 
   pre_tasks:
-    - name: Verzeichnis für App erstellen
+    - name: Create app directory
       ansible.builtin.file:
         path: "{{ project_root }}"
         state: directory
@@ -24,7 +24,39 @@
       tags: [docker_install]
 
   tasks:
-    - name: Docker-Compose Datei kopieren
+    - name: Create external Docker network 'traefik-public'
+      # docker-compose.traefik.yml declares this network as 'external: true',
+      # so it must exist before 'compose up' (otherwise startup aborts).
+      community.docker.docker_network:
+        name: traefik-public
+        state: present
+
+    - name: Allow legacy Docker API version (Traefik pins API 1.24)
+      # Traefik's docker provider hardcodes Docker Engine API 1.24, but the
+      # daemon (Docker 28+) rejects anything below 1.40 by default. Without this
+      # the provider can't read container labels -> no routers -> no TLS certs.
+      # DOCKER_MIN_API_VERSION lowers the daemon's accepted minimum back to 1.24.
+      # This does NOT open any network port (the API stays on the unix socket).
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/docker.service.d/min-api.conf
+        content: |
+          [Service]
+          Environment=DOCKER_MIN_API_VERSION=1.24
+        owner: root
+        group: root
+        mode: '0644'
+      register: docker_min_api
+
+    - name: Reload systemd and restart Docker if the drop-in changed
+      # Only restarts on first apply (when the file is created). Subsequent
+      # deploys leave the file unchanged, so Docker is not restarted again.
+      when: docker_min_api.changed
+      ansible.builtin.systemd:
+        name: docker
+        daemon_reload: true
+        state: restarted
+
+    - name: Copy project files to the VM
       ansible.posix.synchronize:
         src: "{{ local_compose_path }}"
         dest: "{{ project_root }}"
@@ -34,6 +66,11 @@
           - "--exclude=.ssh"
           - "--exclude=.git"
           - "--exclude=.history"
+          # Ship .env.production (the real config) but NOT the local dev .env
+          # (DOMAIN=localhost, changethis...). A task below copies
+          # .env.production -> .env on the VM, where compose reads it.
+          # Exact match '.env' does not match '.env.production'.
+          - "--exclude=.env"
           - "--exclude=docker-compose.override.yml"
           - "--exclude=node_modules"
           - "--exclude=__pycache__"
@@ -42,16 +79,37 @@
           - "--exclude=frontend/dist"
           - "--exclude=frontend/test-results"
           - "--exclude=frontend/blob-report"
-          # model_files/*.gguf is multi-GB; the docker-compose model-downloader
-          # service fetches the model on the VM, so we never ship it via rsync.
-          - "--exclude=model_files"
+          # Exclude ONLY the multi-GB GGUF weights (the model-downloader
+          # service fetches them on the VM). The other files in model_files/
+          # (run_ollama.sh, Modelfile) ARE needed — ollama's entrypoint is
+          # /model_files/run_ollama.sh, so excluding the whole dir crash-loops it.
+          - "--exclude=model_files/*.gguf"
           - "--exclude=.DS_Store"
           - "--exclude=*.pyc"
 
-    - name: Applikation mit Docker Compose starten
+    - name: Activate production .env (.env.production -> .env)
+      # docker compose automatically reads '.env' (not '.env.production').
+      # remote_src copies the already-rsynced production file into the name
+      # compose expects.
+      ansible.builtin.copy:
+        src: "{{ project_root }}/.env.production"
+        dest: "{{ project_root }}/.env"
+        remote_src: yes
+        owner: ubuntu
+        group: ubuntu
+        mode: '0600'
+
+    - name: Start the application with Docker Compose
       community.docker.docker_compose_v2:
         project_src: "{{ project_root }}"
-        files: ["docker-compose.yml"]  # Ignore docker-compose.override.yml (local dev only)
+        # docker-compose.yml = app services (frontend/api/db/...) with traefik
+        #   labels (certresolver=le, Host(dashboard.<DOMAIN>) etc.)
+        # docker-compose.traefik.yml = the Traefik proxy that defines the 'le'
+        #   Let's-Encrypt resolver and terminates TLS on 443.
+        # Both are merged; docker-compose.override.yml (local dev) is ignored.
+        files:
+          - docker-compose.yml
+          - docker-compose.traefik.yml
         # Custom images (llm-model-generator-api, frontend, …) live only in
         # the compose `build:` contexts — no registry — so pull always fails
         # for them. `build: always` makes compose build them on the VM.
@@ -59,6 +117,6 @@
         state: present
       register: compose_output
 
-    - name: Status der Deployment anzeigen
+    - name: Show deployment status
       ansible.builtin.debug:
         var: compose_output

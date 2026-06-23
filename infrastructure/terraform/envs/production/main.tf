@@ -15,7 +15,7 @@ module "vm" {
   # floating_ip_pool when a routable pool is available.
   assign_floating_ip = false
 
-  security_groups = ["default", "ssh"]
+  security_groups = ["default", "ssh", "http-https"]
 
   # Container storage on a separate Cinder volume 
   docker_data_volume_size_gb = 0
