@@ -19,6 +19,8 @@
 @prefix NCBITaxon: <http://purl.obolibrary.org/obo/NCBITaxon#> .
 @base <http://example.org/logicinterface/restaurant/> .
 
+### Restaurant with shapes where blank nodes are expressed in explicit form with _:genidN in names 
+
 ###  http://example.org/logicinterface/restaurant/restaurantShape
 :restaurantShape rdf:type owl:NamedIndividual ,
                           shacl:NodeShape ;

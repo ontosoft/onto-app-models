@@ -165,8 +165,8 @@ class ProcessEngine:
             logger.debug("The current flow element is the start event.")
             # The application is at the start event and has to be found the flow that
             # starts with the start event
-            self.update_current_flow_element()
-            self.move_token()
+            if self.update_current_flow_element():
+                self.move_token()
         elif (
             isinstance(self.app_state.current_flow_element, BBOEndEvent)
             and self.app_state.current_flow_element_container
@@ -196,16 +196,16 @@ class ProcessEngine:
             # If the current flow element is a script task, the correspoinging action
             # has to be executed and the next step is generated
             self.execute_script_task(self.app_state.current_flow_element)
-            self.update_current_flow_element()
-            self.move_token()
+            if self.update_current_flow_element():
+                self.move_token()
         elif isinstance(self.app_state.current_flow_element, BBOUserTask):
             if self.app_state.is_waiting_to_send_data:
                 logger.debug("Waiting to send data")
             elif self.app_state.is_waiting_for_form_data:
                 logger.debug("Waiting to receive data")
             else:
-                self.update_current_flow_element()
-                self.move_token()
+                if self.update_current_flow_element():
+                    self.move_token()
         elif (
             isinstance(self.app_state.current_flow_element, BBOExclusiveGateway)
             and self.app_state.received_action is not None
@@ -213,15 +213,22 @@ class ProcessEngine:
             logger.debug(
                 f"Choosing the correct next flow when the received action is {str(self.app_state.received_action.graph_node)}"
             )
-            self.update_current_flow_element()
-            self.move_token()
+            if self.update_current_flow_element():
+                self.move_token()
 
-    def update_current_flow_element(self):
-        """_summary_
-        Updates the current flow element in the control flow of the application.
-        This function is goes through SequenceFlows and returns the
-        the next node
-        according to the current state.
+    def update_current_flow_element(self) -> bool:
+        """Advance the token to the next flow element in the control flow.
+
+        Walks the SequenceFlows of the current container and moves the token to
+        the target of the matching flow.
+
+        Returns:
+            True  if a next flow element was found and the token advanced.
+            False if no outgoing flow exists (dead end / unreachable next flow).
+                  Callers MUST NOT recurse into ``move_token`` in that case —
+                  otherwise ``move_token`` re-enters the same element forever
+                  (RecursionError). On a dead end the run is finished with a
+                  notification instead of crashing.
         """
         next_flow: BBOFlowElement = next(
             (
@@ -250,12 +257,25 @@ class ProcessEngine:
             logger.error(
                 f"No next flow element has been found for the element {str(self.app_state.current_flow_element.graph_node)}"
             )
-            # TODO insert an additional checking whether the next_flow is
-            # only single element. This can be done in the model generator
-            # using SPARQL queries
-        else:
-            # The token is moved to the next flow element in the control flow
-            self.app_state.current_flow_element = next_flow.target_ref
+            # Dead end: the model has no outgoing flow from this element. Stop
+            # here with a clean notification instead of letting move_token
+            # recurse on the same element forever (RecursionError -> 500).
+            self.output_message = AppExchangeGetOutput(
+                message_type="notification",
+                layout_type="",
+                message_content={
+                    "message": (
+                        "The application stopped: no further step is defined after "
+                        f"'{str(self.app_state.current_flow_element.graph_node)}'."
+                    )
+                },
+                output_knowledge_graph="",
+            )
+            self.app_state.app_finished = True
+            return False
+        # The token is moved to the next flow element in the control flow
+        self.app_state.current_flow_element = next_flow.target_ref
+        return True
 
     def execute_script_task(self, script_task: BBOScriptTask):
         """
@@ -543,7 +563,19 @@ class ProcessEngine:
             self.app_state.is_waiting_to_send_data = False
             self.app_state.is_waiting_for_form_data = True
             return output_message
+        elif self.app_state.app_finished and self.output_message is not None:
+            # Dead end or finish — return the stop/notification message
+            # set by update_current_flow_element or move_token.
+            return self.output_message
         else:
-            pass
             logger.debug("The application is not waiting to send data to the frontend.")
+            # Fallback: prevents returning None (FastAPI ResponseValidationError).
+            if self.output_message is not None:
+                return self.output_message
+            return AppExchangeGetOutput(
+                message_type="information",
+                layout_type="",
+                message_content={"message": "The application is processing."},
+                output_knowledge_graph="",
+            )
 

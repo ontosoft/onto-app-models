@@ -18,7 +18,8 @@
 @prefix oboInOwl: <http://www.geneontology.org/formats/oboInOwl#> .
 @prefix NCBITaxon: <http://purl.obolibrary.org/obo/NCBITaxon#> .
 @base <http://example.org/logicinterface/restaurant/> .
-
+### Old restaurant syntax without BBO elements 
+#    relevant only until the restaurant is solidified
 ###  http://example.org/logicinterface/restaurant/action_1
 :action_1 rdf:type owl:NamedIndividual ,
                    obop:Action .

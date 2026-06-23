@@ -6,7 +6,8 @@ from rdflib import Graph
 from fastapi import APIRouter, HTTPException
 from sqlmodel import func, select
 
-from app.api.routes.onto_app_router import app as app_engine
+import app.api.routes.onto_app_router as _onto_app_router
+from app.owlprocessor.app_engine import AppEngine as _AppEngine
 from app.api.deps import SessionDep, CurrentUser
 from app.models import AppModel, AppModelCreate, AppModelPublic, AppModelsPublic, AppModelUpdate, Message
 
@@ -145,8 +146,12 @@ def run_app_model(
         raise HTTPException(status_code=403, detail="Not enough permissions")
     
     try:
-        app_engine.load_inner_app_model(rdf_string=app_model.knowledge_graph_rdf)
-        app_engine.run_application()
+        # If stop_application set the module-level 'app' to None, recreate it
+        # so that app_exchange_post (which reads that same global) doesn't crash.
+        if _onto_app_router.app is None:
+            _onto_app_router.app = _AppEngine()
+        _onto_app_router.app.load_inner_app_model(rdf_string=app_model.knowledge_graph_rdf)
+        _onto_app_router.app.run_application()
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to run application: {str(e)}")
 

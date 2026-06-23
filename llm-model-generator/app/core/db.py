@@ -31,14 +31,9 @@ EXAMPLE_APPMODELS: list[tuple[str, str, str]] = [
         "enter-string-form.ttl",
     ),
     (
-        "Submit / Cancel Buttons",
-        "Minimal form demonstrating submit and cancel actions.",
-        "submit-cancel-buttons.ttl",
-    ),
-    (
         "Complete Restaurant",
         "Larger restaurant data-entry model.",
-        "complete_restaurant.ttl",
+        "restaurant-preprocessed.ttl",
     ),
 ]
 

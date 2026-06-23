@@ -17,8 +17,9 @@ from rdflib.namespace import SH, OWL
 from owlready2 import World, Ontology
 from app.core.config import settings
 from .app_model import AppInternalStaticModel
-from app.utilities.model_directory_functions import create_pellet_reasoning_graph 
-from app.utilities.model_directory_functions import create_hermit_reasoning_graph 
+from app.utilities.model_directory_functions import create_pellet_reasoning_graph
+from app.utilities.model_directory_functions import create_hermit_reasoning_graph
+from .validate_model import validate_model
 
 
 OBOP = Namespace("http://purl.org/net/obop/")
@@ -37,7 +38,11 @@ class AppStaticModelFactory:
         #The project uses both rdflib and owlready2 to read the RDF file. 
         internal_app_static_model.rdf_graph_rdflib = \
             AppStaticModelFactory.read_graph_rdflib(rdf_model_file, rdf_text_ttl)
-        #The owlready2 library is used to enable reasoning over the RDF graph. 
+        # Static model validation: catch errors (control-flow container
+        # mismatches, dead ends, dangling references, ...) Logs warnings; does not abort
+        # loading. See validate_model.py.
+        validate_model(internal_app_static_model.rdf_graph_rdflib)
+        #The owlready2 library is used to enable reasoning over the RDF graph.
         internal_app_static_model.rdf_world_owlready, internal_app_static_model.rdf_ontology_owlready = \
             AppStaticModelFactory.read_graph_owlready(internal_app_static_model.rdf_graph_rdflib)
         internal_app_static_model.rdf_pellet_reasoning_world = \
@@ -56,7 +61,6 @@ class AppStaticModelFactory:
         AppStaticModelFactory.assignElementsAndLayoutsToLayouts(internal_app_static_model)
         AppStaticModelFactory.assignAdditionalParameters(internal_app_static_model, rdf_model_file, rdf_text_ttl)
         return internal_app_static_model
-
 
 
     @staticmethod

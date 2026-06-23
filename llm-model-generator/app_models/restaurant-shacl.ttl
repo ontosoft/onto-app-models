@@ -9,6 +9,7 @@
 @prefix env: <http://purl.obolibrary.org/obo/env#> . # Environmental Ontology (ENVO) - assuming context
 @prefix ex: <http://example.org/shapes#> . # Our custom shapes namespace
 
+# --- Restaurant model with  inline blank node property lists
 # --- RestaurantShape ---
 ex:RestaurantShape rdf:type shacl:NodeShape ;
     obop:modelBelongsTo ex:Block1 ; # This seems like an application-specific property
