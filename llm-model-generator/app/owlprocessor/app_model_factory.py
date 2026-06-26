@@ -146,7 +146,7 @@ class AppStaticModelFactory:
         # DataProperty http://BPMNbasedOntology#processType belongs to more than one entity types: [owl.ObjectProperty, owl.DatatypeProperty]; I'm trying to fix it...
         # The first change was to remove the owl:ObjectProperty from the bbo.owl file
         # The second change was to remove the owl:DatatypeProperty from the bbo.owl ware 
-        # removin the line :
+        # removing the line :
         # <owl:imports rdf:resource="http://purl.obolibrary.org/obo/uo/releases/2018-05-20/uo.owl"/>
         # this is because the BBO ontology import was not possible to be resolved
         model_graph_with_bbo : Ontology = graph_world. \
@@ -736,6 +736,8 @@ class AppStaticModelFactory:
                 action_type = "submit"
             elif action in rdf_graph_rdflib.subjects(RDF.type, OBOP.SHACLValidation):
                 action_type = "shacl_validation"
+            elif action in rdf_graph_rdflib.subjects(RDF.type, OBOP.CancelBlockAction):
+                action_type = "cancel"
             action_pointer = ActionPointer(str(action), action_type)
             # Reading action initiators which represent the form events 
             # that activate the action. For examle, a button click
@@ -785,6 +787,8 @@ class AppStaticModelFactory:
                     action.type = "generate_json_form"
                 elif(action_class.iri == str(OBOP.SHACLValidation)):
                     action.type = "shacl_validation"
+                elif(action_class.iri == str(OBOP.CancelBlockAction)):
+                    action.type = "cancel"
                 else:
                     action.type = "other"
                     logger.error(f"Unknown action type: {action_class.iri}")

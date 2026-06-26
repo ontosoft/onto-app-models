@@ -72,7 +72,7 @@
 # End Event of the main process
 :end_event_process rdf:type owl:NamedIndividual ,
     bbo:EndEvent ;
-    rdfs:comment "The whole restaarant data insertion process is completed." ;
+    rdfs:comment "The whole restaurant data insertion process is completed." ;
     bbo:has_container :populate_restaurant_knowledge_graph .
 
 
@@ -104,7 +104,7 @@
     bbo:NormalSequenceFlow ; 
     bbo:has_container :populate_restaurant_knowledge_graph ;
     bbo:has_sourceRef :insert_dish_ingredients ; 
-    bbo:has_targetRef :end_event_process .
+    bbo:has_targetRef :final_shacl_validation .
 
 # First Subprocess elements
 :start_insert_general_restaurant_data rdf:type owl:NamedIndividual ,
@@ -171,7 +171,7 @@
     bbo:ScriptTask ;
     rdfs:comment "Generate the notification that data has been stored (using :block_3)" ;
     bbo:has_container :insert_general_restaurant_data ;
-    obop:executesAction :generateJSONFormForNotification_confirm .
+    obop:executesAction :generateJSONFormForNotification_general_confirm .
 
 :generateJSONFormForNotification_general_confirm rdf:type owl:NamedIndividual ,
     obop:GenerateJSONForm ;
@@ -183,32 +183,17 @@
     rdfs:comment "User views the data saved notification" ;
     bbo:has_container :insert_general_restaurant_data .
 
-# 8. SHACL Validation
-:shacl_validation_task rdf:type owl:NamedIndividual ,
-    bbo:ScriptTask ;
-    rdfs:comment "Validate the stored data using SHACL shapes" ;
-    bbo:has_container :insert_general_restaurant_data ;
-    obop:executesAction :validate_action_1 .
+# 8. SHACL Validation insert_general_restaurant_data
 
 # 9. User Receives Validation
-:user_receives_validation_data_restaurant_general rdf:type owl:NamedIndividual ,
-    bbo:UserTask ;
-    rdfs:comment "User receives SHACL validation results" ;
-    bbo:has_container :insert_general_restaurant_data .
 
 
 ### New Action Definition
-:validate_action_1 rdf:type owl:NamedIndividual ,
-    obop:SHACLValidation ;
-    obop:hasInitiator "onClick" ,
-                     "onEnter" ;
-    rdfs:comment "Validate stored data in the knowledge graph using SHACL file" .
-
 
 ### Condition Expressions (Linked to :action_1 and :action_2 from KG2)
 :cancel_condition_expression_general_data rdf:type owl:NamedIndividual ,
     bbo:ConditionExpression ;
-    obop:selectedAction :action_2 ; # Links to Cancel action
+    obop:selectedAction :abort_general_data_insert_action ; # Links to Cancel action
     rdfs:comment "The condition expression for the cancel action." .
 
 :submit_condition_expression_general_restaurant_data rdf:type owl:NamedIndividual ,
@@ -222,7 +207,7 @@
     rdfs:label "Decision on the entered data (Submit or Cancel)" ;
     bbo:has_container :insert_general_restaurant_data .
 
-:end_event_data_insertion_completed rdf:type owl:NamedIndividual ,
+:end_event_data_insertion_completed_general_restaurant_data rdf:type owl:NamedIndividual ,
     bbo:EndEvent ;
     rdfs:comment " Completed the general restaurant data insertion process." ;
     bbo:has_container :insert_general_restaurant_data .
@@ -267,6 +252,9 @@
     bbo:has_targetRef :inserted_data_confirmation_general_data .
 
 
+# Should be checked - General subprocess: SHACL validation task -> receive validation data (was missing).
+
+
 ## OBOP Elements (Blocks, Actions, Buttons, Fields and similar ) for the first subprocess 
 ## (General restaurant data insertion)
 
@@ -290,7 +278,7 @@
 ###  http://example.org/logicinterface/testing/button_2
 :button_2 rdf:type owl:NamedIndividual ,
                    obop:Button ;
-          obop:activatesAction :cancel_action_1 ;
+          obop:activatesAction :abort_general_data_insert_action ;
           obop:belongsTo :general_data_block ;
           obop:belongsToVisual :horizontal_layout_1 ;
           obop:hasLabel "Cancel" ;
@@ -365,7 +353,7 @@
 ###  http://example.org/logicinterface/testing/label_1
 :label_1 rdf:type owl:NamedIndividual ,
                    obop:Label ;
-          obop:belongsTo :block_2 ;
+          obop:belongsTo :general_data_notification_block ;
           obop:belongsToVisual :vertical_layout_2 ;
           obop:hasPositionNumber "0"^^xsd:int ;
           obop:hasText "The data have been stored in the database."^^rdf:PlainLiteral .
@@ -434,16 +422,30 @@
     rdfs:comment "User views the data saved notification" ;
     bbo:has_container :insert_restaurant_menus .
 
+# 8.2. SHACL Validation insert_restaurant_menus
+
+# Decision gateway for the insert_restaurant_menus subprocess (mirror of DecisionGateway1_1).
+:DecisionGateway_2_1 rdf:type owl:NamedIndividual ,
+    bbo:ExclusiveGateway ;
+    rdfs:label "Decision on the entered menu data (Submit or Cancel)" ;
+    bbo:has_container :insert_restaurant_menus .
+
+
+:end_event_data_insertion_completed_restaurant_menus rdf:type owl:NamedIndividual ,
+    bbo:EndEvent ;
+    rdfs:comment " Completed the general restaurant data insertion process." ;
+    bbo:has_container :insert_restaurant_menus .
+
 
 ### Condition Expressions 
 :cancel_condition_expression_menus rdf:type owl:NamedIndividual ,
     bbo:ConditionExpression ;
-    obop:selectedAction :action_2 ; # Links to Cancel action
+    obop:selectedAction :abort_action_restaurant_menu ; # Links to the menu Cancel action
     rdfs:comment "The condition expression for the cancel action for restaurant menus." .
 
-:submit_condition_expression1 rdf:type owl:NamedIndividual ,
+:submit_condition_expression_menus rdf:type owl:NamedIndividual ,
     bbo:ConditionExpression ;
-    obop:selectedAction :action_1 ; # Links to Submit action
+    obop:selectedAction :submit_action_restaurant_menu ; # Links to the menu Submit action
     rdfs:comment "The condition expression exists for the submit action." .
 
 
@@ -478,7 +480,7 @@
     bbo:has_container :insert_restaurant_menus ;
     bbo:has_sourceRef :DecisionGateway_2_1 ;
     bbo:has_targetRef :save_data_insert_restaurant_menus ;
-    bbo:has_conditionExpression :submit_condition_expression1 .
+    bbo:has_conditionExpression :submit_condition_expression_menus .
 
 :flow_2_6 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
     bbo:has_container :insert_restaurant_menus ;
@@ -487,18 +489,17 @@
 
 :flow_2_7 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ; 
     bbo:has_container :insert_restaurant_menus ;
-    bbo:has_sourceRef :inserted_data_confirmation_general_data ; 
+    bbo:has_sourceRef :inserted_data_confirmation_restaurant_menus ; 
     bbo:has_targetRef :user_gets_notification_restaurant_menus .
 
 :flow_2_8 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ; 
     bbo:has_container :insert_restaurant_menus ; 
     bbo:has_sourceRef :user_gets_notification_restaurant_menus ; 
-    bbo:has_targetRef :shacl_validation_task .
+    bbo:has_targetRef :end_event_data_insertion_completed_restaurant_menus .
 
-:flow_2_10 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ; 
-    bbo:has_container :insert_restaurant_menus ; 
-    bbo:has_sourceRef :user_receives_validation_data ; 
-    bbo:has_targetRef :end_event_data_insertion_completed .
+# Should be checked - General subprocess: SHACL validation task -> receive validation data (was missing).
+
+
 
 
 ###  http://example.org/logicinterface/restaurant/restaurantShape
@@ -530,13 +531,13 @@ _:genid1 shacl:datatype xsd:string ;
 
 
 _:genid2 shacl:path schema:streetAddress ;
-          obop:specifedBy :field_1_2 ;
+          obop:specifedBy :field_rest_address_street ;
           shacl:description "The street address including number" ;
           shacl:name "Address" ;
           shacl:order 3 .
 
 _:genid3 shacl:path schema:postalCode ;
-          obop:specifedBy :field_1_3 ;
+          obop:specifedBy :field_rest_postal_code ;
           shacl:description "The postal code" ;
           shacl:name "Postal code:" ;
           shacl:order 2 .
@@ -548,15 +549,665 @@ _:genid3 shacl:path schema:postalCode ;
 
 ### --- Repairs: missing definitions ---
 
-# Decision gateway for the menus subprocess (mirror of DecisionGateway1_1).
-:DecisionGateway_2_1 rdf:type owl:NamedIndividual ,
-    bbo:ExclusiveGateway ;
-    rdfs:label "Decision on the entered menu data (Submit or Cancel)" ;
+### ============================================================
+### Menus data layer — makes the insert_restaurant_menus form generate.
+### Mirrors the general-data subprocess (block + SHACL shape + fields +
+### buttons + layouts + notification). Menu data model: menuName, menuType.
+### ============================================================
+
+:Menu rdf:type owl:Class ;
+    rdfs:label "Menu" .
+
+:menuName rdf:type owl:DatatypeProperty ;
+    rdfs:label "Menu name" .
+:menuType rdf:type owl:DatatypeProperty ;
+    rdfs:label "Menu type" .
+
+### Form block for entering a menu
+:menu_block rdf:type owl:NamedIndividual , obop:Block ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    rdfs:label "Restaurant menu data"^^rdf:PlainLiteral ;
+    obop:targetClass :Menu .
+
+:menu_vertical_layout rdf:type owl:NamedIndividual , obop:VerticalLayout ;
+    dc:title "Main vertical layout for the menu form"^^rdf:PlainLiteral ;
+    obop:belongsTo :menu_block ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:menu_horizontal_layout rdf:type owl:NamedIndividual , obop:HorizontalLayout ;
+    dc:title "Horizontal layout for submit and cancel buttons."^^rdf:PlainLiteral ;
+    obop:belongsToVisual :menu_vertical_layout ;
+    obop:hasPositionNumber "4"^^xsd:int .
+
+### Fields
+:field_menu_name rdf:type owl:NamedIndividual , obop:Field ;
+    rdfs:label "Menu name"^^rdf:PlainLiteral ;
+    obop:belongsTo :menu_block ;
+    obop:belongsToVisual :menu_vertical_layout ;
+    obop:containsDatatype :menuName ;
+    obop:isRelatedToTargetOntologyInstance :menuShape ;
+    obop:hasLabel "Menu name" ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:field_menu_type rdf:type owl:NamedIndividual , obop:Field ;
+    rdfs:label "Menu type"^^rdf:PlainLiteral ;
+    obop:belongsTo :menu_block ;
+    obop:belongsToVisual :menu_vertical_layout ;
+    obop:containsDatatype :menuType ;
+    obop:isRelatedToTargetOntologyInstance :menuShape ;
+    obop:hasLabel "Menu type" ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+### Submit / Cancel actions for the menu block
+:submit_action_restaurant_menu rdf:type owl:NamedIndividual , obop:SubmitBlockAction ;
+    obop:actionInBlock :menu_block ;
+    obop:hasInitiator "onClick" , "onEnter" ;
+    obop:hasLabel "Submit" ;
+    rdfs:comment "Save the entered menu data in the knowledge graph" .
+
+:abort_action_restaurant_menu rdf:type owl:NamedIndividual , obop:CancelBlockAction ;
+    obop:actionInBlock :menu_block ;
+    obop:hasInitiator "onClick" ;
+    obop:hasLabel "Cancel" ;
+    rdfs:comment "Cancel the menu data entry" .
+
+### Buttons
+:button_menu_submit rdf:type owl:NamedIndividual , obop:Button ;
+    obop:activatesAction :submit_action_restaurant_menu ;
+    obop:belongsTo :menu_block ;
+    obop:belongsToVisual :menu_horizontal_layout ;
+    obop:hasLabel "Submit" ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:button_menu_cancel rdf:type owl:NamedIndividual , obop:Button ;
+    obop:activatesAction :abort_action_restaurant_menu ;
+    obop:belongsTo :menu_block ;
+    obop:belongsToVisual :menu_horizontal_layout ;
+    obop:hasLabel "Cancel" ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+### SHACL shape for the menu form (modelBelongsTo links it to :menu_block)
+:menuShape rdf:type owl:NamedIndividual , shacl:NodeShape ;
+    obop:modelBelongsTo :menu_block ;
+    shacl:targetClass :Menu ;
+    shacl:property [
+        shacl:path :menuName ;
+        shacl:datatype xsd:string ;
+        shacl:maxCount 1 ;
+        shacl:name "Menu name" ;
+        shacl:order 0 ;
+        dash:singleLine "true"^^xsd:boolean ;
+        obop:specifedBy :field_menu_name
+    ] , [
+        shacl:path :menuType ;
+        shacl:datatype xsd:string ;
+        shacl:maxCount 1 ;
+        shacl:name "Menu type" ;
+        shacl:order 1 ;
+        dash:singleLine "true"^^xsd:boolean ;
+        obop:specifedBy :field_menu_type
+    ] .
+
+### Menus notification block (block_3, used by generateJSONFormForNotification_confirm_menus)
+:block_3 rdf:type owl:NamedIndividual , obop:Block ;
+    rdfs:label "Restaurant menu saved - Notification"^^rdf:PlainLiteral ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:menu_notification_layout rdf:type owl:NamedIndividual , obop:VerticalLayout ;
+    rdfs:label "Main vertical layout for the menu notification"^^rdf:PlainLiteral ;
+    obop:belongsTo :block_3 ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:menu_notification_label rdf:type owl:NamedIndividual , obop:Label ;
+    obop:belongsTo :block_3 ;
+    obop:belongsToVisual :menu_notification_layout ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:hasText "The menu data have been stored in the database."^^rdf:PlainLiteral .
+
+
+### ============================================================
+### Dishes subprocess (insert_dishes_in_menus) — full BBO chain + data layer.
+### Built in the Option-A shape: no per-subprocess SHACL validation; the cancel
+### branch terminates at its own cancel end event. Entered via the main flow_3
+### (menus -> dishes). Data model: dishName, price, description.
+### ============================================================
+
+### --- BBO control flow ---
+:start_insert_dishes rdf:type owl:NamedIndividual , bbo:SubProcessStartEvent ;
+    rdfs:comment "The start of inserting dishes for a menu." ;
+    bbo:has_container :insert_dishes_in_menus .
+
+:generate_form_representation_dishes rdf:type owl:NamedIndividual , bbo:ScriptTask ;
+    rdfs:comment "Generate the form representation for :dish_block on the server side" ;
+    bbo:has_container :insert_dishes_in_menus ;
+    obop:executesAction :generateJSONFormAction_dishes .
+
+:generateJSONFormAction_dishes rdf:type owl:NamedIndividual , obop:GenerateJSONForm ;
+    obop:actionInBlock :dish_block .
+
+:user_enters_data_dishes rdf:type owl:NamedIndividual , bbo:UserTask ;
+    rdfs:comment "User entering dish data in the web form" ;
+    bbo:has_container :insert_dishes_in_menus .
+
+:processing_received_data_dishes rdf:type owl:NamedIndividual , bbo:ScriptTask ;
+    rdfs:comment "Processing received dish data" ;
+    bbo:has_container :insert_dishes_in_menus .
+
+:DecisionGateway_dishes rdf:type owl:NamedIndividual , bbo:ExclusiveGateway ;
+    rdfs:label "Decision on the entered dish data (Submit or Cancel)" ;
+    bbo:has_container :insert_dishes_in_menus .
+
+:save_data_insert_dishes rdf:type owl:NamedIndividual , bbo:ScriptTask ;
+    rdfs:comment "Save the entered dish data in the knowledge graph" ;
+    obop:executesAction :submit_action_dishes ;
+    bbo:has_container :insert_dishes_in_menus .
+
+:abort_data_insert_task_dishes rdf:type owl:NamedIndividual , bbo:ScriptTask ;
+    rdfs:comment "Dish data insertion aborted (Executed by Cancel Action)" ;
+    obop:executesAction :abort_action_dishes ;
+    bbo:has_container :insert_dishes_in_menus .
+
+:inserted_data_confirmation_dishes rdf:type owl:NamedIndividual , bbo:ScriptTask ;
+    rdfs:comment "Generate the notification that dish data has been stored" ;
+    bbo:has_container :insert_dishes_in_menus ;
+    obop:executesAction :generateJSONFormForNotification_confirm_dishes .
+
+:generateJSONFormForNotification_confirm_dishes rdf:type owl:NamedIndividual , obop:GenerateJSONForm ;
+    obop:actionInBlock :dish_notification_block .
+
+:user_gets_notification_dishes rdf:type owl:NamedIndividual , bbo:UserTask ;
+    rdfs:comment "User views the dish data saved notification" ;
+    bbo:has_container :insert_dishes_in_menus .
+
+:end_event_data_insertion_completed_dishes rdf:type owl:NamedIndividual , bbo:EndEvent ;
+    rdfs:comment "Completed the dish data insertion." ;
+    bbo:has_container :insert_dishes_in_menus .
+
+:end_event_cancelled_dishes rdf:type owl:NamedIndividual , bbo:EndEvent ;
+    rdfs:comment "Dish data insertion cancelled" ;
+    bbo:has_container :insert_dishes_in_menus .
+
+### Condition expressions (gateway routing)
+:cancel_condition_expression_dishes rdf:type owl:NamedIndividual , bbo:ConditionExpression ;
+    obop:selectedAction :abort_action_dishes ;
+    rdfs:comment "Condition expression for the dish Cancel action." .
+
+:submit_condition_expression_dishes rdf:type owl:NamedIndividual , bbo:ConditionExpression ;
+    obop:selectedAction :submit_action_dishes ;
+    rdfs:comment "Condition expression for the dish Submit action." .
+
+### Sequence flows
+:flow_d1 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_dishes_in_menus ;
+    bbo:has_sourceRef :start_insert_dishes ;
+    bbo:has_targetRef :generate_form_representation_dishes .
+
+:flow_d2 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_dishes_in_menus ;
+    bbo:has_sourceRef :generate_form_representation_dishes ;
+    bbo:has_targetRef :user_enters_data_dishes .
+
+:flow_d3 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_dishes_in_menus ;
+    bbo:has_sourceRef :user_enters_data_dishes ;
+    bbo:has_targetRef :processing_received_data_dishes .
+
+:flow_d4 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_dishes_in_menus ;
+    bbo:has_sourceRef :processing_received_data_dishes ;
+    bbo:has_targetRef :DecisionGateway_dishes .
+
+:flow_d5_1 rdf:type owl:NamedIndividual , bbo:ConditionalSequenceFlow ;
+    bbo:has_container :insert_dishes_in_menus ;
+    bbo:has_sourceRef :DecisionGateway_dishes ;
+    bbo:has_targetRef :abort_data_insert_task_dishes ;
+    bbo:has_conditionExpression :cancel_condition_expression_dishes .
+
+:flow_d5_2 rdf:type owl:NamedIndividual , bbo:ConditionalSequenceFlow ;
+    bbo:has_container :insert_dishes_in_menus ;
+    bbo:has_sourceRef :DecisionGateway_dishes ;
+    bbo:has_targetRef :save_data_insert_dishes ;
+    bbo:has_conditionExpression :submit_condition_expression_dishes .
+
+:flow_d6 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_dishes_in_menus ;
+    bbo:has_sourceRef :save_data_insert_dishes ;
+    bbo:has_targetRef :inserted_data_confirmation_dishes .
+
+:flow_d7 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_dishes_in_menus ;
+    bbo:has_sourceRef :inserted_data_confirmation_dishes ;
+    bbo:has_targetRef :user_gets_notification_dishes .
+
+:flow_d8 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_dishes_in_menus ;
+    bbo:has_sourceRef :user_gets_notification_dishes ;
+    bbo:has_targetRef :end_event_data_insertion_completed_dishes .
+
+:flow_d_cancel rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_dishes_in_menus ;
+    bbo:has_sourceRef :abort_data_insert_task_dishes ;
+    bbo:has_targetRef :end_event_cancelled_dishes .
+
+### --- Data layer ---
+:Dish rdf:type owl:Class ; rdfs:label "Dish" .
+:dishName rdf:type owl:DatatypeProperty ; rdfs:label "Dish name" .
+:price rdf:type owl:DatatypeProperty ; rdfs:label "Price" .
+:description rdf:type owl:DatatypeProperty ; rdfs:label "Description" .
+
+:dish_block rdf:type owl:NamedIndividual , obop:Block ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    rdfs:label "Dish data"^^rdf:PlainLiteral ;
+    obop:targetClass :Dish .
+
+:dish_vertical_layout rdf:type owl:NamedIndividual , obop:VerticalLayout ;
+    dc:title "Main vertical layout for the dish form"^^rdf:PlainLiteral ;
+    obop:belongsTo :dish_block ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:dish_horizontal_layout rdf:type owl:NamedIndividual , obop:HorizontalLayout ;
+    dc:title "Horizontal layout for submit and cancel buttons."^^rdf:PlainLiteral ;
+    obop:belongsToVisual :dish_vertical_layout ;
+    obop:hasPositionNumber "4"^^xsd:int .
+
+:field_dish_name rdf:type owl:NamedIndividual , obop:Field ;
+    rdfs:label "Dish name"^^rdf:PlainLiteral ;
+    obop:belongsTo :dish_block ;
+    obop:belongsToVisual :dish_vertical_layout ;
+    obop:containsDatatype :dishName ;
+    obop:isRelatedToTargetOntologyInstance :dishShape ;
+    obop:hasLabel "Dish name" ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:field_dish_price rdf:type owl:NamedIndividual , obop:Field ;
+    rdfs:label "Price"^^rdf:PlainLiteral ;
+    obop:belongsTo :dish_block ;
+    obop:belongsToVisual :dish_vertical_layout ;
+    obop:containsDatatype :price ;
+    obop:isRelatedToTargetOntologyInstance :dishShape ;
+    obop:hasLabel "Price" ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+:field_dish_description rdf:type owl:NamedIndividual , obop:Field ;
+    rdfs:label "Description"^^rdf:PlainLiteral ;
+    obop:belongsTo :dish_block ;
+    obop:belongsToVisual :dish_vertical_layout ;
+    obop:containsDatatype :description ;
+    obop:isRelatedToTargetOntologyInstance :dishShape ;
+    obop:hasLabel "Description" ;
+    obop:hasPositionNumber "2"^^xsd:int .
+
+:submit_action_dishes rdf:type owl:NamedIndividual , obop:SubmitBlockAction ;
+    obop:actionInBlock :dish_block ;
+    obop:hasInitiator "onClick" , "onEnter" ;
+    obop:hasLabel "Submit" ;
+    rdfs:comment "Save the entered dish data in the knowledge graph" .
+
+:abort_action_dishes rdf:type owl:NamedIndividual , obop:CancelBlockAction ;
+    obop:actionInBlock :dish_block ;
+    obop:hasInitiator "onClick" ;
+    obop:hasLabel "Cancel" ;
+    rdfs:comment "Cancel the dish data entry" .
+
+:button_dish_submit rdf:type owl:NamedIndividual , obop:Button ;
+    obop:activatesAction :submit_action_dishes ;
+    obop:belongsTo :dish_block ;
+    obop:belongsToVisual :dish_horizontal_layout ;
+    obop:hasLabel "Submit" ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:button_dish_cancel rdf:type owl:NamedIndividual , obop:Button ;
+    obop:activatesAction :abort_action_dishes ;
+    obop:belongsTo :dish_block ;
+    obop:belongsToVisual :dish_horizontal_layout ;
+    obop:hasLabel "Cancel" ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+:dishShape rdf:type owl:NamedIndividual , shacl:NodeShape ;
+    obop:modelBelongsTo :dish_block ;
+    shacl:targetClass :Dish ;
+    shacl:property [
+        shacl:path :dishName ;
+        shacl:datatype xsd:string ;
+        shacl:maxCount 1 ;
+        shacl:name "Dish name" ;
+        shacl:order 0 ;
+        dash:singleLine "true"^^xsd:boolean ;
+        obop:specifedBy :field_dish_name
+    ] , [
+        shacl:path :price ;
+        shacl:datatype xsd:decimal ;
+        shacl:maxCount 1 ;
+        shacl:name "Price" ;
+        shacl:order 1 ;
+        dash:singleLine "true"^^xsd:boolean ;
+        obop:specifedBy :field_dish_price
+    ] , [
+        shacl:path :description ;
+        shacl:datatype xsd:string ;
+        shacl:maxCount 1 ;
+        shacl:name "Description" ;
+        shacl:order 2 ;
+        obop:specifedBy :field_dish_description
+    ] .
+
+:dish_notification_block rdf:type owl:NamedIndividual , obop:Block ;
+    rdfs:label "Dish saved - Notification"^^rdf:PlainLiteral ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:dish_notification_layout rdf:type owl:NamedIndividual , obop:VerticalLayout ;
+    rdfs:label "Main vertical layout for the dish notification"^^rdf:PlainLiteral ;
+    obop:belongsTo :dish_notification_block ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:dish_notification_label rdf:type owl:NamedIndividual , obop:Label ;
+    obop:belongsTo :dish_notification_block ;
+    obop:belongsToVisual :dish_notification_layout ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:hasText "The dish data have been stored in the database."^^rdf:PlainLiteral .
+
+
+### ============================================================
+### Ingredients subprocess (insert_dish_ingredients) — full BBO chain + data
+### layer. Clean Option-A shape (no per-subprocess validation; cancel -> own
+### cancel end event). Entered via the main flow_4 (dishes -> ingredients).
+### Data model: ingredientName.
+### ============================================================
+
+### --- BBO control flow ---
+:start_insert_ingredients rdf:type owl:NamedIndividual , bbo:SubProcessStartEvent ;
+    rdfs:comment "The start of inserting ingredients for a dish." ;
+    bbo:has_container :insert_dish_ingredients .
+
+:generate_form_representation_ingredients rdf:type owl:NamedIndividual , bbo:ScriptTask ;
+    rdfs:comment "Generate the form representation for :ingredient_block on the server side" ;
+    bbo:has_container :insert_dish_ingredients ;
+    obop:executesAction :generateJSONFormAction_ingredients .
+
+:generateJSONFormAction_ingredients rdf:type owl:NamedIndividual , obop:GenerateJSONForm ;
+    obop:actionInBlock :ingredient_block .
+
+:user_enters_data_ingredients rdf:type owl:NamedIndividual , bbo:UserTask ;
+    rdfs:comment "User entering ingredient data in the web form" ;
+    bbo:has_container :insert_dish_ingredients .
+
+:processing_received_data_ingredients rdf:type owl:NamedIndividual , bbo:ScriptTask ;
+    rdfs:comment "Processing received ingredient data" ;
+    bbo:has_container :insert_dish_ingredients .
+
+:DecisionGateway_ingredients rdf:type owl:NamedIndividual , bbo:ExclusiveGateway ;
+    rdfs:label "Decision on the entered ingredient data (Submit or Cancel)" ;
+    bbo:has_container :insert_dish_ingredients .
+
+:save_data_insert_ingredients rdf:type owl:NamedIndividual , bbo:ScriptTask ;
+    rdfs:comment "Save the entered ingredient data in the knowledge graph" ;
+    obop:executesAction :submit_action_ingredients ;
+    bbo:has_container :insert_dish_ingredients .
+
+:abort_data_insert_task_ingredients rdf:type owl:NamedIndividual , bbo:ScriptTask ;
+    rdfs:comment "Ingredient data insertion aborted (Executed by Cancel Action)" ;
+    obop:executesAction :abort_action_ingredients ;
+    bbo:has_container :insert_dish_ingredients .
+
+:inserted_data_confirmation_ingredients rdf:type owl:NamedIndividual , bbo:ScriptTask ;
+    rdfs:comment "Generate the notification that ingredient data has been stored" ;
+    bbo:has_container :insert_dish_ingredients ;
+    obop:executesAction :generateJSONFormForNotification_confirm_ingredients .
+
+:generateJSONFormForNotification_confirm_ingredients rdf:type owl:NamedIndividual , obop:GenerateJSONForm ;
+    obop:actionInBlock :ingredient_notification_block .
+
+:user_gets_notification_ingredients rdf:type owl:NamedIndividual , bbo:UserTask ;
+    rdfs:comment "User views the ingredient data saved notification" ;
+    bbo:has_container :insert_dish_ingredients .
+
+:end_event_data_insertion_completed_ingredients rdf:type owl:NamedIndividual , bbo:EndEvent ;
+    rdfs:comment "Completed the ingredient data insertion." ;
+    bbo:has_container :insert_dish_ingredients .
+
+:end_event_cancelled_ingredients rdf:type owl:NamedIndividual , bbo:EndEvent ;
+    rdfs:comment "Ingredient data insertion cancelled" ;
+    bbo:has_container :insert_dish_ingredients .
+
+### Condition expressions (gateway routing)
+:cancel_condition_expression_ingredients rdf:type owl:NamedIndividual , bbo:ConditionExpression ;
+    obop:selectedAction :abort_action_ingredients ;
+    rdfs:comment "Condition expression for the ingredient Cancel action." .
+
+:submit_condition_expression_ingredients rdf:type owl:NamedIndividual , bbo:ConditionExpression ;
+    obop:selectedAction :submit_action_ingredients ;
+    rdfs:comment "Condition expression for the ingredient Submit action." .
+
+### Sequence flows
+:flow_i1 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_dish_ingredients ;
+    bbo:has_sourceRef :start_insert_ingredients ;
+    bbo:has_targetRef :generate_form_representation_ingredients .
+
+:flow_i2 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_dish_ingredients ;
+    bbo:has_sourceRef :generate_form_representation_ingredients ;
+    bbo:has_targetRef :user_enters_data_ingredients .
+
+:flow_i3 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_dish_ingredients ;
+    bbo:has_sourceRef :user_enters_data_ingredients ;
+    bbo:has_targetRef :processing_received_data_ingredients .
+
+:flow_i4 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_dish_ingredients ;
+    bbo:has_sourceRef :processing_received_data_ingredients ;
+    bbo:has_targetRef :DecisionGateway_ingredients .
+
+:flow_i5_1 rdf:type owl:NamedIndividual , bbo:ConditionalSequenceFlow ;
+    bbo:has_container :insert_dish_ingredients ;
+    bbo:has_sourceRef :DecisionGateway_ingredients ;
+    bbo:has_targetRef :abort_data_insert_task_ingredients ;
+    bbo:has_conditionExpression :cancel_condition_expression_ingredients .
+
+:flow_i5_2 rdf:type owl:NamedIndividual , bbo:ConditionalSequenceFlow ;
+    bbo:has_container :insert_dish_ingredients ;
+    bbo:has_sourceRef :DecisionGateway_ingredients ;
+    bbo:has_targetRef :save_data_insert_ingredients ;
+    bbo:has_conditionExpression :submit_condition_expression_ingredients .
+
+:flow_i6 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_dish_ingredients ;
+    bbo:has_sourceRef :save_data_insert_ingredients ;
+    bbo:has_targetRef :inserted_data_confirmation_ingredients .
+
+:flow_i7 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_dish_ingredients ;
+    bbo:has_sourceRef :inserted_data_confirmation_ingredients ;
+    bbo:has_targetRef :user_gets_notification_ingredients .
+
+:flow_i8 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_dish_ingredients ;
+    bbo:has_sourceRef :user_gets_notification_ingredients ;
+    bbo:has_targetRef :end_event_data_insertion_completed_ingredients .
+
+:flow_i_cancel rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_dish_ingredients ;
+    bbo:has_sourceRef :abort_data_insert_task_ingredients ;
+    bbo:has_targetRef :end_event_cancelled_ingredients .
+
+### --- Data layer ---
+:Ingredient rdf:type owl:Class ; rdfs:label "Ingredient" .
+:ingredientName rdf:type owl:DatatypeProperty ; rdfs:label "Ingredient name" .
+
+:ingredient_block rdf:type owl:NamedIndividual , obop:Block ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    rdfs:label "Ingredient data"^^rdf:PlainLiteral ;
+    obop:targetClass :Ingredient .
+
+:ingredient_vertical_layout rdf:type owl:NamedIndividual , obop:VerticalLayout ;
+    dc:title "Main vertical layout for the ingredient form"^^rdf:PlainLiteral ;
+    obop:belongsTo :ingredient_block ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:ingredient_horizontal_layout rdf:type owl:NamedIndividual , obop:HorizontalLayout ;
+    dc:title "Horizontal layout for submit and cancel buttons."^^rdf:PlainLiteral ;
+    obop:belongsToVisual :ingredient_vertical_layout ;
+    obop:hasPositionNumber "4"^^xsd:int .
+
+:field_ingredient_name rdf:type owl:NamedIndividual , obop:Field ;
+    rdfs:label "Ingredient name"^^rdf:PlainLiteral ;
+    obop:belongsTo :ingredient_block ;
+    obop:belongsToVisual :ingredient_vertical_layout ;
+    obop:containsDatatype :ingredientName ;
+    obop:isRelatedToTargetOntologyInstance :ingredientShape ;
+    obop:hasLabel "Ingredient name" ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:submit_action_ingredients rdf:type owl:NamedIndividual , obop:SubmitBlockAction ;
+    obop:actionInBlock :ingredient_block ;
+    obop:hasInitiator "onClick" , "onEnter" ;
+    obop:hasLabel "Submit" ;
+    rdfs:comment "Save the entered ingredient data in the knowledge graph" .
+
+:abort_action_ingredients rdf:type owl:NamedIndividual , obop:CancelBlockAction ;
+    obop:actionInBlock :ingredient_block ;
+    obop:hasInitiator "onClick" ;
+    obop:hasLabel "Cancel" ;
+    rdfs:comment "Cancel the ingredient data entry" .
+
+:button_ingredient_submit rdf:type owl:NamedIndividual , obop:Button ;
+    obop:activatesAction :submit_action_ingredients ;
+    obop:belongsTo :ingredient_block ;
+    obop:belongsToVisual :ingredient_horizontal_layout ;
+    obop:hasLabel "Submit" ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:button_ingredient_cancel rdf:type owl:NamedIndividual , obop:Button ;
+    obop:activatesAction :abort_action_ingredients ;
+    obop:belongsTo :ingredient_block ;
+    obop:belongsToVisual :ingredient_horizontal_layout ;
+    obop:hasLabel "Cancel" ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+:ingredientShape rdf:type owl:NamedIndividual , shacl:NodeShape ;
+    obop:modelBelongsTo :ingredient_block ;
+    shacl:targetClass :Ingredient ;
+    shacl:property [
+        shacl:path :ingredientName ;
+        shacl:datatype xsd:string ;
+        shacl:maxCount 1 ;
+        shacl:name "Ingredient name" ;
+        shacl:order 0 ;
+        dash:singleLine "true"^^xsd:boolean ;
+        obop:specifedBy :field_ingredient_name
+    ] .
+
+:ingredient_notification_block rdf:type owl:NamedIndividual , obop:Block ;
+    rdfs:label "Ingredient saved - Notification"^^rdf:PlainLiteral ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:ingredient_notification_layout rdf:type owl:NamedIndividual , obop:VerticalLayout ;
+    rdfs:label "Main vertical layout for the ingredient notification"^^rdf:PlainLiteral ;
+    obop:belongsTo :ingredient_notification_block ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:ingredient_notification_label rdf:type owl:NamedIndividual , obop:Label ;
+    obop:belongsTo :ingredient_notification_block ;
+    obop:belongsToVisual :ingredient_notification_layout ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:hasText "The ingredient data have been stored in the database."^^rdf:PlainLiteral .
+
+
+
+
+### --- Option-A restructuring: cancel end events, completed chains, final validation ---
+
+# General subprocess: cancel terminus + completed chain (confirmation -> notification -> end).
+:end_event_cancelled_general rdf:type owl:NamedIndividual , bbo:EndEvent ;
+    rdfs:comment "General restaurant data insertion cancelled" ;
+    bbo:has_container :insert_general_restaurant_data .
+
+:flow_1_7 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_general_restaurant_data ;
+    bbo:has_sourceRef :inserted_data_confirmation_general_data ;
+    bbo:has_targetRef :user_gets_notification_general_data .
+
+:flow_1_8 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_general_restaurant_data ;
+    bbo:has_sourceRef :user_gets_notification_general_data ;
+    bbo:has_targetRef :end_event_data_insertion_completed_general_restaurant_data .
+
+:flow_1_cancel rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_general_restaurant_data ;
+    bbo:has_sourceRef :abort_general_data_insert_task ;
+    bbo:has_targetRef :end_event_cancelled_general .
+
+# Menus subprocess: cancel terminus (notification -> end was re-pointed on flow_2_8).
+:end_event_cancelled_menus rdf:type owl:NamedIndividual , bbo:EndEvent ;
+    rdfs:comment "Restaurant menus insertion cancelled" ;
     bbo:has_container :insert_restaurant_menus .
 
-# Should be checked - General subprocess: SHACL validation task -> receive validation data (was missing).
-:flow_2_9 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
-    bbo:has_container :insert_general_restaurant_data ;
-    bbo:has_sourceRef :shacl_validation_task ;
-    bbo:has_targetRef :user_receives_validation_data_restaurant_general .
+:flow_2_cancel rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_restaurant_menus ;
+    bbo:has_sourceRef :abort_data_insert_task_restaurant_menus ;
+    bbo:has_targetRef :end_event_cancelled_menus .
 
+# Single final validation over the whole knowledge graph, after ingredients.
+:final_shacl_validation rdf:type owl:NamedIndividual , bbo:ScriptTask ;
+    rdfs:comment "Validate the whole stored knowledge graph using SHACL shapes" ;
+    bbo:has_container :populate_restaurant_knowledge_graph ;
+    obop:executesAction :final_validation_action .
+
+:final_validation_action rdf:type owl:NamedIndividual , obop:SHACLValidation ;
+    obop:hasInitiator "onClick" , "onEnter" ;
+    rdfs:comment "Validate stored data in the knowledge graph using the SHACL file" .
+
+:user_receives_final_validation rdf:type owl:NamedIndividual , bbo:UserTask ;
+    rdfs:comment "User receives the final SHACL validation results" ;
+    bbo:has_container :populate_restaurant_knowledge_graph .
+
+:flow_final_1 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
+    bbo:has_container :populate_restaurant_knowledge_graph ;
+    bbo:has_sourceRef :final_shacl_validation ;
+    bbo:has_targetRef :user_receives_final_validation .
+
+:flow_final_2 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
+    bbo:has_container :populate_restaurant_knowledge_graph ;
+    bbo:has_sourceRef :user_receives_final_validation ;
+    bbo:has_targetRef :end_event_process .
+
+
+### ============================================================
+### Continue buttons — let the user advance past each notification screen.
+### One shared "continue" action (type "other": the engine only needs the
+### received action to unblock the notification UserTask; it does not run a
+### script, since the next node is the subprocess end event).
+### ============================================================
+:continue_action rdf:type owl:NamedIndividual , obop:Action ;
+    obop:hasInitiator "onClick" ;
+    obop:hasLabel "Continue" ;
+    rdfs:comment "Advance the workflow from a notification screen to the next step." .
+
+:button_continue_general rdf:type owl:NamedIndividual , obop:Button ;
+    obop:activatesAction :continue_action ;
+    obop:belongsTo :general_data_notification_block ;
+    obop:belongsToVisual :vertical_layout_2 ;
+    obop:hasLabel "Continue" ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+:button_continue_menus rdf:type owl:NamedIndividual , obop:Button ;
+    obop:activatesAction :continue_action ;
+    obop:belongsTo :block_3 ;
+    obop:belongsToVisual :menu_notification_layout ;
+    obop:hasLabel "Continue" ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+:button_continue_dishes rdf:type owl:NamedIndividual , obop:Button ;
+    obop:activatesAction :continue_action ;
+    obop:belongsTo :dish_notification_block ;
+    obop:belongsToVisual :dish_notification_layout ;
+    obop:hasLabel "Continue" ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+:button_continue_ingredients rdf:type owl:NamedIndividual , obop:Button ;
+    obop:activatesAction :continue_action ;
+    obop:belongsTo :ingredient_notification_block ;
+    obop:belongsToVisual :ingredient_notification_layout ;
+    obop:hasLabel "Continue" ;
+    obop:hasPositionNumber "1"^^xsd:int .

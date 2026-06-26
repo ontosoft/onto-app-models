@@ -1,5 +1,5 @@
 from .forms import Form, FunctionalJSONForm
-from rdflib import Graph, Namespace, RDF, URIRef, Literal
+from rdflib import Graph, Namespace, RDF, RDFS, URIRef, Literal
 from .app_model import AppInternalStaticModel
 from .obop_action import OBOPAction
 from .bbo_elements import (
@@ -42,6 +42,12 @@ class ProcessEngine:
         self._app_state: ApplicationState = ApplicationState(
             self.internal_app_static_model
         )
+        # Pending message for the frontend (form / notification / error). It is
+        # set by move_token / update_current_flow_element / execute_cancel_action
+        # and read by generate_layout. Initialised here so generate_layout never
+        # reads an unset attribute (AttributeError -> 500) on paths that finish
+        # without producing a form, e.g. the cancel/abort path.
+        self.output_message: AppExchangeGetOutput | None = None
 
     @property
     def internal_app_static_model(self) -> AppInternalStaticModel:
@@ -91,13 +97,18 @@ class ProcessEngine:
                 ),
                 None,
             )
-            if action is None:
+            if action is not None:
+                self.app_state.received_action = action
+            elif str(action_node):
+                # A non-empty action node that isn't in the model is a real error.
                 logger.error(
                     f"Action with graph node {action_node} not found in the application model."
                 )
                 return
-            else:
-                self.app_state.received_action = action
+            # else: an empty action node is a plain "proceed" signal (e.g. the
+            # SHACL-validation result's OK button, which carries no model action,
+            # see validate_output_knowledge_graph). Fall through and just advance
+            # the waiting UserTask below.
 
             if (
                 isinstance(self.app_state.current_flow_element, BBOUserTask)
@@ -172,11 +183,24 @@ class ProcessEngine:
             and self.app_state.current_flow_element_container
             == self.internal_app_static_model.main_bbo_process
         ):
-            # The application execution is finished
+            # The application execution is finished. Use this end event's own
+            # rdfs:comment as the message (e.g. "Order Successfully Placed" vs
+            # "Data insertion cancelled") so different termini — success, cancel —
+            # give the user the right feedback.
+            end_event_comment = self.internal_app_static_model.rdf_graph_rdflib.value(
+                self.app_state.current_flow_element.graph_node, RDFS.comment
+            )
             self.output_message = AppExchangeGetOutput(
                 message_type="notification",
                 layout_type="message-box",
-                message_content="The application has finished.",
+                message_content={
+                    "message": (
+                        str(end_event_comment)
+                        if end_event_comment is not None
+                        else "The application has finished."
+                    )
+                },
+                output_knowledge_graph="",
             )
             self.app_state.app_finished = True
         elif (
@@ -186,12 +210,19 @@ class ProcessEngine:
             != self.internal_app_static_model.main_bbo_process
             and isinstance(self.app_state.current_flow_element_container, BBOSubProcess)
         ):
-            # If the token reached the end of the subprocess, it has to
-            # move to the next flow element in the super process
-            self.app_state.current_flow_element = (
-                self.app_state.current_flow_element_container
+            # The subprocess finished. Return the token to the super-process and
+            # advance PAST the subprocess node (follow its outgoing flow). Just
+            # setting current = the subprocess node and calling move_token would
+            # re-enter it (the BBOSubProcess branch above sends the token to the
+            # subprocess start event), looping forever on the first subprocess.
+            subprocess_node = self.app_state.current_flow_element_container
+            self.app_state.current_flow_element = subprocess_node
+            self.app_state.current_flow_element_container = (
+                subprocess_node.flow_element_container
+                or self.internal_app_static_model.main_bbo_process
             )
-            self.move_token()
+            if self.update_current_flow_element():
+                self.move_token()
         elif isinstance(self.app_state.current_flow_element, BBOScriptTask):
             # If the current flow element is a script task, the correspoinging action
             # has to be executed and the next step is generated

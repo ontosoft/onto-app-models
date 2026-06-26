@@ -124,42 +124,39 @@ services:
   frontend:
     restart: "no"
     ports:
-      - "5173:80"
+      - "5173:5173"
     build:
       context: .
       dockerfile: frontend/Dockerfile
+      # Stop at the Bun build-stage (no nginx) so we can run the Vite dev server.
+      target: build-stage
       args:
         - VITE_API_URL=http://localhost:8000
         - NODE_ENV=development
+    # Override the image CMD: run the Vite dev server with hot reload.
+    command: bun run dev -- --host --port 5173
+    # `docker compose watch` syncs ./frontend into the container so HMR fires
+    # on file changes (node_modules stays the one installed in the image).
+    develop:
+      watch:
+        - path: ./frontend
+          action: sync
+          target: /app/frontend
+          ignore:
+            - node_modules
 
-    # In the case that docker compose watch function is used, the command in the Dockerfile is overridden to run the development server, and the source code is synced with the container. This allows for hot reloading of the frontend code during development.
-    # for the development 
+    # --- Production-style build (nginx serving dist/) — uncomment to switch back
+    #     and comment out the dev block above (no target -> full nginx image):
     # ports:
-    #   - "5173:5173"
+    #   - "5173:80"
     # build:
     #   context: .
     #   dockerfile: frontend/Dockerfile
-    #   target: build-stage
     #   args:
     #     - VITE_API_URL=http://localhost:8000
     #     - NODE_ENV=development
-    # command: bun run dev -- --host --port 5173
-    # develop:
-    #   watch:
-    #     - path: ./frontend
-    #       action: sync
-    #       target: /app/frontend
-    #       ignore:
-    #         - node_modules
 
-#   frontend-onto:
-#     restart: "no"
-#     ports:
-#       - "3000:3000"
-#     build:
-#       context: .
-#       dockerfile: frontend1/Dockerfile
-# 
+ 
   playwright:
     build:
       context: .

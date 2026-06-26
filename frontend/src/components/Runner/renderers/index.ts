@@ -11,6 +11,7 @@ import {
   TextControl,
   textControlTester,
 } from "./controls"
+import { LabelRenderer, labelTester } from "./label"
 import {
   GroupRenderer,
   groupTester,
@@ -35,6 +36,8 @@ export const shadcnRenderers: JsonFormsRendererRegistryEntry[] = [
   { tester: numberControlTester, renderer: NumberControl },
   { tester: booleanControlTester, renderer: BooleanControl },
   { tester: enumControlTester, renderer: EnumControl },
+  // notification text
+  { tester: labelTester, renderer: LabelRenderer },
   // actions
   { tester: actionButtonTester, renderer: ActionButtonControl },
 ]

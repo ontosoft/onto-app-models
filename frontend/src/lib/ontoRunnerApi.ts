@@ -86,7 +86,7 @@ export async function stopApplication(): Promise<unknown> {
  */
 export interface UiAction {
   graph_node: string
-  type: "submit" | "reset" | "shacl_validation" | "other" | string
+  type: "submit" | "reset" | "shacl_validation" | "cancel" | "other" | string
   initiators: string[]
 }
 
@@ -120,6 +120,17 @@ export function buildActionMessage(
         message_type: "action",
         message_content: {
           action_type: "shacl_validation",
+          action_graph_node: action.graph_node,
+        },
+      }
+    case "cancel":
+      // The engine routes on action_graph_node alone (the exclusive gateway
+      // matches it to the cancel ConditionExpression); no form data is sent,
+      // since cancel discards the current entry rather than submitting it.
+      return {
+        message_type: "action",
+        message_content: {
+          action_type: "cancel",
           action_graph_node: action.graph_node,
         },
       }

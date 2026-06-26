@@ -165,10 +165,10 @@ def validate_model(graph: Graph) -> list[ValidationIssue]:
     # Future: issues.extend(validate_layouts(graph)), validate_forms(graph), ...
 
     for issue in issues:
-        logger.warning(issue.message)
+        logger.error(issue.message)
 
     if issues:
-        logger.warning("Model validation found %d issue(s).", len(issues))
+        logger.error("Model validation found %d issue(s).", len(issues))
     else:
         logger.info("Model validation passed: no issues found.")
     return issues

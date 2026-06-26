@@ -79,7 +79,7 @@
 ###  http://example.org/logicinterface/testing/abort_data_insert
 :abort_data_insert rdf:type owl:NamedIndividual ,
     bbo:ScriptTask ;
-    rdfs:comment "Save the entered data in the rdfstore" ;
+    rdfs:comment "Data insertion aborted" ;
     bbo:has_container :popule_single_form_knowledge_graph .
 
 ###  http://example.org/logicinterface/testing/inserted_data_confirmation
@@ -113,11 +113,18 @@
     rdfs:comment "Order Successfully Placed" ;
     bbo:has_container :popule_single_form_knowledge_graph .
 
-###  http://example.org/logicinterface/testing/abort_data_insert
-:abort_data_insert rdf:type owl:NamedIndividual ,
-             bbo:ScriptTask ;
-    rdfs:comment "Data insertion aborted" ;
+###  http://example.org/logicinterface/testing/end_event_cancelled
+:end_event_cancelled rdf:type owl:NamedIndividual ,
+             bbo:EndEvent ;
+    rdfs:comment "Data insertion cancelled" ;
     bbo:has_container :popule_single_form_knowledge_graph .
+
+###  http://example.org/logicinterface/testing/flow_6_cancel
+:flow_6_cancel rdf:type owl:NamedIndividual ,
+    bbo:NormalSequenceFlow ;
+    bbo:has_container :popule_single_form_knowledge_graph ;
+    bbo:has_sourceRef :abort_data_insert ;
+    bbo:has_targetRef :end_event_cancelled .
 
 
 ###  http://example.org/logicinterface/testing/flow_1

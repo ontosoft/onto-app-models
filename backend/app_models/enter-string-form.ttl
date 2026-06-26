@@ -76,12 +76,6 @@
     bbo:has_container :popule_single_form_knowledge_graph .
 
 
-###  http://example.org/logicinterface/testing/abort_data_insert
-:abort_data_insert rdf:type owl:NamedIndividual ,
-    bbo:ScriptTask ;
-    rdfs:comment "Save the entered data in the rdfstore" ;
-    bbo:has_container :popule_single_form_knowledge_graph .
-
 ###  http://example.org/logicinterface/testing/inserted_data_confirmation
 :inserted_data_confirmation rdf:type owl:NamedIndividual ,
     bbo:ScriptTask ;

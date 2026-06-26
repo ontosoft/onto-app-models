@@ -122,6 +122,14 @@ class ApplicationState:
         self._running_initiated = True
 
     @property
+    def is_running_initiated(self) -> bool:
+        # AppEngine.run_application reads this on a re-run / overlapping run to
+        # decide "already running". It is backed by _running_initiated (set False
+        # in __init__), so the attribute always exists — without this property the
+        # read raised AttributeError and wedged the single-tenant engine.
+        return self._running_initiated
+
+    @property
     def layout_type(self)-> LayoutTypes:
         return self._layout_type
 
