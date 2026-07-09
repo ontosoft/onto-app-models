@@ -51,11 +51,20 @@ class AppEngine():
             filePath = self.model_directory/file_name
         self.internal_app_static_model = model_factory.rdf_graf_to_uimodel(rdf_model_file=filePath, rdf_text_ttl=rdf_string)
 
+    def reset(self) -> None:
+        """Drop the running process engine so this engine can start a fresh run.
+
+        Called when a session id is reused (or a new model loaded) so that
+        run_application (which only creates a ProcessEngine when the instance is
+        None) starts clean instead of returning "already running".
+        """
+        self.process_engine_instance = None
+
     def run_application(self)-> None:
         """
-        Starts the application interaction model instance. The main part is 
+        Starts the application interaction model instance. The main part is
         the process that generates an instance of the application interaction model
-        
+
         """
         if self is not None and self.internal_app_static_model is not None and \
             self.internal_app_static_model.is_loaded and \

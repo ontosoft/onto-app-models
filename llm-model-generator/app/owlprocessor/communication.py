@@ -1,27 +1,10 @@
-from typing import Literal
+"""Backward-compatible re-export of the engine I/O DTOs.
 
-from pydantic import BaseModel
+The definitions now live in :mod:`app.contracts.engine` so the API tier and the
+Stage-2 engine worker can share one contract without importing the engine
+package. Engine internals still import them from here unchanged.
+"""
 
-class AppExchangeGetOutput(BaseModel):
-    """
-    This class represents the data which is sent from the backend
-    to the frontend. If the frontend has to show the form then
-    an object of this class contains JSONForm elements to 
-    create that form.
- 
-    """
-    message_type: Literal[ "layout" , "notification","information" , "error"]
-    layout_type: Literal[ "form" , "message-box",""]
-    message_content: dict
-    output_knowledge_graph: str
+from app.contracts.engine import AppExchangeFrontEndData, AppExchangeGetOutput
 
-
-class AppExchangeFrontEndData(BaseModel):
-    """
-    This class represents the data which is sent from the frontend to the backend.
- 
-    """
-    message_type: str
-    message_content : dict 
-
-
+__all__ = ["AppExchangeFrontEndData", "AppExchangeGetOutput"]

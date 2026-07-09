@@ -3,11 +3,10 @@ import json
 from typing import Any
 from rdflib import Graph
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Header
 from sqlmodel import func, select
 
-import app.api.routes.onto_app_router as _onto_app_router
-from app.owlprocessor.app_engine import AppEngine as _AppEngine
+from app.core.session_service import engine_sessions, DEFAULT_SESSION
 from app.api.deps import SessionDep, CurrentUser
 from app.models import AppModel, AppModelCreate, AppModelPublic, AppModelsPublic, AppModelUpdate, Message
 
@@ -134,24 +133,27 @@ def delete_app_model(
 
 @router.post("/run/{id}", response_model=Message)
 def run_app_model(
-    *, session: SessionDep, current_user: CurrentUser, id: uuid.UUID
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    id: uuid.UUID,
+    onto_session: str = Header(default=DEFAULT_SESSION, alias="X-Onto-Session"),
 ) -> Any:
     """
-    Run an app model.
+    Run an app model in the caller's engine session (X-Onto-Session header).
     """
     app_model = session.get(AppModel, id)
     if not app_model:
         raise HTTPException(status_code=404, detail="App model not found")
     if not current_user.is_superuser and app_model.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
-    
+
     try:
-        # If stop_application set the module-level 'app' to None, recreate it
-        # so that app_exchange_post (which reads that same global) doesn't crash.
-        if _onto_app_router.app is None:
-            _onto_app_router.app = _AppEngine()
-        _onto_app_router.app.load_inner_app_model(rdf_string=app_model.knowledge_graph_rdf)
-        _onto_app_router.app.run_application()
+        # Load + run this model in its own session engine. A fresh session id
+        # gets a clean engine; a reused one is reset() first (see run_model).
+        engine_sessions.run_model(
+            onto_session, rdf_string=app_model.knowledge_graph_rdf
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to run application: {str(e)}")
 

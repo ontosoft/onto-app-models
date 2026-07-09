@@ -125,6 +125,24 @@ class Settings(BaseSettings):
 
     OPENAI_API_KEY: str
 
+    # --- Engine transport (Stage 2b) ---
+    # "local": run engines in this process (default; local dev / tests / single
+    # container). "redis": forward per-session engine ops to an engine_worker
+    # container over Redis (crash isolation + horizontal scaling).
+    ENGINE_TRANSPORT: Literal["local", "redis"] = "local"
+    REDIS_HOST: str = "redis"
+    REDIS_PORT: int = 6379
+    REDIS_DB: int = 0
+    # Seconds the API waits for a worker's RPC reply before giving up.
+    ENGINE_RPC_TIMEOUT: int = 60
+    # Threads per worker -> how many sessions one worker serves concurrently.
+    ENGINE_WORKER_CONCURRENCY: int = 4
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def REDIS_URL(self) -> str:
+        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
+
     debug: bool = True
     BASE_DIR :Path= Path(__file__).resolve().parent.parent
 

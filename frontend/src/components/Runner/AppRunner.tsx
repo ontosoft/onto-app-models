@@ -54,6 +54,9 @@ export function AppRunner({ appModelId, appModelTitle }: AppRunnerProps) {
   const [pageKey, setPageKey] = useState(0)
 
   const startedRef = useRef(false)
+  // One engine session per mounted runner, so each tab runs its own
+  // independent application on the backend (X-Onto-Session header).
+  const sessionId = useRef(crypto.randomUUID()).current
 
   const applyPage = useCallback((next: AppExchangeGetOutput) => {
     setPage(next)
@@ -69,12 +72,15 @@ export function AppRunner({ appModelId, appModelTitle }: AppRunnerProps) {
 
     ;(async () => {
       try {
-        await runAppModelById(appModelId)
-        await appExchangePost({
-          message_type: "initiate_exchange",
-          message_content: {},
-        })
-        const first = await appExchangeGet()
+        await runAppModelById(appModelId, sessionId)
+        await appExchangePost(
+          {
+            message_type: "initiate_exchange",
+            message_content: {},
+          },
+          sessionId,
+        )
+        const first = await appExchangeGet(sessionId)
         applyPage(first)
         setPhase("ready")
       } catch (err) {
@@ -82,7 +88,7 @@ export function AppRunner({ appModelId, appModelTitle }: AppRunnerProps) {
         setPhase("error")
       }
     })()
-  }, [appModelId, applyPage])
+  }, [appModelId, applyPage, sessionId])
 
   const formGraphNode =
     (page?.message_content as Partial<FormContent> | undefined)?.graph_node ??
@@ -95,8 +101,9 @@ export function AppRunner({ appModelId, appModelTitle }: AppRunnerProps) {
         try {
           await appExchangePost(
             buildActionMessage(action, formGraphNode, formData),
+            sessionId,
           )
-          const next = await appExchangeGet()
+          const next = await appExchangeGet(sessionId)
           applyPage(next)
         } catch (err) {
           showErrorToast(
@@ -107,19 +114,19 @@ export function AppRunner({ appModelId, appModelTitle }: AppRunnerProps) {
         }
       })()
     },
-    [formGraphNode, formData, applyPage, showErrorToast],
+    [formGraphNode, formData, applyPage, showErrorToast, sessionId],
   )
 
   const handleStop = useCallback(() => {
     ;(async () => {
       try {
-        await stopApplication()
+        await stopApplication(sessionId)
       } catch {
         // best-effort shutdown; navigate away regardless
       }
       navigate({ to: "/appmodels" })
     })()
-  }, [navigate])
+  }, [navigate, sessionId])
 
   return (
     <div className="mx-auto max-w-3xl">
