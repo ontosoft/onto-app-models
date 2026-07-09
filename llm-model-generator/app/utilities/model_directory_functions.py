@@ -1,13 +1,16 @@
 import os
 import json
 import logging
-import tempfile
 from rdflib import Graph, RDF, Namespace
 from rdflib.plugins.sparql import prepareQuery
 from owlready2 import World, sync_reasoner_pellet
 from owlready2 import sync_reasoner_hermit
-from pathlib import Path
 from app.core.config import settings
+from app.owlprocessor.static_model_cache import (
+    reasoned_world_cache,
+    serialize_world,
+    load_world,
+)
 
 ontoui_logger = logging.getLogger("ontoui_app")
 
@@ -87,82 +90,60 @@ def print_triples_in_graph(graph_world: World):
         ontoui_logger.debug(f"Subject: {s}, Predicate: {p}, Object: {o}")
 
 
-def create_pellet_reasoning_graph(graph_world: World) -> World:
-    """
-    The function applies the pellet reasoner and returns results.
-    The graph world is first cloned in order to avoid modifying the original graph.
-    """
+def create_pellet_reasoning_graph(graph_world: World, cache_key: str) -> World:
+    """Apply Pellet reasoning to a clone of the input world and return the result.
 
+    ``cache_key`` is a stable hash of the original model RDF. The reasoned world is
+    cached by it, so a repeat load of the same model skips the (10-25s) reasoner: a
+    fresh World is reloaded from the cached serialization instead (inferences
+    survive save->reload). Each caller gets its own World, so concurrent sessions
+    never share one owlready store.
+    """
     try:
-        temporary_location: Path = settings.TEMPORARY_MODELS_DIRECTORY
-        graph_world.save(file=str(temporary_location / "before.owl"), format="rdfxml")
-        # Clone the graph world to avoid modifying the original graph
-        cloned_world = World()
-        # Step 1: Save the original world to a temporary file
-        with tempfile.NamedTemporaryFile(suffix=".owl") as tmp:
-            graph_world.save(tmp.name)
+        full_key = reasoned_world_cache.key("pellet", cache_key)
 
-            # Step 2: Load the saved data into the cloned world
-            ontology = cloned_world.get_ontology(tmp.name).load()
+        def _build() -> bytes:
+            # Miss: clone the input into a fresh world, reason into it, serialize.
+            cloned_world = load_world(serialize_world(graph_world))
+            with cloned_world:
+                sync_reasoner_pellet(
+                    cloned_world,
+                    infer_property_values=True,
+                    infer_data_property_values=True,
+                )
+            return serialize_world(cloned_world)
 
-        # Step 3: Apply Pellet reasoning
-
-        cloned_world.save(
-            file=str(temporary_location / "after_cloning.owl"), format="rdfxml"
+        data, cached = reasoned_world_cache.get_or_build(full_key, _build)
+        ontoui_logger.info(
+            "Pellet reasoning: cache %s (key %s)", "HIT" if cached else "MISS", cache_key[:12]
         )
-        with cloned_world:
-            sync_reasoner_pellet(
-                cloned_world,
-                infer_property_values=True,
-                infer_data_property_values=True,
-            )
-        cloned_world.save(
-            file=str(temporary_location / "after_pellet_applied.owl"), format="rdfxml"
-        )
-        return cloned_world
-    except FileNotFoundError as e:
-        ontoui_logger.error(f"File not found: {e}")
-        raise
+        return load_world(data)
     except Exception as e:
         ontoui_logger.error(f"Error during clonning or Pellet reasoning: {e}")
         raise
 
 
-def create_hermit_reasoning_graph(graph_world: World) -> World:
-    """
-    The function applies the pellet reasoner and returns results.
+def create_hermit_reasoning_graph(graph_world: World, cache_key: str) -> World:
+    """Apply HermiT reasoning to a clone of the input world and return the result.
+
+    Same caching strategy as create_pellet_reasoning_graph: the reasoned world is
+    cached by the stable ``cache_key`` and reloaded per caller, so repeat loads skip
+    the reasoner.
     """
     try:
-        temporary_location: Path = settings.TEMPORARY_MODELS_DIRECTORY
-        graph_world.save(
-            file=str(temporary_location / "before_hermit.owl"), format="rdfxml"
-        )
-        # Clone the graph world to avoid modifying the original graph
-        cloned_world = World()
-        # Step 1: Save the original world to a temporary file
-        with tempfile.NamedTemporaryFile(suffix=".owl") as tmp:
-            graph_world.save(tmp.name)
+        full_key = reasoned_world_cache.key("hermit", cache_key)
 
-            # Step 2: Load the saved data into the cloned world
-            ontology = cloned_world.get_ontology(tmp.name).load()
+        def _build() -> bytes:
+            cloned_world = load_world(serialize_world(graph_world))
+            with cloned_world:
+                sync_reasoner_hermit(cloned_world, infer_property_values=True)
+            return serialize_world(cloned_world)
 
-        # Step 3: Apply Pellet reasoning
-
-        cloned_world.save(
-            file=str(temporary_location / "after_cloning.owl"), format="rdfxml"
+        data, cached = reasoned_world_cache.get_or_build(full_key, _build)
+        ontoui_logger.info(
+            "HermiT reasoning: cache %s (key %s)", "HIT" if cached else "MISS", cache_key[:12]
         )
-        with cloned_world:
-            sync_reasoner_hermit(
-                cloned_world,
-                infer_property_values=True
-            )
-        cloned_world.save(
-            file=str(temporary_location / "after_hermit_applied.owl"), format="rdfxml"
-        )
-        return cloned_world
-    except FileNotFoundError as e:
-        ontoui_logger.error(f"File not found: {e}")
-        raise
+        return load_world(data)
     except Exception as e:
         ontoui_logger.error(f"Error during clonning or Hermit reasoning: {e}")
         raise
