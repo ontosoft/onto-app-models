@@ -1,0 +1,16 @@
+# Phase-1 input fixture: a minimal SHACL shapes file (one entity, one field).
+# The model_generator turns this into a complete, runnable OntoUI model — the
+# single-string-form equivalent of the hand-written enter-string-form.ttl.
+@prefix sh:   <http://www.w3.org/ns/shacl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix v1:   <http://purl.org/goodrelations/v1#> .
+
+<http://example.org/generated/string-form/BusinessEntityShape>
+    a sh:NodeShape ;
+    sh:targetClass v1:BusinessEntity ;
+    sh:property [
+        sh:path     v1:legalName ;
+        sh:datatype xsd:string ;
+        sh:name     "Field 1" ;
+        sh:order    0 ;
+    ] .
