@@ -1,3 +1,4 @@
+import hashlib
 import logging
 import os
 import sys
@@ -45,12 +46,20 @@ class AppStaticModelFactory:
         #The owlready2 library is used to enable reasoning over the RDF graph.
         internal_app_static_model.rdf_world_owlready, internal_app_static_model.rdf_ontology_owlready = \
             AppStaticModelFactory.read_graph_owlready(internal_app_static_model.rdf_graph_rdflib)
+        # Stable cache key for the reasoned worlds: hash the ORIGINAL model RDF
+        # (not the owlready serialization, which isn't byte-stable). Lets a repeat
+        # load of the same model skip the reasoner. See static_model_cache.py.
+        if rdf_text_ttl is not None:
+            model_bytes = rdf_text_ttl.encode("utf-8")
+        else:
+            model_bytes = Path(rdf_model_file).read_bytes()
+        cache_key = hashlib.sha256(model_bytes).hexdigest()
         internal_app_static_model.rdf_pellet_reasoning_world = \
             create_pellet_reasoning_graph(
-                internal_app_static_model.rdf_world_owlready)           
+                internal_app_static_model.rdf_world_owlready, cache_key)
         internal_app_static_model.rdf_hermit_reasoning_world = \
             create_hermit_reasoning_graph(
-                internal_app_static_model.rdf_world_owlready)
+                internal_app_static_model.rdf_world_owlready, cache_key)
         AppStaticModelFactory.read_bbo_elements(internal_app_static_model)
         AppStaticModelFactory.readAllLayouts(internal_app_static_model)
         AppStaticModelFactory.readAllForms(internal_app_static_model)
