@@ -5,7 +5,7 @@ from pathlib import Path
 from app.owlprocessor.app_engine import AppEngine
 from app.owlprocessor.app_model_factory import AppStaticModelFactory
 from app.utilities.model_directory_functions import read_model_files_from_directory
-from app.owlprocessor.communication import AppExchangeGetOutput
+from app.contracts.engine import AppExchangeGetOutput
 from app.core.session_service import engine_sessions, DEFAULT_SESSION
 import logging
 

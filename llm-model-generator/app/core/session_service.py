@@ -1,133 +1,58 @@
-"""Per-session engine registry — the seam between the API and the runtime engine.
+"""Per-session engine access for the API — a thin facade over an EngineTransport.
 
-Every browser tab / run gets its own :class:`AppEngine`, keyed by a session id
-(the ``X-Onto-Session`` header). This replaces the former module-level global
-engine in ``onto_app_router`` that made the backend single-tenant.
+Routes import ``engine_sessions`` and call ``load/run/run_model/post/get/stop/status``
+keyed by the caller's session id (the ``X-Onto-Session`` header). This facade owns
+*which* transport backs those calls:
 
-The whole API talks to the engine *only* through this service. That is the point
-of the seam: Stage 2 can swap the in-process ``AppEngine`` for an RPC client to a
-separate worker container without any route code changing.
+- Stage 1/2a: ``LocalEngineTransport`` — engines run in this process.
+- Stage 2b: a Redis-backed transport that forwards to a worker container.
+
+Because routes talk only to this facade, moving the engine out of the process
+does not touch any route code. See app/core/engine_transport.py.
 """
 
 from __future__ import annotations
 
-import threading
-from collections import OrderedDict
+from app.contracts.engine import AppExchangeGetOutput
+from app.core.engine_transport import (
+    DEFAULT_SESSION,
+    EngineTransport,
+    LocalEngineTransport,
+)
 
-from app.owlprocessor.app_engine import AppEngine
-from app.owlprocessor.communication import AppExchangeGetOutput
-
-DEFAULT_SESSION = "__default__"  # fallback when no X-Onto-Session header is sent
-
-
-class _Session:
-    __slots__ = ("engine", "lock")
-
-    def __init__(self) -> None:
-        self.engine = AppEngine()
-        self.lock = threading.Lock()  # serialize ops on this one engine
+__all__ = ["EngineSessionService", "engine_sessions", "DEFAULT_SESSION"]
 
 
 class EngineSessionService:
-    """One :class:`AppEngine` per session id, LRU-bounded.
+    """Delegates every per-session operation to the configured transport."""
 
-    The bound stops abandoned tabs (closed without Stop) from leaking
-    reasoner-loaded engines. A short registry lock guards only the dict; a
-    per-session lock serializes operations on a single engine so one session's
-    10-25s reasoner load never blocks another session's requests.
-    """
+    def __init__(self, transport: EngineTransport | None = None) -> None:
+        # Stage 2b will select the transport from settings (ENGINE_TRANSPORT):
+        # LocalEngineTransport in-process, or a RedisEngineTransport to a worker.
+        self._transport: EngineTransport = transport or LocalEngineTransport()
 
-    def __init__(self, max_sessions: int = 32) -> None:
-        self._sessions: "OrderedDict[str, _Session]" = OrderedDict()
-        self._registry_lock = threading.Lock()
-        self._max = max_sessions
-
-    # -- registry (short critical sections only) --
-    def _get_or_create(self, sid: str) -> _Session:
-        with self._registry_lock:
-            s = self._sessions.get(sid)
-            if s is None:
-                s = _Session()
-                self._sessions[sid] = s
-                while len(self._sessions) > self._max:
-                    self._sessions.popitem(last=False)  # evict least-recently-used
-            self._sessions.move_to_end(sid)
-            return s
-
-    def _get(self, sid: str) -> _Session | None:
-        with self._registry_lock:
-            s = self._sessions.get(sid)
-            if s is not None:
-                self._sessions.move_to_end(sid)
-            return s
-
-    # -- operations (engine work happens OUTSIDE the registry lock) --
     def load(self, sid: str, *, file_name=None, rdf_string=None) -> None:
-        s = self._get_or_create(sid)
-        with s.lock:
-            s.engine.reset()  # fresh run if this session id is reused
-            s.engine.load_inner_app_model(file_name=file_name, rdf_string=rdf_string)
+        return self._transport.load(sid, file_name=file_name, rdf_string=rdf_string)
 
     def run(self, sid: str) -> bool:
-        s = self._get(sid)
-        if s is None:
-            return False
-        with s.lock:
-            s.engine.run_application()
-            return True
+        return self._transport.run(sid)
 
     def run_model(self, sid: str, *, rdf_string=None, file_name=None) -> None:
-        """load + run atomically for one session (the appmodels run path)."""
-        s = self._get_or_create(sid)
-        with s.lock:
-            s.engine.reset()
-            s.engine.load_inner_app_model(file_name=file_name, rdf_string=rdf_string)
-            s.engine.run_application()
+        return self._transport.run_model(
+            sid, rdf_string=rdf_string, file_name=file_name
+        )
 
     def post(self, sid: str, frontend_state) -> AppExchangeGetOutput:
-        s = self._get(sid)
-        if s is None:
-            return AppExchangeGetOutput(
-                message_type="error",
-                layout_type="message-box",
-                message_content={"message": "No running application for this session."},
-                output_knowledge_graph="",
-            )
-        with s.lock:
-            return s.engine.process_received_client_data(frontend_state)
+        return self._transport.post(sid, frontend_state)
 
     def get(self, sid: str) -> AppExchangeGetOutput:
-        s = self._get(sid)
-        if s is None:
-            return AppExchangeGetOutput(
-                message_type="notification",
-                layout_type="message-box",
-                message_content={"message": "No running application for this session."},
-                output_knowledge_graph="",
-            )
-        with s.lock:
-            return s.engine.read_new_model_layout()
+        return self._transport.get(sid)
 
     def stop(self, sid: str) -> None:
-        with self._registry_lock:
-            self._sessions.pop(sid, None)
+        return self._transport.stop(sid)
 
     def status(self, sid: str) -> dict:
-        s = self._get(sid)
-        if s is None:
-            return {"exists": False, "loaded": False, "running": False}
-        with s.lock:
-            eng = s.engine
-            loaded = (
-                eng.internal_app_static_model is not None
-                and eng.internal_app_static_model.is_loaded
-            )
-            return {
-                "exists": True,
-                "loaded": loaded,
-                "running": eng.process_engine_instance is not None,
-                "model_name": eng.model_name,
-            }
+        return self._transport.status(sid)
 
 
 engine_sessions = EngineSessionService()  # process-wide singleton, imported by both routers
