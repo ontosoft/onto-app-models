@@ -1,20 +1,15 @@
-import {
-  type AppExchangeGetOutput,
-  OntoModelGeneratorService,
-  OpenAPI,
-} from "~/client"
+import { type AppExchangeGetOutput, OpenAPI } from "~/client"
 
 /**
  * Thin API layer for the OntoUI runtime ("generator") engine.
  *
- * Two of the engine endpoints can't go through the generated client:
- *  - POST /generator/app_exchange_post reads a raw `Request` on the backend,
- *    so openapi-ts produced a body-less method. We send the JSON body here.
- *  - POST /appmodels/run/{id} exists on the backend but is missing from the
- *    (stale) generated client, so we call it directly.
+ * Every call carries an `X-Onto-Session` header identifying the caller's engine
+ * session, so concurrent tabs/users run independent applications on the backend
+ * (see app/core/session_service.py). The session id is minted once per running
+ * app in AppRunner and passed into each function here.
  *
- * The read-only GETs (`app_exchange_get`, `stop_application`) DO exist in the
- * generated client, so we reuse those.
+ * All four calls go through the hand-rolled fetch helpers below rather than the
+ * generated client, so we control the session header without a client regen.
  */
 
 /** Resolve the bearer token the same way the generated client does. */
@@ -28,14 +23,36 @@ async function authHeader(): Promise<Record<string, string>> {
   return value ? { Authorization: `Bearer ${value}` } : {}
 }
 
-async function postJson<T>(path: string, body: unknown): Promise<T> {
+/** Common headers: auth + the engine session id. */
+async function sessionHeaders(
+  sessionId: string,
+): Promise<Record<string, string>> {
+  return { "X-Onto-Session": sessionId, ...(await authHeader()) }
+}
+
+async function postJson<T>(
+  path: string,
+  body: unknown,
+  sessionId: string,
+): Promise<T> {
   const res = await fetch(`${OpenAPI.BASE}${path}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(await authHeader()),
+      ...(await sessionHeaders(sessionId)),
     },
     body: JSON.stringify(body),
+  })
+  if (!res.ok) {
+    throw new Error(`Request to ${path} failed with status ${res.status}`)
+  }
+  return (await res.json()) as T
+}
+
+async function getJson<T>(path: string, sessionId: string): Promise<T> {
+  const res = await fetch(`${OpenAPI.BASE}${path}`, {
+    method: "GET",
+    headers: await sessionHeaders(sessionId),
   })
   if (!res.ok) {
     throw new Error(`Request to ${path} failed with status ${res.status}`)
@@ -47,8 +64,11 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
  * Load THIS app model's RDF into the engine and start it.
  * (POST /api/v1/appmodels/run/{id} — auth + ownership enforced server-side.)
  */
-export async function runAppModelById(id: string): Promise<unknown> {
-  return postJson(`/api/v1/appmodels/run/${id}`, undefined)
+export async function runAppModelById(
+  id: string,
+  sessionId: string,
+): Promise<unknown> {
+  return postJson(`/api/v1/appmodels/run/${id}`, undefined, sessionId)
 }
 
 // ---- The data-exchange loop -------------------------------------------------
@@ -63,18 +83,21 @@ export type FrontendMessage =
 /** Send a message to the running engine (initiate the exchange or an action). */
 export async function appExchangePost(
   message: FrontendMessage,
+  sessionId: string,
 ): Promise<unknown> {
-  return postJson("/api/v1/generator/app_exchange_post", message)
+  return postJson("/api/v1/generator/app_exchange_post", message, sessionId)
 }
 
 /** Read the current UI page the engine wants the frontend to render. */
-export async function appExchangeGet(): Promise<AppExchangeGetOutput> {
-  return OntoModelGeneratorService.readCurrentAppDataFromModel()
+export async function appExchangeGet(
+  sessionId: string,
+): Promise<AppExchangeGetOutput> {
+  return getJson("/api/v1/generator/app_exchange_get", sessionId)
 }
 
 /** Shut the running application down on the server. */
-export async function stopApplication(): Promise<unknown> {
-  return OntoModelGeneratorService.stopApplication()
+export async function stopApplication(sessionId: string): Promise<unknown> {
+  return getJson("/api/v1/generator/stop_application", sessionId)
 }
 
 // ---- Action payload builders ------------------------------------------------

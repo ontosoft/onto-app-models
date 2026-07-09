@@ -30,7 +30,9 @@ const RunAppModel = ({ id, onSuccess }: RunAppModelProps) => {
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
   const mutation = useMutation({
-    mutationFn: () => runAppModelById(id),
+    // Fresh engine session per run (this action starts the app, then navigates
+    // away; the runner route drives its own session).
+    mutationFn: () => runAppModelById(id, crypto.randomUUID()),
     onSuccess: () => {
       showSuccessToast("Application started successfully")
       setIsOpen(false)
