@@ -167,6 +167,8 @@ services:
       db:
         condition: service_healthy
         restart: true
+      redis:
+        condition: service_healthy
       prestart:
         condition: service_completed_successfully
     env_file:
@@ -190,6 +192,10 @@ services:
       - POSTGRES_USER=${POSTGRES_USER?Variable not set}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
       - SENTRY_DSN=${SENTRY_DSN}
+      # Run the engine out-of-process in the engine-worker container(s).
+      - ENGINE_TRANSPORT=redis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     healthcheck:
       # The api image has no curl, so a curl-based check always fails -> the
       # container is marked unhealthy and Traefik drops its router (404 on
@@ -219,6 +225,39 @@ services:
 
       # Enable redirection for HTTP and HTTPS
       - traefik.http.routers.${STACK_NAME?Variable not set}-backend-http.middlewares=https-redirect
+
+  # Runs the OntoUI runtime engines out-of-process. The API (ENGINE_TRANSPORT=redis)
+  # forwards per-session engine ops here over Redis. DB-less; crash-isolated (a bad
+  # model can only take down a worker, which is restarted). Scale horizontally with
+  # `docker compose up --scale engine-worker=N` (no container_name, so N>1 is allowed).
+  engine-worker:
+    image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
+    restart: unless-stopped
+    networks:
+      - default
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: python -m app.engine_worker
+    env_file:
+      - .env
+    environment:
+      - ENGINE_TRANSPORT=redis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - ENVIRONMENT=${ENVIRONMENT}
+      - SECRET_KEY=${SECRET_KEY?Variable not set}
+      - FIRST_SUPERUSER=${FIRST_SUPERUSER?Variable not set}
+      - FIRST_SUPERUSER_PASSWORD=${FIRST_SUPERUSER_PASSWORD?Variable not set}
+      # Present so Settings validates; the worker never opens a DB connection.
+      - POSTGRES_SERVER=db
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+    build:
+      context: .
+      dockerfile: llm-model-generator/Dockerfile
 
   frontend:
     image: '${DOCKER_IMAGE_FRONTEND?Variable not set}:${TAG-latest}'

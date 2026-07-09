@@ -1,5 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, Request, Header
 from fastapi import Query
+from fastapi.concurrency import run_in_threadpool
 from app.core.config import settings
 from pathlib import Path
 from app.owlprocessor.app_engine import AppEngine
@@ -45,7 +46,7 @@ async def run_application(
     Runs the application by creating a ProcessEngine for this session.
     If the session's model is already running, reports that instead.
     """
-    status = engine_sessions.status(session)
+    status = await run_in_threadpool(engine_sessions.status, session)
     if status["running"]:
         logger.info("The application was already run before for this session.")
         return {"message": "The applicaton was already run before."}
@@ -53,7 +54,7 @@ async def run_application(
         # The static model corresponding to the RDF graph is loaded for this
         # session but not yet running. Start it.
         logger.info(f"Running the application with the model {status['model_name']}")
-        engine_sessions.run(session)
+        await run_in_threadpool(engine_sessions.run, session)
         return {"message_type": "information",
                 "layout_type": "",
                 "message_content": "The application is running."}
@@ -71,7 +72,7 @@ async def stop_application(
     This function stops the application for this session if it is running.
     """
     logger.info("Stopping the application for this session")
-    engine_sessions.stop(session)
+    await run_in_threadpool(engine_sessions.stop, session)
     return {"message_type": "information",
              "message_content" : "No model is loaded. The application was shut down."}
 
@@ -89,7 +90,7 @@ async def process_data_sent_from_frontend(
     # The data sent from the frontend is in the json format
     frontend_state = await request.json()
 
-    return engine_sessions.post(session, frontend_state)
+    return await run_in_threadpool(engine_sessions.post, session, frontend_state)
 
 @router.get("/app_exchange_get", response_description="Get current UI page")
 async def read_current_app_data_from_model(
@@ -101,7 +102,7 @@ async def read_current_app_data_from_model(
     processing the data sent from the frontend and both methods are used to
     make data exchange between the frontend and the backend.
     """
-    return engine_sessions.get(session)
+    return await run_in_threadpool(engine_sessions.get, session)
  
     
 @router.get("/read_inner_server_models", response_description="Get current list of inner UI models on the server") 
@@ -126,11 +127,12 @@ async def load_inner_server_model(
         filename (str): The name of the UI model file to be loaded.
         This file is stored in the 'app_models' folder as RDF file
     """
-    status = engine_sessions.status(session)
+    status = await run_in_threadpool(engine_sessions.status, session)
     if force_load is not None and force_load:
         logger.debug(f"The app model \"{filename} \" is about to be loaded by force.")
-        engine_sessions.load(session, file_name=filename)
-        return {"message": f"The model is loaded {engine_sessions.status(session)['model_name']} by force."}
+        await run_in_threadpool(engine_sessions.load, session, file_name=filename)
+        loaded = await run_in_threadpool(engine_sessions.status, session)
+        return {"message": f"The model is loaded {loaded['model_name']} by force."}
     elif status["loaded"]:
         logger.debug(f"The app model \"{status['model_name']} \" was already loaded.")
         return {"message": f"The model {status['model_name']} is loaded . The applicaton was already run before. Do you want to load a new model?"}
@@ -138,8 +140,9 @@ async def load_inner_server_model(
         # If the model is not loaded, load it even if it is not forced
         try:
             logger.debug(f"The app model \"{filename} \" is about to be loaded.")
-            engine_sessions.load(session, file_name=filename)
-            return {"message": f"The model is loaded {engine_sessions.status(session)['model_name']}. "}
+            await run_in_threadpool(engine_sessions.load, session, file_name=filename)
+            loaded = await run_in_threadpool(engine_sessions.status, session)
+            return {"message": f"The model is loaded {loaded['model_name']}. "}
         except Exception as e:
             logger.error(f"Error loading the model {filename}: {e}")
             return {"message": f"Error loading the model {filename}: {e}"}

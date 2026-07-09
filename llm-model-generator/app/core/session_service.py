@@ -13,23 +13,45 @@ does not touch any route code. See app/core/engine_transport.py.
 
 from __future__ import annotations
 
+import logging
+
 from app.contracts.engine import AppExchangeGetOutput
+from app.core.config import settings
 from app.core.engine_transport import (
     DEFAULT_SESSION,
     EngineTransport,
     LocalEngineTransport,
 )
 
+logger = logging.getLogger("ontoui_app")
+
 __all__ = ["EngineSessionService", "engine_sessions", "DEFAULT_SESSION"]
+
+
+def _build_transport() -> EngineTransport:
+    """Select the engine transport from settings.ENGINE_TRANSPORT.
+
+    "redis" forwards ops to an engine_worker container; anything else runs the
+    engine in this process. Falls back to local if the Redis client can't be
+    constructed, so a misconfigured API still serves (single-tenant) rather than
+    failing to boot.
+    """
+    if settings.ENGINE_TRANSPORT == "redis":
+        try:
+            from app.core.engine_transport import RedisEngineTransport
+
+            logger.info("Engine transport: redis (delegating to engine_worker)")
+            return RedisEngineTransport()
+        except Exception:
+            logger.exception("Failed to init Redis engine transport; using local")
+    return LocalEngineTransport()
 
 
 class EngineSessionService:
     """Delegates every per-session operation to the configured transport."""
 
     def __init__(self, transport: EngineTransport | None = None) -> None:
-        # Stage 2b will select the transport from settings (ENGINE_TRANSPORT):
-        # LocalEngineTransport in-process, or a RedisEngineTransport to a worker.
-        self._transport: EngineTransport = transport or LocalEngineTransport()
+        self._transport: EngineTransport = transport or _build_transport()
 
     def load(self, sid: str, *, file_name=None, rdf_string=None) -> None:
         return self._transport.load(sid, file_name=file_name, rdf_string=rdf_string)
