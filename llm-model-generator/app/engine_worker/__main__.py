@@ -35,7 +35,14 @@ def _jsonable(x):
 class EngineWorker:
     def __init__(self) -> None:
         self.wid = uuid4().hex[:12]
-        self.r = redis.Redis.from_url(settings.REDIS_URL)
+        # Explicit socket_timeout: with redis-py's default (None), blocking BLPOP
+        # hits an internal ~5s read ceiling, which under GIL contention from the
+        # reasoner can spuriously time out the inbox loop. Give it ample headroom.
+        self.r = redis.Redis.from_url(
+            settings.REDIS_URL,
+            socket_timeout=settings.ENGINE_RPC_TIMEOUT + 15,
+            socket_keepalive=True,
+        )
         self.transport = LocalEngineTransport()
         self.executor = ThreadPoolExecutor(
             max_workers=settings.ENGINE_WORKER_CONCURRENCY,
@@ -96,7 +103,12 @@ class EngineWorker:
         inbox = rpc.worker_inbox_key(self.wid)
         try:
             while not self._stop.is_set():
-                item = self.r.blpop(inbox, timeout=1)
+                try:
+                    item = self.r.blpop(inbox, timeout=1)
+                except redis.exceptions.RedisError:
+                    # A transient Redis/socket hiccup must not kill the worker loop.
+                    logger.debug("inbox blpop error; retrying", exc_info=True)
+                    continue
                 if item is None:
                     continue
                 _key, raw = item

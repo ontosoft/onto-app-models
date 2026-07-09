@@ -181,8 +181,16 @@ class RedisEngineTransport:
         from app.core import engine_rpc as rpc
 
         self._rpc = rpc
-        self._r = redis.Redis.from_url(settings.REDIS_URL)
         self._timeout = settings.ENGINE_RPC_TIMEOUT
+        # socket_timeout MUST exceed the blocking BLPOP timeout: with redis-py's
+        # default (None), blocking reads hit an internal ~5s ceiling, so any RPC
+        # whose reply takes >~5s (e.g. a cold reasoner load) would fail with
+        # "Timeout reading from socket". +15s of headroom over the RPC budget.
+        self._r = redis.Redis.from_url(
+            settings.REDIS_URL,
+            socket_timeout=self._timeout + 15,
+            socket_keepalive=True,
+        )
 
     # -- worker resolution --
     def _live(self, wid: str | None) -> bool:
