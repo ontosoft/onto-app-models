@@ -799,8 +799,15 @@ class AppStaticModelFactory:
                 elif(action_class.iri == str(OBOP.CancelBlockAction)):
                     action.type = "cancel"
                 else:
+                    # A generic obop:Action (e.g. a "continue"/proceed button) has
+                    # no specialised OBOP subclass -> a plain "other" action the
+                    # engine advances via its gateway. Only a truly unrecognised
+                    # subclass is worth flagging.
                     action.type = "other"
-                    logger.error(f"Unknown action type: {action_class.iri}")
+                    if action_class.iri != str(OBOP.Action):
+                        logger.warning(
+                            f"Unrecognized action class {action_class.iri}; treating as 'other'"
+                        )
                 internal_app_static_model.actions.append(action)
                 logger.debug(f"Loaded action: {action.__repr__()}")
 
