@@ -115,6 +115,24 @@ services:
       SMTP_TLS: "false"
       EMAILS_FROM_EMAIL: "noreply@example.com"
 
+  # Dev: hot-reload the engine worker on code changes. Unlike the api
+  # (fastapi run --reload), `python -m app.engine_worker` has no self-reloader, so
+  # a plain `sync` wouldn't take effect. `sync+restart` copies the changed files in
+  # AND restarts the worker process, which re-imports the new code (its in-memory
+  # sessions are dropped, which is fine in dev). pyproject.toml changes rebuild.
+  engine-worker:
+    restart: "no"
+    develop:
+      watch:
+        - path: ./llm-model-generator
+          action: sync+restart
+          target: /app/llm-model-generator
+          ignore:
+            - ./llm-model-generator/.venv
+            - .venv
+        - path: ./llm-model-generator/pyproject.toml
+          action: rebuild
+
   mailcatcher:
     image: schickling/mailcatcher
     ports:
