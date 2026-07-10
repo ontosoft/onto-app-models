@@ -133,8 +133,11 @@ class Settings(BaseSettings):
     REDIS_HOST: str = "redis"
     REDIS_PORT: int = 6379
     REDIS_DB: int = 0
-    # Seconds the API waits for a worker's RPC reply before giving up.
-    ENGINE_RPC_TIMEOUT: int = 60
+    # Seconds the API waits for a worker's RPC reply before giving up. A cold
+    # model load runs the Java reasoner (Pellet+HermiT), which can take ~60-90s in
+    # a CPU-throttled container; keep this comfortably above that. Repeat loads hit
+    # the reasoned-world cache and are fast. Override via env for slower/faster hosts.
+    ENGINE_RPC_TIMEOUT: int = 180
     # Threads per worker -> how many sessions one worker serves concurrently.
     ENGINE_WORKER_CONCURRENCY: int = 4
 
