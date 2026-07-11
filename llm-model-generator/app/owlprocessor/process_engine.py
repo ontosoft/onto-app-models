@@ -596,17 +596,23 @@ class ProcessEngine:
             return output_message
         elif self.app_state.app_finished and self.output_message is not None:
             # Dead end or finish — return the stop/notification message
-            # set by update_current_flow_element or move_token.
+            # set by update_current_flow_element or move_token. Stamp the current
+            # cumulative graph so the finish/EndProcess screen shows it too (the
+            # message itself was built with an empty graph earlier).
+            self.output_message.output_knowledge_graph = data
             return self.output_message
         else:
             logger.debug("The application is not waiting to send data to the frontend.")
             # Fallback: prevents returning None (FastAPI ResponseValidationError).
+            # Stamp the current graph so it is present after every operation, not
+            # only on form screens.
             if self.output_message is not None:
+                self.output_message.output_knowledge_graph = data
                 return self.output_message
             return AppExchangeGetOutput(
                 message_type="information",
                 layout_type="",
                 message_content={"message": "The application is processing."},
-                output_knowledge_graph="",
+                output_knowledge_graph=data,
             )
 

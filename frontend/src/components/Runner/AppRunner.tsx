@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 
 import type { AppExchangeGetOutput } from "~/client"
 import { RunnerActionContext } from "~/components/Runner/ActionContext"
+import { GraphPanel } from "~/components/Runner/GraphPanel"
 import { shadcnRenderers } from "~/components/Runner/renderers"
 import { Button } from "~/components/ui/button"
 import useCustomToast from "~/hooks/useCustomToast"
@@ -52,6 +53,9 @@ export function AppRunner({ appModelId, appModelTitle }: AppRunnerProps) {
   const [busy, setBusy] = useState(false)
   // Bumped on every page change so JsonForms re-initialises with fresh data.
   const [pageKey, setPageKey] = useState(0)
+  // Latest non-empty output graph. The engine sends the cumulative graph on
+  // every response, but if one ever arrives empty we keep showing the last one.
+  const [graph, setGraph] = useState("")
 
   const startedRef = useRef(false)
   // One engine session per mounted runner, so each tab runs its own
@@ -63,6 +67,8 @@ export function AppRunner({ appModelId, appModelTitle }: AppRunnerProps) {
     const content = next.message_content as Partial<FormContent>
     setFormData((content?.data as Record<string, unknown>) ?? {})
     setPageKey((k) => k + 1)
+    if (next.output_knowledge_graph?.trim())
+      setGraph(next.output_knowledge_graph)
   }, [])
 
   // Start the application once, then pull the first page.
@@ -170,6 +176,7 @@ export function AppRunner({ appModelId, appModelTitle }: AppRunnerProps) {
             data={formData}
             onDataChange={setFormData}
           />
+          <GraphPanel turtle={graph} />
         </RunnerActionContext.Provider>
       ) : null}
     </div>
