@@ -1,5 +1,33 @@
 from rdflib import URIRef
 
+
+class Connection:
+    """A to-be-created object-property link between two form instances.
+
+    Read from an ``obop:Connection`` individual: ``connectionHasSource`` /
+    ``connectionHasTarget`` point at the NodeShapes of the two forms, and each
+    ``obop:hasConnector`` names one object property via its ``shacl:path``. At
+    runtime the engine resolves each shape to the instance its form created and
+    emits ``(source_instance, object_property, target_instance)`` per property.
+    """
+
+    def __init__(
+        self,
+        source_shape: URIRef,
+        target_shape: URIRef,
+        object_properties: list[URIRef],
+    ):
+        self.source_shape = source_shape
+        self.target_shape = target_shape
+        self.object_properties = object_properties
+
+    def __repr__(self):
+        return (
+            f"Connection(source={self.source_shape}, target={self.target_shape}, "
+            f"properties={[str(p) for p in self.object_properties]})"
+        )
+
+
 class OBOPAction:
     def __init__(self, node: URIRef):
         self._graph_node : URIRef = node
@@ -32,4 +60,16 @@ class OBOPAction:
     @isSubmit.setter
     def isSubmit(self, value):
         self._isSubmit = value
+
+
+class MakeConnectionAction(OBOPAction):
+    """An ``obop:MakeConnectionAction`` — links instances entered in different
+    forms via object properties. Carries the ``obop:Connection``(s) to establish
+    when its script task executes (see ProcessEngine.execute_make_connection_action).
+    """
+
+    def __init__(self, node: URIRef):
+        super().__init__(node)
+        self._type = "make_connection"
+        self.connections: list["Connection"] = []
 

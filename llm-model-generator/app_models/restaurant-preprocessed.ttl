@@ -398,6 +398,39 @@
     obop:executesAction :submit_action_restaurant_menu ;
     bbo:has_container :insert_restaurant_menus .
 
+# 4b. Link the restaurant to the menu with object properties. A ScriptTask cannot
+# contain another ScriptTask in BBO, so this is a separate ScriptTask chained right
+# after the menu submit by a sequence flow — they run back-to-back. By now the menu
+# instance was just created and the restaurant instance from the first subprocess
+# still exists, so both endpoints of the connection resolve.
+:insert_restaurant_menu_connection rdf:type owl:NamedIndividual ,
+    bbo:ScriptTask ;
+    rdfs:comment "Save the object properties linking the restaurant to the menu." ;
+    obop:executesAction :connection_action_restaurant_menu ;
+    bbo:has_container :insert_restaurant_menus .
+
+:connection_action_restaurant_menu rdf:type owl:NamedIndividual ,
+    obop:MakeConnectionAction ;
+    obop:hasConnection :restaurant_menu_connection .
+
+# The restaurant (source) and menu (target) forms are identified by their NodeShapes;
+# the engine resolves each shape to the instance its form created (via modelBelongsTo).
+:restaurant_menu_connection rdf:type owl:NamedIndividual ,
+    obop:Connection ;
+    obop:connectionHasSource :restaurantShape ;
+    obop:connectionHasTarget :menuShape ;
+    obop:hasConnector :restaurant_offers_connector ,
+                      :restaurant_has_menu_connector .
+
+# Each connector names one object property to create, via its shacl:path.
+:restaurant_offers_connector rdf:type owl:NamedIndividual ,
+    obop:Connector ;
+    shacl:path gr:offers .
+
+:restaurant_has_menu_connector rdf:type owl:NamedIndividual ,
+    obop:Connector ;
+    shacl:path schema:hasMenu .
+
 # 5. Abort Data (uses :action_2, the Cancel action from KG2)
 :abort_data_insert_task_restaurant_menus rdf:type owl:NamedIndividual ,
     bbo:ScriptTask ;
@@ -485,6 +518,11 @@
 :flow_2_6 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
     bbo:has_container :insert_restaurant_menus ;
     bbo:has_sourceRef :save_data_insert_restaurant_menus ;
+    bbo:has_targetRef :insert_restaurant_menu_connection .
+
+:flow_2_6b rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_restaurant_menus ;
+    bbo:has_sourceRef :insert_restaurant_menu_connection ;
     bbo:has_targetRef :inserted_data_confirmation_restaurant_menus .
 
 :flow_2_7 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ; 
