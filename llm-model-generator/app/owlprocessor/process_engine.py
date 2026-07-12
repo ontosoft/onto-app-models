@@ -332,6 +332,8 @@ class ProcessEngine:
             self.execute_submit_action()
         elif script_task.obop_action.type == "shacl_validation":
             self.validate_output_knowledge_graph()
+        elif script_task.obop_action.type == "make_connection":
+            self.execute_make_connection_action(script_task)
 
     def execute_generate_json_form_action(self, script_task: BBOScriptTask):
         logger.debug(
@@ -504,6 +506,68 @@ class ProcessEngine:
                 # We have to decide what to do with other form elements that
                 # are not inserted in the form data
                 # element = next((el for el in form.elements if str(el.graph_node) == str(element_graph_node_uri)), None)
+
+    def execute_make_connection_action(self, script_task: BBOScriptTask):
+        """Emit the object-property triples for a MakeConnectionAction.
+
+        Runs as its own ScriptTask, placed by a sequence flow right after the
+        menu-submit ScriptTask (they cannot be nested in BBO — a ScriptTask is not
+        a container — but consecutive ScriptTasks execute back-to-back). By now the
+        menu-submit created the new menu instance and the restaurant instance from
+        the earlier subprocess is still in list_of_active_forms, so both endpoints
+        resolve. For each obop:Connection it adds (source, property, target) per
+        connector's object property to the output graph.
+        """
+        action = script_task.obop_action
+        for connection in action.connections:
+            source_instance = self._resolve_shape_instance(connection.source_shape)
+            target_instance = self._resolve_shape_instance(connection.target_shape)
+            if source_instance is None or target_instance is None:
+                logger.warning(
+                    f"Cannot make connection {connection!r}: unresolved instance "
+                    f"(source={source_instance}, target={target_instance}). Both forms "
+                    "must be submitted before the connection action runs."
+                )
+                continue
+            for object_property in connection.object_properties:
+                self.output_graph_store.add(
+                    (source_instance, URIRef(object_property), target_instance)
+                )
+                logger.debug(
+                    f"Connection added: ({source_instance}, {object_property}, {target_instance})"
+                )
+
+    def _resolve_shape_instance(self, shape_node) -> URIRef | None:
+        """Map a NodeShape to the runtime instance its form created.
+
+        A shape ``obop:modelBelongsTo`` a block, and a block is a form's
+        graph_node; the form's active instance is stored in that active form's
+        ``stored_instance_graph_node``. Returns None if the shape has no block or
+        the corresponding form has not been submitted yet.
+        """
+        if shape_node is None:
+            return None
+        block = self.internal_app_static_model.rdf_graph_rdflib.value(
+            URIRef(shape_node), OBOP.modelBelongsTo
+        )
+        if block is None:
+            logger.warning(f"Shape {shape_node} has no obop:modelBelongsTo block.")
+            return None
+        active_form = next(
+            (
+                af
+                for af in self.app_state.list_of_active_forms
+                if str(af.graph_node) == str(block) and af.has_stored_instances
+            ),
+            None,
+        )
+        if active_form is None:
+            logger.warning(
+                f"No submitted form for block {block} (shape {shape_node}); "
+                "its instance does not exist yet."
+            )
+            return None
+        return active_form.stored_instance_graph_node
 
     def validate_output_knowledge_graph(self):
         """_summary_

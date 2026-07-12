@@ -14,6 +14,7 @@ from .bbo_elements import (BBOProcess,  BBOFlowNode, BBOSubProcess,
     BBOSubProcessStartEvent)
 from rdflib import RDFS
 from .app_model import OBOPAction
+from .obop_action import Connection, MakeConnectionAction
 from rdflib.namespace import SH, OWL
 from owlready2 import World, Ontology
 from app.core.config import settings
@@ -64,6 +65,7 @@ class AppStaticModelFactory:
         AppStaticModelFactory.readAllLayouts(internal_app_static_model)
         AppStaticModelFactory.readAllForms(internal_app_static_model)
         AppStaticModelFactory.readActions(internal_app_static_model)
+        AppStaticModelFactory.readConnections(internal_app_static_model)
         AppStaticModelFactory.connect_bbo_script_tasks_with_obop_actions(internal_app_static_model)
         AppStaticModelFactory.combine_shacl_properties_and_obop_elements(internal_app_static_model)
         AppStaticModelFactory.assignOwnerFormsToLayouts(internal_app_static_model)
@@ -780,51 +782,90 @@ class AppStaticModelFactory:
             PREFIX obop: <http://purl.org/net/obop/>
             SELECT DISTINCT ?action ?xActionClass
             WHERE {
-                ?action a ?xActionClass . 
+                ?action a ?xActionClass .
                 ?xActionClass rdfs:subClassOf* obop:Action .
+                # Keep only the most specific action class per action: drop
+                # ?xActionClass if the action also has a type that is a (proper)
+                # subclass of it. Reasoning materialises every superclass as a
+                # type, so without this filter we would get one row per superclass.
+                FILTER NOT EXISTS {
+                    ?action a ?moreSpecific .
+                    ?moreSpecific rdfs:subClassOf ?xActionClass .
+                    FILTER (?moreSpecific != ?xActionClass)
+                }
             }"""
             all_actions_generator = internal_app_static_model.rdf_pellet_reasoning_world. \
                 sparql(all_actions_query)
             for row in all_actions_generator:
                 (graph_action, action_class) = row
-                logger.debug(f"Action  {graph_action.iri}  ")
-                action : OBOPAction = OBOPAction(URIRef(graph_action.iri))
-                if (action_class.iri == str(OBOP.SubmitBlockAction)):
+                node = URIRef(graph_action.iri)
+                cls = action_class.iri
+                logger.debug(f"Action {graph_action.iri} (leaf class {cls})")
+                if cls == str(OBOP.MakeConnectionAction):
+                    # Connection actions carry their own data -> dedicated subclass.
+                    action: OBOPAction = MakeConnectionAction(node)
+                elif cls == str(OBOP.SubmitBlockAction):
+                    action = OBOPAction(node)
                     action.type = "submit"
                     action.isSubmit = True
-                elif(action_class.iri == str(OBOP.GenerateJSONForm)):
+                elif cls == str(OBOP.GenerateJSONForm):
+                    action = OBOPAction(node)
                     action.type = "generate_json_form"
-                elif(action_class.iri == str(OBOP.SHACLValidation)):
+                elif cls == str(OBOP.SHACLValidation):
+                    action = OBOPAction(node)
                     action.type = "shacl_validation"
-                elif(action_class.iri == str(OBOP.CancelBlockAction)):
+                elif cls == str(OBOP.CancelBlockAction):
+                    action = OBOPAction(node)
                     action.type = "cancel"
                 else:
                     # A generic obop:Action (e.g. a "continue"/proceed button) has
                     # no specialised OBOP subclass -> a plain "other" action the
                     # engine advances via its gateway. Only a truly unrecognised
                     # subclass is worth flagging.
+                    action = OBOPAction(node)
                     action.type = "other"
-                    if action_class.iri != str(OBOP.Action):
+                    if cls != str(OBOP.Action):
                         logger.warning(
-                            f"Unrecognized action class {action_class.iri}; treating as 'other'"
+                            f"Unrecognized action class {cls}; treating as 'other'"
                         )
                 internal_app_static_model.actions.append(action)
                 logger.debug(f"Loaded action: {action.__repr__()}")
-
-            # TODO: For other action types
-            # if isHasConnection(quad[1]):
-            #     for quad1 in self.rdfGraph.triples((quad[2], None, None)):
-            #         if isRdfType(quad1[1]) and isConnection(quad1[2]):
-            #             action.type = CONNECTION_TYPE
-            #             source, destination = None, None
-            #             for sQuad in self.rdfGraph.triples((quad[2], HAS_SOURCE_NODE, None)):
-            #                 source = sQuad[2]
-            #             for dQuad in self.rdfGraph.triples((quad[2], HAS_DESTINATION_NODE, None)):
-            #                 destination = dQuad[2]
-            #             action.activity = {"connection": {"
         except Exception as e:
-            logger.error(f"Error by reading actions: {e}")    
+            logger.error(f"Error by reading actions: {e}")
             logger.exception("Error by reading actions")
+
+    @staticmethod
+    def readConnections(internal_app_static_model: AppInternalStaticModel):
+        """Read the obop:Connection details for every MakeConnectionAction.
+
+        For each MakeConnectionAction, follow obop:hasConnection to its
+        Connection(s), then read connectionHasSource / connectionHasTarget (the
+        two form NodeShapes) and each obop:hasConnector's shacl:path (the object
+        property to create). The plain rdflib graph is enough here — these are all
+        asserted triples, no reasoning needed.
+        """
+        rdf = internal_app_static_model.rdf_graph_rdflib
+        for action in internal_app_static_model.actions:
+            if not isinstance(action, MakeConnectionAction):
+                continue
+            for connection_node in rdf.objects(action.graph_node, OBOP.hasConnection):
+                source_shape = rdf.value(connection_node, OBOP.connectionHasSource)
+                target_shape = rdf.value(connection_node, OBOP.connectionHasTarget)
+                object_properties = [
+                    prop
+                    for connector in rdf.objects(connection_node, OBOP.hasConnector)
+                    for prop in rdf.objects(connector, SH.path)
+                ]
+                if source_shape is None or target_shape is None or not object_properties:
+                    logger.warning(
+                        f"Incomplete obop:Connection {connection_node} on action "
+                        f"{action.graph_node}: source={source_shape}, target={target_shape}, "
+                        f"properties={object_properties}; skipping."
+                    )
+                    continue
+                connection = Connection(source_shape, target_shape, object_properties)
+                action.connections.append(connection)
+                logger.debug(f"Loaded {connection!r} for action {action.graph_node}")
 
     @staticmethod
     def connect_bbo_script_tasks_with_obop_actions (internal_app_static_model: AppInternalStaticModel):
