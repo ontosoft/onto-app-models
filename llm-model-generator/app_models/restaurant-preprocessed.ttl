@@ -546,7 +546,9 @@
                  obop:modelBelongsTo :general_data_block ;
                  shacl:property _:genid1 ,
                                 _:genid2 ,
-                                _:genid3 ;
+                                _:genid3 ,
+                                _:genid_offers ,
+                                _:genid_has_menu ;
                  shacl:targetClass obo:ENVO_01000934 ,
                                    gr:BusinessEntity .
 
@@ -579,6 +581,17 @@ _:genid3 shacl:path schema:postalCode ;
           shacl:description "The postal code" ;
           shacl:name "Postal code:" ;
           shacl:order 2 .
+
+### Relationship property shapes on :restaurantShape — declare, in the shape
+### itself, that a restaurant is related to its menu(s) via gr:offers and
+### schema:hasMenu, each value conforming to :menuShape. This makes the
+### relationship part of the validated model, alongside the obop:Connection that
+### creates the triples at runtime. No obop:specifedBy -> not a form field.
+_:genid_offers shacl:path gr:offers ;
+          shacl:node :menuShape .
+
+_:genid_has_menu shacl:path schema:hasMenu ;
+          shacl:node :menuShape .
 
 
 
