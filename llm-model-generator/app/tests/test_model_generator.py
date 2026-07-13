@@ -7,7 +7,7 @@ completion screen.
 
 from pathlib import Path
 
-from rdflib import Graph
+from rdflib import RDF, Graph, Namespace, URIRef
 
 import model_generator
 from model_generator import generate_appmodel_from_shacl
@@ -128,3 +128,59 @@ def test_multi_entity_restaurant_generates_and_runs():
     for expected in ("business_entity_block", "menu_block", "dish_block", "ingredient_block"):
         assert expected in blocks
     assert _walk_to_completion(eng, max_steps=24) is True
+
+
+def test_relationships_generate_connections_and_link_instances():
+    """A sh:property with sh:node -> an obop:Connection, no form field, and the
+    engine creates the object-property triples between the two instances."""
+    OBOP = Namespace("http://purl.org/net/obop/")
+    SH = Namespace("http://www.w3.org/ns/shacl#")
+    GR = Namespace("http://purl.org/goodrelations/v1#")
+    SCHEMA = Namespace("http://schema.org/")
+    R = Namespace("http://example.org/generated/restaurant/")
+
+    shapes = (EXAMPLES / "restaurant.shapes.ttl").read_text(encoding="utf-8")
+    gm = generate_appmodel_from_shacl(shapes)
+    g = Graph()
+    g.parse(data=gm.rdf, format="turtle")
+
+    # relationship properties never become form fields
+    field_paths = {
+        o for f in g.subjects(RDF.type, OBOP.Field)
+        for o in g.objects(f, OBOP.containsDatatype)
+    }
+    assert not field_paths & {SCHEMA.hasMenu, GR.offers, R.belongsToMenu}
+
+    # one Connection per (source, target) pair; restaurant->menu carries BOTH connectors
+    be_menu = URIRef(f"{BASE}business_entity_menu_connection")
+    assert (be_menu, OBOP.connectionHasSource, URIRef(f"{BASE}business_entity_shape")) in g
+    assert (be_menu, OBOP.connectionHasTarget, URIRef(f"{BASE}menu_shape")) in g
+    connector_paths = {
+        o for c in g.objects(be_menu, OBOP.hasConnector) for o in g.objects(c, SH.path)
+    }
+    assert connector_paths == {SCHEMA.hasMenu, GR.offers}
+
+    # dish->menu: the SOURCE subprocess runs later, so its task lives in insert_dish
+    task = URIRef(f"{BASE}make_connection_dish_menu")
+    assert (task, None, URIRef(f"{BASE}insert_dish")) in g
+
+    # the source shape declares the relationship (validation-only property shape)
+    rel_nodes = {
+        o for ps in g.objects(URIRef(f"{BASE}business_entity_shape"), SH.property)
+        for o in g.objects(ps, SH.node)
+    }
+    assert URIRef(f"{BASE}menu_shape") in rel_nodes
+
+    # runtime: after a full walk, the instances are linked
+    eng = AppEngine()
+    eng.load_inner_app_model(rdf_string=gm.rdf)
+    eng.run_application()
+    assert _walk_to_completion(eng, max_steps=24) is True
+    out = eng.process_engine_instance.output_graph_store
+    assert len(list(out.subject_objects(SCHEMA.hasMenu))) == 1
+    assert len(list(out.subject_objects(GR.offers))) == 1
+    assert len(list(out.subject_objects(R.belongsToMenu))) == 1
+    ((restaurant, menu),) = out.subject_objects(SCHEMA.hasMenu)
+    assert (restaurant, RDF.type, GR.BusinessEntity) in out
+    assert (menu, RDF.type, R.Menu) in out
+    assert (restaurant, GR.offers, menu) in out

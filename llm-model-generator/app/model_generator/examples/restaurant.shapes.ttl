@@ -2,6 +2,10 @@
 # Entity-level sh:order fixes the subprocess sequence (general -> menu -> dish
 # -> ingredient). The generator turns this into the full multi-subprocess app
 # that was hand-built in restaurant-preprocessed.ttl.
+#
+# Property shapes with sh:node are entity relationships (-> obop:Connection,
+# no form field). They cover both connection-task placements: restaurant->menu
+# (target's subprocess runs later) and dish->menu (source's runs later).
 @prefix sh:     <http://www.w3.org/ns/shacl#> .
 @prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
 @prefix gr:     <http://purl.org/goodrelations/v1#> .
@@ -13,7 +17,9 @@ r:RestaurantShape a sh:NodeShape ;
     sh:order 0 ;
     sh:property [ sh:path gr:legalName ;        sh:datatype xsd:string ; sh:name "Restaurant name" ; sh:order 0 ] ;
     sh:property [ sh:path schema:streetAddress ; sh:datatype xsd:string ; sh:name "Address" ;         sh:order 1 ] ;
-    sh:property [ sh:path schema:postalCode ;    sh:datatype xsd:string ; sh:name "Postal code" ;     sh:order 2 ] .
+    sh:property [ sh:path schema:postalCode ;    sh:datatype xsd:string ; sh:name "Postal code" ;     sh:order 2 ] ;
+    sh:property [ sh:path schema:hasMenu ; sh:node r:MenuShape ; sh:order 3 ] ;
+    sh:property [ sh:path gr:offers ;      sh:node r:MenuShape ; sh:order 4 ] .
 
 r:MenuShape a sh:NodeShape ;
     sh:targetClass r:Menu ;
@@ -26,7 +32,8 @@ r:DishShape a sh:NodeShape ;
     sh:order 2 ;
     sh:property [ sh:path r:dishName ;    sh:datatype xsd:string  ; sh:name "Dish name" ;   sh:order 0 ] ;
     sh:property [ sh:path r:price ;       sh:datatype xsd:decimal ; sh:name "Price" ;       sh:order 1 ] ;
-    sh:property [ sh:path r:description ; sh:datatype xsd:string  ; sh:name "Description" ; sh:order 2 ] .
+    sh:property [ sh:path r:description ; sh:datatype xsd:string  ; sh:name "Description" ; sh:order 2 ] ;
+    sh:property [ sh:path r:belongsToMenu ; sh:node r:MenuShape ; sh:order 3 ] .
 
 r:IngredientShape a sh:NodeShape ;
     sh:targetClass r:Ingredient ;
