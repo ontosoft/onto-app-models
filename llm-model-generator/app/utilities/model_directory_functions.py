@@ -21,13 +21,17 @@ if "JAVA_HOME" not in os.environ:
 OBOP = Namespace("http://purl.org/net/obop/")
 
 
-def read_model_files_from_directory(models_directory: str = "app_models"):
+def read_model_files_from_directory(models_directory=None):
     """
-    Reads the current list of inner model files (*.ttl files) in the folder 'app_models' into
-    json format.
+    Reads the current list of inner model files (*.ttl files) in the models
+    directory into json format.
+
+    Defaults to settings.MODEL_DIRECTORY — the same directory the load and
+    upload endpoints use — instead of a cwd-relative path, so the list and the
+    load/upload surfaces can never disagree about where the models live.
     """
     models_info = []
-    directory_path = os.getcwd() + "/" + models_directory
+    directory_path = str(models_directory or settings.MODEL_DIRECTORY)
     ontoui_logger.debug("Directory: %s", directory_path)
     for filename in os.listdir(directory_path):
         if filename.endswith(".ttl"):

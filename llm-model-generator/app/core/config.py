@@ -150,7 +150,13 @@ class Settings(BaseSettings):
     BASE_DIR :Path= Path(__file__).resolve().parent.parent
 
     TEMPORARY_MODELS_DIRECTORY : ClassVar[Path] = BASE_DIR /"temporary_models"
-    MODEL_DIRECTORY : ClassVar[Path] = BASE_DIR/"app_models"
+    # app_models sits at the package root (llm-model-generator/app_models), one
+    # level ABOVE app/ — unlike ontologies/ and temporary_models/, which live
+    # under app/. BASE_DIR/"app_models" pointed at the non-existent
+    # app/app_models, breaking load_inner_uimodel_from_server (FileNotFoundError
+    # on the _shacl_shape companion) and sending uploads where the list endpoint
+    # never looks.
+    MODEL_DIRECTORY : ClassVar[Path] = BASE_DIR.parent/"app_models"
     ONTOLOGIES_DIRECTORY: ClassVar[Path] = BASE_DIR/"ontologies"
     CURRENT_JAVA_HOME: ClassVar[str] = os.getenv("JAVA_HOME", "/Library/Java/JavaVirtualMachines/adoptopenjdk-13.jdk/Contents/Home/")
 
