@@ -26,7 +26,8 @@ class PropSpec:
 
 @dataclass
 class RelationSpec:
-    """One object property linking two entities (a ``sh:property`` with ``sh:node``).
+    """One object property linking two entities: a ``sh:property`` carrying
+    ``sh:node`` (the target shape) or ``sh:class`` (a class some shape targets).
 
     Not a form field: it becomes a validation-only property shape on the source
     NodeShape plus one obop:Connector on the generated obop:Connection, so the
@@ -35,7 +36,7 @@ class RelationSpec:
 
     path: str  # full IRI of the object property (sh:path)
     iri_token: str  # snake_case fragment minting IRIs (connector_<...>_<iri_token>)
-    target_iri_token: str  # iri_token of the entity pointed at (sh:node)
+    target_iri_token: str  # iri_token of the entity pointed at (sh:node/sh:class)
     order: int  # deterministic ordering among the entity's relationships
 
 

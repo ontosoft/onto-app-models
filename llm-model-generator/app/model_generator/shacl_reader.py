@@ -2,7 +2,8 @@
 
 Only the structural facts the generator needs are read: each ``sh:NodeShape``
 with a ``sh:targetClass``, and its ``sh:property`` shapes (path, datatype, name,
-order). A property shape whose ``sh:node`` points at another read NodeShape is a
+order). A property shape whose ``sh:node`` points at another read NodeShape —
+or whose ``sh:class`` matches another shape's ``sh:targetClass`` — is a
 *relationship* between two entities (-> :class:`RelationSpec`, generated as an
 obop:Connection), not a form field. Anything else in the shapes (constraints
 like sh:minCount, sh:pattern, etc.) is preserved as the *runtime* validation
@@ -79,6 +80,28 @@ def _entity_iri_token_by_shape(graph: Graph) -> dict:
     return iri_tokens
 
 
+def _entity_iri_token_by_class(graph: Graph, iri_token_by_shape: dict) -> dict:
+    """Map each ``sh:targetClass`` IRI to its entity's iri_token.
+
+    Lets a property shape reference its target entity by class instead of by
+    shape (``[ sh:path ... ; sh:class schema:Menu ]``). If several shapes
+    target the same class, the first in deterministic shape order wins (with a
+    warning) — ``iri_token_by_shape`` already iterates in that order.
+    """
+    iri_tokens: dict = {}
+    for shape, iri_token in iri_token_by_shape.items():
+        for cls in sorted(graph.objects(shape, SH.targetClass), key=str):
+            if cls in iri_tokens:
+                if iri_tokens[cls] != iri_token:
+                    logger.warning(
+                        f"Several NodeShapes target class {cls}; sh:class "
+                        f"relationships resolve to entity '{iri_tokens[cls]}'."
+                    )
+                continue
+            iri_tokens[cls] = iri_token
+    return iri_tokens
+
+
 def read_shapes(graph: Graph) -> list[EntitySpec]:
     """Return one EntitySpec per SHACL NodeShape (sorted for determinism).
 
@@ -87,6 +110,7 @@ def read_shapes(graph: Graph) -> list[EntitySpec]:
     concern.
     """
     iri_token_by_shape = _entity_iri_token_by_shape(graph)
+    iri_token_by_class = _entity_iri_token_by_class(graph, iri_token_by_shape)
 
     entities: list[EntitySpec] = []
     for shape, iri_token in iri_token_by_shape.items():
@@ -103,22 +127,29 @@ def read_shapes(graph: Graph) -> list[EntitySpec]:
                 continue
             order = graph.value(prop, SH.order)
             node = graph.value(prop, SH.node)
-            if node is not None:
+            cls = graph.value(prop, SH["class"])
+            if node is not None or cls is not None:
                 # A relationship to another entity, never a form field.
-                if node in iri_token_by_shape:
+                # sh:node names the target shape directly; sh:class resolves
+                # through the shapes' target classes (sh:node wins if both).
+                target_iri_token = iri_token_by_shape.get(node)
+                if target_iri_token is None and cls is not None:
+                    target_iri_token = iri_token_by_class.get(cls)
+                if target_iri_token is not None:
                     rels.append(
                         RelationSpec(
                             path=str(path),
                             iri_token=_snake(_local(path)),
-                            target_iri_token=iri_token_by_shape[node],
+                            target_iri_token=target_iri_token,
                             order=int(order) if order is not None else len(rels),
                         )
                     )
                 else:
                     logger.warning(
-                        f"Property shape on {shape} has sh:node {node}, which is "
-                        "not a NodeShape with a sh:targetClass in this input; "
-                        "skipping the relationship."
+                        f"Property shape on {shape} references "
+                        f"{node if node is not None else cls} (sh:node/sh:class), "
+                        "which no NodeShape with a sh:targetClass in this input "
+                        "matches; skipping the relationship."
                     )
                 continue
             datatype = graph.value(prop, SH.datatype)

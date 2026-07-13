@@ -149,7 +149,9 @@ def test_relationships_generate_connections_and_link_instances():
         o for f in g.subjects(RDF.type, OBOP.Field)
         for o in g.objects(f, OBOP.containsDatatype)
     }
-    assert not field_paths & {SCHEMA.hasMenu, GR.offers, R.belongsToMenu}
+    assert not field_paths & {
+        SCHEMA.hasMenu, GR.offers, R.belongsToMenu, R.hasIngredient
+    }
 
     # one Connection per (source, target) pair; restaurant->menu carries BOTH connectors
     be_menu = URIRef(f"{BASE}business_entity_menu_connection")
@@ -163,6 +165,11 @@ def test_relationships_generate_connections_and_link_instances():
     # dish->menu: the SOURCE subprocess runs later, so its task lives in insert_dish
     task = URIRef(f"{BASE}make_connection_dish_menu")
     assert (task, None, URIRef(f"{BASE}insert_dish")) in g
+
+    # sh:class resolves through the target class: dish->ingredient
+    di = URIRef(f"{BASE}dish_ingredient_connection")
+    assert (di, OBOP.connectionHasSource, URIRef(f"{BASE}dish_shape")) in g
+    assert (di, OBOP.connectionHasTarget, URIRef(f"{BASE}ingredient_shape")) in g
 
     # the source shape declares the relationship (validation-only property shape)
     rel_nodes = {
@@ -180,6 +187,7 @@ def test_relationships_generate_connections_and_link_instances():
     assert len(list(out.subject_objects(SCHEMA.hasMenu))) == 1
     assert len(list(out.subject_objects(GR.offers))) == 1
     assert len(list(out.subject_objects(R.belongsToMenu))) == 1
+    assert len(list(out.subject_objects(R.hasIngredient))) == 1
     ((restaurant, menu),) = out.subject_objects(SCHEMA.hasMenu)
     assert (restaurant, RDF.type, GR.BusinessEntity) in out
     assert (menu, RDF.type, R.Menu) in out
