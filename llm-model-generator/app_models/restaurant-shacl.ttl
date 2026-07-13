@@ -27,12 +27,10 @@ ex:RestaurantShape rdf:type shacl:NodeShape ;
         shacl:node ex:MenuShape ; # This links to the MenuShape
         shacl:minCount 1 ; # A restaurant must have at least one menu
     ] ;
-    # You had _genid2 and _genid3 for menus. Let's consolidate to one for clarity
-    # If a restaurant can offer multiple *types* of things that are menus,
-    # and they each need to conform to MenuShape, then one property constraint is enough.
-    # If 'gr:offers' is for something else, define it separately.
-    # For now, I'm assuming 'schema:hasMenu' is the primary way to link to menus.
-    # If gr:offers also points to menus, you'd add another shacl:property with gr:offers and shacl:node ex:MenuShape
+    shacl:property [ # The restaurant also offers its menus (GoodRelations)
+        shacl:path gr:offers ;
+        shacl:node ex:MenuShape ; # Offered items conform to MenuShape too
+    ] ;
 .
 
 # --- MenuShape ---
