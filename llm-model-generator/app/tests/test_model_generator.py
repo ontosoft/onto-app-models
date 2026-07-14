@@ -86,7 +86,9 @@ def _walk_to_completion(eng: AppEngine, max_steps: int = 12) -> bool:
                     "form_data": {},
                 },
             })
-        elif btns == ["Continue"]:
+        elif "Continue" in btns:
+            # looped entities also show "Add another <label>"; default walk
+            # always continues (no extra iterations)
             eng.process_received_client_data({
                 "message_type": "action",
                 "message_content": {
@@ -192,3 +194,74 @@ def test_relationships_generate_connections_and_link_instances():
     assert (restaurant, RDF.type, GR.BusinessEntity) in out
     assert (menu, RDF.type, R.Menu) in out
     assert (restaurant, GR.offers, menu) in out
+
+
+def test_looped_entity_creates_multiple_instances_and_links():
+    """Multiplicity: menu is the target of the unbounded hasMenu/offers, so its
+    subprocess loops ("Add another Menu"); each iteration creates a NEW menu
+    instance and connects it to the restaurant."""
+    SCHEMA = Namespace("http://schema.org/")
+    GR = Namespace("http://purl.org/goodrelations/v1#")
+    R = Namespace("http://example.org/generated/restaurant/")
+
+    shapes = (EXAMPLES / "restaurant.shapes.ttl").read_text(encoding="utf-8")
+    gm = generate_appmodel_from_shacl(shapes)
+
+    g = Graph()
+    g.parse(data=gm.rdf, format="turtle")
+    # the loop machinery is generated for the looped entity
+    assert (URIRef(f"{BASE}loop_gateway_menu"), None, None) in g
+    assert (URIRef(f"{BASE}add_another_action_menu"), None, None) in g
+    assert validate_model(g) == []
+
+    eng = AppEngine()
+    eng.load_inner_app_model(rdf_string=gm.rdf)
+    eng.run_application()
+    eng.process_received_client_data(
+        {"message_type": "initiate_exchange", "message_content": {}}
+    )
+
+    def act(action_type, node, form_node="", data=None):
+        eng.process_received_client_data({
+            "message_type": "action",
+            "message_content": {
+                "action_type": action_type,
+                "action_graph_node": node,
+                "form_graph_node": form_node,
+                "form_data": data or {},
+            },
+        })
+
+    def submit(block_token, data):
+        mc = eng.read_new_model_layout().message_content
+        block = str(mc.get("graph_node", ""))
+        assert block.endswith(f"{block_token}_block"), block
+        act("submit", f"{BASE}submit_action_{block_token}", block, data)
+
+    def press(action_node):
+        eng.read_new_model_layout()  # consume the notification screen
+        act("other", action_node)
+
+    submit("business_entity", {"Restaurant name": "Trattoria"})
+    press(f"{BASE}continue_action")
+    submit("menu", {"Menu name": "Lunch"})
+    press(f"{BASE}add_another_action_menu")  # loop back for a second menu
+    submit("menu", {"Menu name": "Dinner"})
+    press(f"{BASE}continue_action")
+    assert _walk_to_completion(eng, max_steps=24) is True
+
+    out = eng.process_engine_instance.output_graph_store
+    menus = set(out.subjects(RDF.type, R.Menu))
+    assert len(menus) == 2  # two distinct Menu instances, nothing overwritten
+    names = {str(o) for m in menus for o in out.objects(m, R.menuName)}
+    assert names == {"Lunch", "Dinner"}
+
+    # the restaurant is linked to BOTH menus, via both connectors
+    restaurant = next(out.subjects(RDF.type, GR.BusinessEntity))
+    assert set(out.objects(restaurant, SCHEMA.hasMenu)) == menus
+    assert set(out.objects(restaurant, GR.offers)) == menus
+
+    # dish -> menu uses latest-instance semantics: linked to the newest menu
+    dish = next(out.subjects(RDF.type, R.Dish))
+    (linked_menu,) = list(out.objects(dish, R.belongsToMenu))
+    assert str(next(out.objects(linked_menu, R.menuName))) == "Dinner"

@@ -628,8 +628,13 @@ class AppStaticModelFactory:
                 logger.error(f"Form {block} does not have a position number.")
             
             form = Form(internal_app_static_model, block, position.toPython())
-            form.target_classes =  \
-                internal_app_static_model.rdf_graph_rdflib.objects( block, OBOP.targetClass)
+            # Materialise the generator: rdflib .objects() yields once, and a
+            # looped form ("Add another Menu") is submitted several times —
+            # iteration 2+ would otherwise get an exhausted generator and mint
+            # instances WITHOUT their rdf:type triples.
+            form.target_classes = list(
+                internal_app_static_model.rdf_graph_rdflib.objects(block, OBOP.targetClass)
+            )
             
             internal_app_static_model.forms.append(form)
             AppStaticModelFactory.readFormElements(form, internal_app_static_model.rdf_graph_rdflib)

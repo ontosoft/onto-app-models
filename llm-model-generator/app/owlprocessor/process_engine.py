@@ -432,10 +432,16 @@ class ProcessEngine:
                 # It should be checked if there exists an instance in the outputGraphStore
                 # corresponding to the current form
                 #
+                # Bind the NEWEST active form for this block: every
+                # generate-form task appends a fresh ActiveForm, so in a loop
+                # ("Add another Menu") the same block occurs several times. The
+                # first match would be iteration 1's form, whose stored
+                # instance this submit would then overwrite instead of
+                # creating a new one.
                 active_form: ActiveForm = next(
                     (
                         af
-                        for af in self.app_state.list_of_active_forms
+                        for af in reversed(self.app_state.list_of_active_forms)
                         if str(af.graph_node) == str(form_graph_node)
                     ),
                     None,
@@ -553,10 +559,14 @@ class ProcessEngine:
         if block is None:
             logger.warning(f"Shape {shape_node} has no obop:modelBelongsTo block.")
             return None
+        # Latest-instance semantics: in a loop the block has several submitted
+        # ActiveForms; the connection binds the most recently created instance
+        # (each iteration's make_connection then links its own new instance).
+        # A UI picker for choosing an arbitrary instance is a planned follow-up.
         active_form = next(
             (
                 af
-                for af in self.app_state.list_of_active_forms
+                for af in reversed(self.app_state.list_of_active_forms)
                 if str(af.graph_node) == str(block) and af.has_stored_instances
             ),
             None,

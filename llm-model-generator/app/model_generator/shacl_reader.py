@@ -136,12 +136,16 @@ def read_shapes(graph: Graph) -> list[EntitySpec]:
                 if target_iri_token is None and cls is not None:
                     target_iri_token = iri_token_by_class.get(cls)
                 if target_iri_token is not None:
+                    max_count = graph.value(prop, SH.maxCount)
                     rels.append(
                         RelationSpec(
                             path=str(path),
                             iri_token=_snake(_local(path)),
                             target_iri_token=target_iri_token,
                             order=int(order) if order is not None else len(rels),
+                            # unbounded (or >1) cardinality -> the target entity
+                            # may be instantiated several times
+                            multiple=max_count is None or int(max_count) > 1,
                         )
                     )
                 else:
@@ -176,6 +180,14 @@ def read_shapes(graph: Graph) -> list[EntitySpec]:
                 relationships=rels,
             )
         )
+
+    # An entity targeted by an unbounded relationship is loopable: its
+    # subprocess gets an "Add another <label>" loop so N instances can be made.
+    entity_by_token = {e.iri_token: e for e in entities}
+    for entity in entities:
+        for rel in entity.relationships:
+            if rel.multiple:
+                entity_by_token[rel.target_iri_token].looped = True
 
     # Order subprocesses by the shape's sh:order (then iri_token for stability).
     entities.sort(key=lambda e: (e.order, e.iri_token))
