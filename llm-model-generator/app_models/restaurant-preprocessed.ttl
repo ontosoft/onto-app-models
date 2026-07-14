@@ -1031,6 +1031,12 @@ _:genid_has_menu shacl:path schema:hasMenu ;
         shacl:name "Description" ;
         shacl:order 2 ;
         obop:specifedBy :field_dish_description
+    ] , [
+        # Relationship declared in the shape itself: a dish's ingredients, each
+        # conforming to :ingredientShape. No obop:specifedBy -> not a form
+        # field; the triples are created by :dish_ingredient_connection.
+        shacl:path schema:hasIngredient ;
+        shacl:node :ingredientShape
     ] .
 
 :dish_notification_block rdf:type owl:NamedIndividual , obop:Block ;
@@ -1086,6 +1092,27 @@ _:genid_has_menu shacl:path schema:hasMenu ;
     obop:executesAction :submit_action_ingredients ;
     bbo:has_container :insert_dish_ingredients .
 
+### Link each ingredient to its dish. Chained right after the ingredient save;
+### runs on every loop iteration, so every new ingredient gets connected. The
+### dish side resolves to the LATEST dish instance (instance picker planned).
+:insert_dish_ingredient_connection rdf:type owl:NamedIndividual , bbo:ScriptTask ;
+    rdfs:comment "Save the object property linking the dish to the ingredient." ;
+    obop:executesAction :connection_action_dish_ingredient ;
+    bbo:has_container :insert_dish_ingredients .
+
+:connection_action_dish_ingredient rdf:type owl:NamedIndividual ,
+    obop:MakeConnectionAction ;
+    obop:hasConnection :dish_ingredient_connection .
+
+:dish_ingredient_connection rdf:type owl:NamedIndividual , obop:Connection ;
+    obop:connectionHasSource :dishShape ;
+    obop:connectionHasTarget :ingredientShape ;
+    obop:hasConnector :dish_has_ingredient_connector .
+
+# schema:hasIngredient — a dish is made of ingredients (see restaurant-shacl.ttl).
+:dish_has_ingredient_connector rdf:type owl:NamedIndividual , obop:Connector ;
+    shacl:path schema:hasIngredient .
+
 :abort_data_insert_task_ingredients rdf:type owl:NamedIndividual , bbo:ScriptTask ;
     rdfs:comment "Ingredient data insertion aborted (Executed by Cancel Action)" ;
     obop:executesAction :abort_action_ingredients ;
@@ -1119,6 +1146,23 @@ _:genid_has_menu shacl:path schema:hasMenu ;
 :submit_condition_expression_ingredients rdf:type owl:NamedIndividual , bbo:ConditionExpression ;
     obop:selectedAction :submit_action_ingredients ;
     rdfs:comment "Condition expression for the ingredient Submit action." .
+
+### Ingredient multiplicity: gateway after the ingredient notification —
+### "Continue" ends the subprocess, "Add another ingredient" loops back.
+:IngredientLoopGateway rdf:type owl:NamedIndividual ,
+    bbo:ExclusiveGateway ;
+    rdfs:label "Continue, or add another ingredient?" ;
+    bbo:has_container :insert_dish_ingredients .
+
+:ingredient_loop_continue_condition rdf:type owl:NamedIndividual ,
+    bbo:ConditionExpression ;
+    obop:selectedAction :continue_action ;
+    rdfs:comment "The user is done entering ingredients." .
+
+:ingredient_loop_again_condition rdf:type owl:NamedIndividual ,
+    bbo:ConditionExpression ;
+    obop:selectedAction :add_another_ingredient_action ;
+    rdfs:comment "The user wants to enter one more ingredient." .
 
 ### Sequence flows
 :flow_i1 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
@@ -1156,6 +1200,11 @@ _:genid_has_menu shacl:path schema:hasMenu ;
 :flow_i6 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
     bbo:has_container :insert_dish_ingredients ;
     bbo:has_sourceRef :save_data_insert_ingredients ;
+    bbo:has_targetRef :insert_dish_ingredient_connection .
+
+:flow_i6b rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_dish_ingredients ;
+    bbo:has_sourceRef :insert_dish_ingredient_connection ;
     bbo:has_targetRef :inserted_data_confirmation_ingredients .
 
 :flow_i7 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
@@ -1166,7 +1215,19 @@ _:genid_has_menu shacl:path schema:hasMenu ;
 :flow_i8 rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
     bbo:has_container :insert_dish_ingredients ;
     bbo:has_sourceRef :user_gets_notification_ingredients ;
-    bbo:has_targetRef :end_event_data_insertion_completed_ingredients .
+    bbo:has_targetRef :IngredientLoopGateway .
+
+:flow_i9_continue rdf:type owl:NamedIndividual , bbo:ConditionalSequenceFlow ;
+    bbo:has_container :insert_dish_ingredients ;
+    bbo:has_sourceRef :IngredientLoopGateway ;
+    bbo:has_targetRef :end_event_data_insertion_completed_ingredients ;
+    bbo:has_conditionExpression :ingredient_loop_continue_condition .
+
+:flow_i9_again rdf:type owl:NamedIndividual , bbo:ConditionalSequenceFlow ;
+    bbo:has_container :insert_dish_ingredients ;
+    bbo:has_sourceRef :IngredientLoopGateway ;
+    bbo:has_targetRef :generate_form_representation_ingredients ; # loop back
+    bbo:has_conditionExpression :ingredient_loop_again_condition .
 
 :flow_i_cancel rdf:type owl:NamedIndividual , bbo:NormalSequenceFlow ;
     bbo:has_container :insert_dish_ingredients ;
@@ -1382,3 +1443,17 @@ _:genid_has_menu shacl:path schema:hasMenu ;
     obop:belongsToVisual :ingredient_notification_layout ;
     obop:hasLabel "Continue" ;
     obop:hasPositionNumber "1"^^xsd:int .
+
+### Ingredient multiplicity: the notification screen also offers to enter one
+### more ingredient (see :IngredientLoopGateway).
+:add_another_ingredient_action rdf:type owl:NamedIndividual , obop:Action ;
+    obop:hasInitiator "onClick" ;
+    obop:hasLabel "Add another ingredient" ;
+    rdfs:comment "Loop back to enter one more ingredient."@en .
+
+:button_add_another_ingredient rdf:type owl:NamedIndividual , obop:Button ;
+    obop:activatesAction :add_another_ingredient_action ;
+    obop:belongsTo :ingredient_notification_block ;
+    obop:belongsToVisual :ingredient_notification_layout ;
+    obop:hasLabel "Add another ingredient" ;
+    obop:hasPositionNumber "2"^^xsd:int .
