@@ -152,7 +152,9 @@ def run_app_model(
         # Load + run this model in its own session engine. A fresh session id
         # gets a clean engine; a reused one is reset() first (see run_model).
         engine_sessions.run_model(
-            onto_session, rdf_string=app_model.knowledge_graph_rdf
+            onto_session,
+            rdf_string=app_model.knowledge_graph_rdf,
+            model_name=app_model.title,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to run application: {str(e)}")

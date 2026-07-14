@@ -38,13 +38,23 @@ class AppEngine():
         self.model_name = None
         self.model_directory : Path = settings.MODEL_DIRECTORY
 
-    def load_inner_app_model(self, file_name: Path = None, rdf_string: str = None):
+    def load_inner_app_model(
+        self, file_name: Path = None, rdf_string: str = None, model_name: str = None
+    ):
         """
              Loads the Application model from the rdf graph either in the file or
              as a string. Only one of the two parameters can be used at a time.
+             ``model_name`` optionally names the model for status()/messages
+             (e.g. the AppModel title on DB runs); file loads default to the
+             file name.
         """
- 
+
         logger.debug("Loading the server-side application model.")
+        # Record what is being loaded so status()/user-facing messages can name
+        # it (previously never assigned -> "The model is loaded None by force.").
+        self.model_name = model_name or (
+            str(file_name) if file_name is not None else None
+        )
         model_factory = AppStaticModelFactory()
         filePath : Path = file_name
         if file_name is not None:
