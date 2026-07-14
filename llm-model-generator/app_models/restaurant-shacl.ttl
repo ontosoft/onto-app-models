@@ -13,6 +13,7 @@
 # --- RestaurantShape ---
 ex:RestaurantShape rdf:type shacl:NodeShape ;
     obop:modelBelongsTo ex:Block1 ; # This seems like an application-specific property
+    shacl:order 0 ; # workflow sequence: the restaurant data is entered first
     shacl:targetClass env:ENVO_01000934, schema:FoodEstablishment, gr:BusinessEntity ;
     shacl:property [ # Property for legal name
         shacl:path gr:legalName ;
@@ -35,6 +36,7 @@ ex:RestaurantShape rdf:type shacl:NodeShape ;
 
 # --- MenuShape ---
 ex:MenuShape rdf:type shacl:NodeShape ;
+    shacl:order 1 ; # workflow sequence: menus after the restaurant
     shacl:targetClass schema:Menu ; # Targeting schema:Menu class
     shacl:property [ # Property for menu name
         shacl:path schema:name ;
@@ -47,17 +49,19 @@ ex:MenuShape rdf:type shacl:NodeShape ;
         shacl:datatype xsd:string ;
         shacl:maxCount 1 ;
     ] ;
-    shacl:property [ # Property for offers, linking to menu items/dishes
-        shacl:path schema:offers ;
-        shacl:node ex:MenuItemShape ; # Link to a MenuItemShape (defined below)
+    shacl:property [ # The menu's dishes; hasMenuItem's domain includes Menu,
+                     # so a flat menu (no sections) points straight at items
+        shacl:path schema:hasMenuItem ;
+        shacl:node ex:DishShape ; # Link to a DishShape (defined below)
         shacl:minCount 1 ; # A menu must offer at least one item
-        # You might also want shacl:minCount for the number of distinct items
     ] ;
     # You might add properties like currency, validFrom, validThrough, etc.
 .
 
-# --- MenuItemShape (Added for completeness to demonstrate nested relationships) ---
-ex:MenuItemShape rdf:type shacl:NodeShape ;
+# --- DishShape: dishes are the restaurant's menu items ---
+ex:DishShape rdf:type shacl:NodeShape ;
+    rdfs:comment "A DishShape represents the restaurant menu items (schema:MenuItem): the dishes offered on a menu."@en ;
+    shacl:order 2 ; # workflow sequence: dishes after menus
     shacl:targetClass schema:MenuItem ;
     shacl:property [
         shacl:path schema:name ;
@@ -74,18 +78,15 @@ ex:MenuItemShape rdf:type shacl:NodeShape ;
         shacl:path schema:offers ; # This might link to PriceSpecification or specific offers
         shacl:datatype xsd:string ; # Placeholder, could be a more complex shape
     ] ;
-    shacl:property [
-        shacl:path schema:hasMenuSection ; # If menus have sections
-        shacl:node ex:MenuSectionShape ; # Link to a MenuSectionShape
-    ] ;
-    shacl:property [
-        shacl:path schema:hasMenuItem ; # For ingredients, might be a more specific property
+    shacl:property [ # A dish is made of ingredients
+        shacl:path schema:hasIngredient ;
         shacl:node ex:IngredientShape ; # Link to IngredientShape
         shacl:minCount 0 ; # Optional ingredients
     ] .
 
 # --- IngredientShape (Added for completeness) ---
 ex:IngredientShape rdf:type shacl:NodeShape ;
+    shacl:order 3 ; # workflow sequence: ingredients last
     shacl:targetClass schema:Ingredient ; # Schema.org has schema:Ingredient for recipe ingredients
     shacl:property [
         shacl:path schema:name ;
@@ -95,18 +96,4 @@ ex:IngredientShape rdf:type shacl:NodeShape ;
     shacl:property [
         shacl:path schema:description ;
         shacl:datatype xsd:string ;
-    ] .
-
-# You might also want a MenuSectionShape if your menus are structured with sections
-ex:MenuSectionShape rdf:type shacl:NodeShape ;
-    shacl:targetClass schema:MenuSection ;
-    shacl:property [
-        shacl:path schema:name ;
-        shacl:datatype xsd:string ;
-        shacl:minCount 1 ;
-    ] ;
-    shacl:property [
-        shacl:path schema:hasMenuItem ;
-        shacl:node ex:MenuItemShape ;
-        shacl:minCount 1 ;
     ] .
