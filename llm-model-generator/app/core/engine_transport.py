@@ -44,9 +44,9 @@ class EngineTransport(Protocol):
     """The operations the API needs on a per-session engine, regardless of where
     that engine actually runs (this process, or a worker container)."""
 
-    def load(self, sid: str, *, file_name=None, rdf_string=None) -> None: ...
+    def load(self, sid: str, *, file_name=None, rdf_string=None, model_name=None) -> None: ...
     def run(self, sid: str) -> bool: ...
-    def run_model(self, sid: str, *, rdf_string=None, file_name=None) -> None: ...
+    def run_model(self, sid: str, *, rdf_string=None, file_name=None, model_name=None) -> None: ...
     def post(self, sid: str, frontend_state) -> AppExchangeGetOutput: ...
     def get(self, sid: str) -> AppExchangeGetOutput: ...
     def stop(self, sid: str) -> None: ...
@@ -99,11 +99,13 @@ class LocalEngineTransport:
             return s
 
     # -- operations (engine work happens OUTSIDE the registry lock) --
-    def load(self, sid: str, *, file_name=None, rdf_string=None) -> None:
+    def load(self, sid: str, *, file_name=None, rdf_string=None, model_name=None) -> None:
         s = self._get_or_create(sid)
         with s.lock:
             s.engine.reset()  # fresh run if this session id is reused
-            s.engine.load_inner_app_model(file_name=file_name, rdf_string=rdf_string)
+            s.engine.load_inner_app_model(
+                file_name=file_name, rdf_string=rdf_string, model_name=model_name
+            )
 
     def run(self, sid: str) -> bool:
         s = self._get(sid)
@@ -113,12 +115,14 @@ class LocalEngineTransport:
             s.engine.run_application()
             return True
 
-    def run_model(self, sid: str, *, rdf_string=None, file_name=None) -> None:
+    def run_model(self, sid: str, *, rdf_string=None, file_name=None, model_name=None) -> None:
         """load + run atomically for one session (the appmodels run path)."""
         s = self._get_or_create(sid)
         with s.lock:
             s.engine.reset()
-            s.engine.load_inner_app_model(file_name=file_name, rdf_string=rdf_string)
+            s.engine.load_inner_app_model(
+                file_name=file_name, rdf_string=rdf_string, model_name=model_name
+            )
             s.engine.run_application()
 
     def post(self, sid: str, frontend_state) -> AppExchangeGetOutput:
@@ -242,11 +246,15 @@ class RedisEngineTransport:
         return str(v) if v is not None else None
 
     # -- EngineTransport ops --
-    def load(self, sid: str, *, file_name=None, rdf_string=None) -> None:
+    def load(self, sid: str, *, file_name=None, rdf_string=None, model_name=None) -> None:
         wid = self._assign(sid)
         if wid is None:
             raise RuntimeError("no engine worker available")
-        self._call(wid, "load", sid, {"file_name": self._s(file_name), "rdf_string": rdf_string})
+        self._call(wid, "load", sid, {
+            "file_name": self._s(file_name),
+            "rdf_string": rdf_string,
+            "model_name": model_name,
+        })
 
     def run(self, sid: str) -> bool:
         wid = self._resolve(sid)
@@ -254,11 +262,15 @@ class RedisEngineTransport:
             return False
         return bool(self._call(wid, "run", sid, {}))
 
-    def run_model(self, sid: str, *, rdf_string=None, file_name=None) -> None:
+    def run_model(self, sid: str, *, rdf_string=None, file_name=None, model_name=None) -> None:
         wid = self._assign(sid)
         if wid is None:
             raise RuntimeError("no engine worker available")
-        self._call(wid, "run_model", sid, {"rdf_string": rdf_string, "file_name": self._s(file_name)})
+        self._call(wid, "run_model", sid, {
+            "rdf_string": rdf_string,
+            "file_name": self._s(file_name),
+            "model_name": model_name,
+        })
 
     def post(self, sid: str, frontend_state) -> AppExchangeGetOutput | None:
         wid = self._resolve(sid)

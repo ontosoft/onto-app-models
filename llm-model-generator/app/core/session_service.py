@@ -53,15 +53,17 @@ class EngineSessionService:
     def __init__(self, transport: EngineTransport | None = None) -> None:
         self._transport: EngineTransport = transport or _build_transport()
 
-    def load(self, sid: str, *, file_name=None, rdf_string=None) -> None:
-        return self._transport.load(sid, file_name=file_name, rdf_string=rdf_string)
+    def load(self, sid: str, *, file_name=None, rdf_string=None, model_name=None) -> None:
+        return self._transport.load(
+            sid, file_name=file_name, rdf_string=rdf_string, model_name=model_name
+        )
 
     def run(self, sid: str) -> bool:
         return self._transport.run(sid)
 
-    def run_model(self, sid: str, *, rdf_string=None, file_name=None) -> None:
+    def run_model(self, sid: str, *, rdf_string=None, file_name=None, model_name=None) -> None:
         return self._transport.run_model(
-            sid, rdf_string=rdf_string, file_name=file_name
+            sid, rdf_string=rdf_string, file_name=file_name, model_name=model_name
         )
 
     def post(self, sid: str, frontend_state) -> AppExchangeGetOutput:
