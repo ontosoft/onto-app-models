@@ -13,7 +13,11 @@ rdflib graph, mirroring the hand-built restaurant pattern:
   * a shared "Continue" action/button on every notification screen
   * per relationship (RelationSpec) an obop:Connection + Connectors, executed by
     a MakeConnectionAction ScriptTask spliced after the save task of the later
-    of the two entities' subprocesses (save -> make_connection -> confirmation).
+    of the two entities' subprocesses (save -> make_connection -> confirmation)
+  * looped entities (targets of an unbounded relationship): the notification
+    screen gains an "Add another <label>" button and routes through an
+    ExclusiveGateway — Continue ends the subprocess, Add-another loops back to
+    the generate-form task, so each iteration creates a fresh linked instance.
 
 No LLM here — this is the reproducible structure. Output is plain triples, so
 there are no string-template / whitespace pitfalls.
@@ -308,6 +312,20 @@ class ModelBuilder:
         self.link(continue_btn, OBOP.belongsToVisual, notif_layout)
         self.lit(continue_btn, OBOP.hasLabel, "Continue")
         self.position(continue_btn, 1)
+        if ent.looped:
+            # Loopable entity (target of an unbounded relationship): offer to
+            # enter one more instance right from the saved-notification screen.
+            add_action = self.ind(f"add_another_action_{n}", OBOP.Action)
+            self.lit(add_action, OBOP.hasInitiator, "onClick")
+            self.lit(add_action, OBOP.hasLabel, f"Add another {ent.label}")
+            self.g.add((add_action, RDFS.comment, Literal(
+                f"Loop back to enter one more {ent.label}.")))
+            add_btn = self.ind(f"add_another_btn_{n}", OBOP.Button)
+            self.link(add_btn, OBOP.activatesAction, add_action)
+            self.link(add_btn, OBOP.belongsTo, notif_block)
+            self.link(add_btn, OBOP.belongsToVisual, notif_layout)
+            self.lit(add_btn, OBOP.hasLabel, f"Add another {ent.label}")
+            self.position(add_btn, 2)
         confirm_action = self.ind(f"confirm_action_{n}", OBOP.GenerateJSONForm)
         self.link(confirm_action, OBOP.actionInBlock, notif_block)
         self.link(nodes["confirm"], OBOP.executesAction, confirm_action)
@@ -335,7 +353,28 @@ class ModelBuilder:
             prev = task
         self.flow(f"flow_{n}_5", sub, prev, nodes["confirm"])
         self.flow(f"flow_{n}_6", sub, nodes["confirm"], nodes["notif_task"])
-        self.flow(f"flow_{n}_7", sub, nodes["notif_task"], nodes["end"])
+        if ent.looped:
+            # notification -> loop gateway: "Continue" ends the subprocess,
+            # "Add another <label>" loops back to the generate-form task, where
+            # a fresh ActiveForm (hence a fresh instance) is created.
+            loop_gw = self.ind(f"loop_gateway_{n}", BBO.ExclusiveGateway)
+            self.link(loop_gw, BBO.has_container, sub)
+            loop_continue_cond = self.ind(
+                f"loop_continue_cond_{n}", BBO.ConditionExpression
+            )
+            self.link(loop_continue_cond, OBOP.selectedAction, self.continue_action)
+            loop_again_cond = self.ind(f"loop_again_cond_{n}", BBO.ConditionExpression)
+            self.link(
+                loop_again_cond, OBOP.selectedAction,
+                self.ex[f"add_another_action_{n}"],
+            )
+            self.flow(f"flow_{n}_7", sub, nodes["notif_task"], loop_gw)
+            self.flow(f"flow_{n}_loop_end", sub, loop_gw, nodes["end"],
+                      loop_continue_cond)
+            self.flow(f"flow_{n}_loop_again", sub, loop_gw, nodes["gen"],
+                      loop_again_cond)
+        else:
+            self.flow(f"flow_{n}_7", sub, nodes["notif_task"], nodes["end"])
         self.flow(f"flow_{n}_abort_end", sub, nodes["abort"], nodes["cancel_end"])
 
 

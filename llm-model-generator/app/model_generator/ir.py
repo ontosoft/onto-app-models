@@ -38,6 +38,7 @@ class RelationSpec:
     iri_token: str  # snake_case fragment minting IRIs (connector_<...>_<iri_token>)
     target_iri_token: str  # iri_token of the entity pointed at (sh:node/sh:class)
     order: int  # deterministic ordering among the entity's relationships
+    multiple: bool = False  # sh:maxCount absent or >1 -> many target instances
 
 
 @dataclass
@@ -50,3 +51,6 @@ class EntitySpec:
     order: int = 0  # subprocess sequence (sh:order on the NodeShape)
     properties: list[PropSpec] = field(default_factory=list)
     relationships: list[RelationSpec] = field(default_factory=list)
+    # True when some relationship with multiple=True targets this entity: its
+    # subprocess then loops ("Add another <label>") so N instances can be made.
+    looped: bool = False
