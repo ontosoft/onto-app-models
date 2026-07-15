@@ -107,7 +107,10 @@ class Form:
         if self.main_layout is None:
             logger.error("The form does not have a main layout element.")
             raise ValueError("The form does not have a main layout element.")
-           
+
+        # Only this form's instance pickers may be pending when it is submitted.
+        app_state.current_json_form_picker_mapping = {}
+
         jform : FunctionalJSONForm = {
             "graph_node": str(self._graph_node),
             "schema": {
@@ -199,10 +202,13 @@ class VerticalLayout(Layout):
         }
         for element in self._elements:
             if isinstance(element, FormElement):
-                jsonform_uischema["elements"].append(
-                    element.create_jsonform_ui_schema_element(app_state))
+                ui_element = element.create_jsonform_ui_schema_element(app_state)
+                # None = the element renders nothing right now (e.g. an
+                # instance picker with no instances to choose yet).
+                if ui_element is not None:
+                    jsonform_uischema["elements"].append(ui_element)
             elif isinstance(element, Layout):
-                # If the element is a layout, we need to recursively call the create_jsonform_ui_schema method 
+                # If the element is a layout, we need to recursively call the create_jsonform_ui_schema method
                 jsonform_uischema["elements"].append(
                     element.create_jsonform_ui_schema(app_state))
 
@@ -235,8 +241,10 @@ class HorizontalLayout(Layout):
         }
         for element in self._elements:
             if (isinstance(element, FormElement)):
-                jsonform_uischema["elements"].append(
-                    element.create_jsonform_ui_schema_element(app_state))
+                ui_element = element.create_jsonform_ui_schema_element(app_state)
+                # None = the element renders nothing right now (see VerticalLayout)
+                if ui_element is not None:
+                    jsonform_uischema["elements"].append(ui_element)
             elif isinstance(element, Layout):
                 # If the element is a layout, we need to recursively call the
                 #  create_jsonform_ui_schema method

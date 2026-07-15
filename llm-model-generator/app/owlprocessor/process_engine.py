@@ -42,6 +42,9 @@ class ProcessEngine:
         self._app_state: ApplicationState = ApplicationState(
             self.internal_app_static_model
         )
+        # Instance pickers query the collected instances while a form is being
+        # generated, so the waiting state carries a live view of the graph.
+        self._app_state.output_graph_store = self._output_knowledge_graph
         # Pending message for the frontend (form / notification / error). It is
         # set by move_token / update_current_flow_element / execute_cancel_action
         # and read by generate_layout. Initialised here so generate_layout never
@@ -473,7 +476,28 @@ class ProcessEngine:
                         f"Using existing instance {named_individual_iri} for the form {form_graph_node}"
                     )
 
+                # Instance pickers: record which existing instance the user
+                # chose for each connection. A picker left untouched clears any
+                # previous choice, so the connection falls back to the latest
+                # instance. Picker values are choices, not datatype properties.
+                picker_mapping = self.app_state.current_json_form_picker_mapping
+                for picker_key, picker in picker_mapping.items():
+                    self.app_state.chosen_connection_instances.pop(
+                        picker["connection"], None
+                    )
+                    chosen_label = form_data.get(picker_key)
+                    if chosen_label and chosen_label in picker["options"]:
+                        self.app_state.chosen_connection_instances[
+                            picker["connection"]
+                        ] = (picker["shape"], picker["options"][chosen_label])
+                        logger.debug(
+                            f"Picker '{picker_key}': connection {picker['connection']} "
+                            f"will link {picker['options'][chosen_label]}"
+                        )
+
                 for key in form_data.keys():
+                    if key in picker_mapping:
+                        continue  # handled above; not a datatype property
                     # find the element graph node iri for the data element in the array of mappings
                     logger.debug(
                         f"Mapping {self.app_state.current_json_form_name_mapping} is being searched "
@@ -526,8 +550,22 @@ class ProcessEngine:
         """
         action = script_task.obop_action
         for connection in action.connections:
-            source_instance = self._resolve_shape_instance(connection.source_shape)
-            target_instance = self._resolve_shape_instance(connection.target_shape)
+            source_instance = target_instance = None
+            # An instance picker's choice wins over latest-instance resolution:
+            # the recorded shape says which endpoint the chosen instance fills.
+            choice = self.app_state.chosen_connection_instances.get(
+                str(connection.graph_node)
+            )
+            if choice is not None:
+                chosen_shape, chosen_instance = choice
+                if chosen_shape == str(connection.source_shape):
+                    source_instance = URIRef(chosen_instance)
+                elif chosen_shape == str(connection.target_shape):
+                    target_instance = URIRef(chosen_instance)
+            if source_instance is None:
+                source_instance = self._resolve_shape_instance(connection.source_shape)
+            if target_instance is None:
+                target_instance = self._resolve_shape_instance(connection.target_shape)
             if source_instance is None or target_instance is None:
                 logger.warning(
                     f"Cannot make connection {connection!r}: unresolved instance "

@@ -740,6 +740,16 @@ class AppStaticModelFactory:
             RDF.type, OBOP.Field):
                internal_element = OBOPElement(form, element, OBOP.Field, position, label)
         elif element in rdf_graph_rdflib.subjects(
+                    RDF.type, OBOP.ListField):
+            # A selection field. With obop:picksInstanceFor it is an instance
+            # picker: at runtime it lists the existing instances of the
+            # connection's other endpoint and the choice decides which instance
+            # the connection links (instead of the most recent one).
+            internal_element = OBOPElement(form, element, OBOP.ListField, position, label)
+            internal_element.picks_instance_for = rdf_graph_rdflib.value(
+                element, OBOP.picksInstanceFor
+            )
+        elif element in rdf_graph_rdflib.subjects(
                     RDF.type, OBOP.Loop):
             internal_element = OBOPElement(form, element, OBOP.Loop, position)
 
@@ -868,7 +878,9 @@ class AppStaticModelFactory:
                         f"properties={object_properties}; skipping."
                     )
                     continue
-                connection = Connection(source_shape, target_shape, object_properties)
+                connection = Connection(
+                    connection_node, source_shape, target_shape, object_properties
+                )
                 action.connections.append(connection)
                 logger.debug(f"Loaded {connection!r} for action {action.graph_node}")
 

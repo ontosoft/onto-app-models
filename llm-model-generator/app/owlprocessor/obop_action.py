@@ -13,17 +13,20 @@ class Connection:
 
     def __init__(
         self,
+        graph_node: URIRef,
         source_shape: URIRef,
         target_shape: URIRef,
         object_properties: list[URIRef],
     ):
+        self.graph_node = graph_node  # the obop:Connection individual's IRI
         self.source_shape = source_shape
         self.target_shape = target_shape
         self.object_properties = object_properties
 
     def __repr__(self):
         return (
-            f"Connection(source={self.source_shape}, target={self.target_shape}, "
+            f"Connection({self.graph_node}: source={self.source_shape}, "
+            f"target={self.target_shape}, "
             f"properties={[str(p) for p in self.object_properties]})"
         )
 
