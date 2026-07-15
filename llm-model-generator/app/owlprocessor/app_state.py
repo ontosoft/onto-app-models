@@ -38,6 +38,19 @@ class ApplicationState:
         # The message type is used to specify what kind of message
         # is sent to the frontend. 
         self._current_json_form_name_mapping : JSONFormNameMapping = {}
+        # Instance pickers of the form currently waiting for data:
+        # label -> {"connection": iri, "shape": endpoint iri,
+        #           "options": {instance label -> instance iri}}.
+        # The options list ALL instances of the endpoint's target classes found
+        # in the output knowledge graph at form-generation time.
+        self._current_json_form_picker_mapping : dict = {}
+        # The user's picker choices: connection iri -> (endpoint shape iri,
+        # chosen instance iri). Read by execute_make_connection_action, which
+        # falls back to the latest instance when no choice was made.
+        self.chosen_connection_instances : dict = {}
+        # Live reference to the engine's output knowledge graph (set by
+        # ProcessEngine) so pickers can query the collected instances.
+        self.output_graph_store = None
         self._json_form : FunctionalJSONForm = None
         self._list_of_active_forms: list[ActiveForm]= []  # List of forms sent to the frontend for editing
         #This list of forms is used to keep track of named individuaals
@@ -102,6 +115,14 @@ class ApplicationState:
     @current_json_form_name_mapping.setter
     def current_json_form_name_mapping(self, value):
         self._current_json_form_name_mapping = value
+
+    @property
+    def current_json_form_picker_mapping(self) -> dict:
+        return self._current_json_form_picker_mapping
+
+    @current_json_form_picker_mapping.setter
+    def current_json_form_picker_mapping(self, value: dict):
+        self._current_json_form_picker_mapping = value
 
     @property
     def json_form(self)-> FunctionalJSONForm:

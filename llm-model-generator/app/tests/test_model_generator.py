@@ -265,3 +265,70 @@ def test_looped_entity_creates_multiple_instances_and_links():
     dish = next(out.subjects(RDF.type, R.Dish))
     (linked_menu,) = list(out.objects(dish, R.belongsToMenu))
     assert str(next(out.objects(linked_menu, R.menuName))) == "Dinner"
+
+
+def test_instance_picker_links_chosen_instance():
+    """The generated dish form offers a picker over ALL menu instances found in
+    the output graph; choosing one overrides the latest-instance default."""
+    R = Namespace("http://example.org/generated/restaurant/")
+
+    shapes = (EXAMPLES / "restaurant.shapes.ttl").read_text(encoding="utf-8")
+    gm = generate_appmodel_from_shacl(shapes)
+    g = Graph()
+    g.parse(data=gm.rdf, format="turtle")
+    # the generator emitted a picker ListField tied to the dish->menu connection
+    picker = URIRef(f"{BASE}picker_dish_dish_menu")
+    assert (picker, None, URIRef(f"{BASE}dish_menu_connection")) in g
+
+    eng = AppEngine()
+    eng.load_inner_app_model(rdf_string=gm.rdf)
+    eng.run_application()
+    eng.process_received_client_data(
+        {"message_type": "initiate_exchange", "message_content": {}}
+    )
+
+    def act(action_type, node, form_node="", data=None):
+        eng.process_received_client_data({
+            "message_type": "action",
+            "message_content": {
+                "action_type": action_type,
+                "action_graph_node": node,
+                "form_graph_node": form_node,
+                "form_data": data or {},
+            },
+        })
+
+    def submit(block_token, data):
+        mc = eng.read_new_model_layout().message_content
+        block = str(mc.get("graph_node", ""))
+        assert block.endswith(f"{block_token}_block"), block
+        act("submit", f"{BASE}submit_action_{block_token}", block, data)
+        return mc
+
+    def press(action_node):
+        eng.read_new_model_layout()
+        act("other", action_node)
+
+    submit("business_entity", {"Restaurant name": "Trattoria"})
+    press(f"{BASE}continue_action")
+    submit("menu", {"Menu name": "Lunch"})
+    press(f"{BASE}add_another_action_menu")
+    submit("menu", {"Menu name": "Dinner"})
+    press(f"{BASE}continue_action")
+
+    # the dish form carries the picker, listing BOTH menus from the graph;
+    # the user picks "Lunch" — NOT the latest ("Dinner")
+    mc = eng.read_new_model_layout().message_content
+    props = mc["schema"]["properties"]
+    assert "Menu" in props
+    assert set(props["Menu"]["enum"]) == {"Lunch", "Dinner"}
+    act(
+        "submit", f"{BASE}submit_action_dish", mc["graph_node"],
+        {"Dish name": "Pasta", "Menu": "Lunch"},
+    )
+    assert _walk_to_completion(eng, max_steps=24) is True
+
+    out = eng.process_engine_instance.output_graph_store
+    dish = next(out.subjects(RDF.type, R.Dish))
+    (linked_menu,) = list(out.objects(dish, R.belongsToMenu))
+    assert str(next(out.objects(linked_menu, R.menuName))) == "Lunch"

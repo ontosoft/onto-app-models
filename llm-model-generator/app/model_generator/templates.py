@@ -115,6 +115,8 @@ class ModelBuilder:
         fires — correct for any relationship structure, cycles included.
         """
         index = {ent.iri_token: i for i, ent in enumerate(entities)}
+        # kept for the instance pickers: the earlier entity's label names them
+        self._entity_by_token = {ent.iri_token: ent for ent in entities}
         for ent in entities:
             by_target: dict[str, list] = {}
             for rel in ent.relationships:
@@ -346,11 +348,32 @@ class ModelBuilder:
         # save -> [make_connection tasks planned for this subprocess] -> confirm.
         # Consecutive ScriptTasks run back-to-back, so the connection triples are
         # created in the same submit step (BBO tasks cannot nest).
+        picker_labels = {p.label for p in ent.properties}
         prev = nodes["save"]
         for k, (src, tgt, rels) in enumerate(self._pending_connections.get(n, [])):
             task = self._build_connection(sub, src, tgt, rels)
             self.flow(f"flow_{n}_5_conn_{k}", sub, prev, task)
             prev = task
+            # Instance picker on this form: choose WHICH existing instance of
+            # the connection's other (earlier) endpoint the new instance links
+            # to. Rendered by the engine as a dropdown of the instances found
+            # in the output graph; left untouched, the latest instance is used.
+            other = src if src != n else tgt
+            if other == n:
+                continue  # self-relationship: nothing sensible to pick
+            base_label = self._entity_by_token[other].label
+            label, suffix = base_label, 2
+            while label in picker_labels:
+                label = f"{base_label} ({suffix})"
+                suffix += 1
+            picker_labels.add(label)
+            picker = self.ind(f"picker_{n}_{src}_{tgt}", OBOP.ListField)
+            self.link(picker, OBOP.belongsTo, block)
+            self.link(picker, OBOP.belongsToVisual, vlayout)
+            self.lit(picker, OBOP.hasLabel, label)
+            self.position(picker, len(ent.properties) + k)
+            self.link(picker, OBOP.picksInstanceFor,
+                      self.ex[f"{src}_{tgt}_connection"])
         self.flow(f"flow_{n}_5", sub, prev, nodes["confirm"])
         self.flow(f"flow_{n}_6", sub, nodes["confirm"], nodes["notif_task"])
         if ent.looped:

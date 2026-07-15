@@ -979,6 +979,16 @@ _:genid_has_menu shacl:path schema:hasMenu ;
     obop:hasLabel "Description" ;
     obop:hasPositionNumber "2"^^xsd:int .
 
+### Instance picker: choose WHICH menu this dish belongs to. The engine lists
+### all menu instances found in the output knowledge graph; left untouched,
+### the connection links the most recently created menu.
+:field_dish_menu_picker rdf:type owl:NamedIndividual , obop:ListField ;
+    obop:belongsTo :dish_block ;
+    obop:belongsToVisual :dish_vertical_layout ;
+    obop:hasLabel "Menu" ;
+    obop:hasPositionNumber "3"^^xsd:int ;
+    obop:picksInstanceFor :menu_dish_connection .
+
 :submit_action_dishes rdf:type owl:NamedIndividual , obop:SubmitBlockAction ;
     obop:actionInBlock :dish_block ;
     obop:hasInitiator "onClick" , "onEnter" ;
@@ -1261,6 +1271,15 @@ _:genid_has_menu shacl:path schema:hasMenu ;
     obop:isRelatedToTargetOntologyInstance :ingredientShape ;
     obop:hasLabel "Ingredient name" ;
     obop:hasPositionNumber "0"^^xsd:int .
+
+### Instance picker: choose WHICH dish this ingredient belongs to (all dish
+### instances from the output knowledge graph; default: the latest).
+:field_ingredient_dish_picker rdf:type owl:NamedIndividual , obop:ListField ;
+    obop:belongsTo :ingredient_block ;
+    obop:belongsToVisual :ingredient_vertical_layout ;
+    obop:hasLabel "Dish" ;
+    obop:hasPositionNumber "1"^^xsd:int ;
+    obop:picksInstanceFor :dish_ingredient_connection .
 
 :submit_action_ingredients rdf:type owl:NamedIndividual , obop:SubmitBlockAction ;
     obop:actionInBlock :ingredient_block ;

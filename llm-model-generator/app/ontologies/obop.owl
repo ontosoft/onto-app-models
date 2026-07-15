@@ -406,7 +406,18 @@
         <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
         <rdfs:label xml:lang="en">model belongs to interface container</rdfs:label>
     </owl:ObjectProperty>
-    
+
+
+
+    <!-- http://purl.org/net/obop/picksInstanceFor -->
+
+    <owl:ObjectProperty rdf:about="http://purl.org/net/obop/picksInstanceFor">
+        <rdfs:domain rdf:resource="http://purl.org/net/obop/ListField"/>
+        <rdfs:range rdf:resource="http://purl.org/net/obop/Connection"/>
+        <rdfs:comment xml:lang="en">Relates a ListField to a Connection: at runtime the field lists the already-created instances of the connection's other endpoint, and the user's selection determines which instance the connection links.</rdfs:comment>
+        <rdfs:label xml:lang="en">picksInstanceFor</rdfs:label>
+    </owl:ObjectProperty>
+
 
 
     <!-- http://purl.org/net/obop/specifiedBy -->
