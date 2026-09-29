@@ -93,4 +93,4 @@ Top-level `.env` is the single source of truth for the backend and Docker Compos
 
 ## Deployment
 
-`infrastructure/terraform/` provisions OpenStack VMs (envs `staging`, `production`); `infrastructure/ansible/` configures them. GitHub Actions in `.github/workflows/{staging,production}-deploy.yml` drive both. For local CI runs, the README suggests `act --secret-file .secrets`.
+`infrastructure/terraform/` provisions OpenStack VMs (env `staging`; cluster specifics are variables in `envs/staging/variables.tf`); `infrastructure/ansible/` configures them. GitHub Actions in `.github/workflows/staging-deploy.yml` drives both. For local CI runs, the README suggests `act --secret-file .secrets`.

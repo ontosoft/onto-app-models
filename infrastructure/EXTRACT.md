@@ -28,9 +28,7 @@ rsync -a \
   infrastructure/ "$DEST/infrastructure/"
 
 # Workflows
-cp .github/workflows/staging-deploy.yml \
-   .github/workflows/production-deploy.yml \
-   "$DEST/.github/workflows/"
+cp .github/workflows/staging-deploy.yml "$DEST/.github/workflows/"
 
 # act template (tracked). Do NOT copy the real .secrets blindly.
 cp .secrets.template "$DEST/"
@@ -47,8 +45,7 @@ printf '\n.secrets\n' >> "$DEST/.gitignore"
 
 | Item | Action |
 |---|---|
-| Repo secrets `STAGING_OS_*`, `PRODUCTION_OS_*`, `SSH_PRIVATE_KEY` | Recreate in the new repo's Settings → Secrets. |
-| `production` Environment + protection rules | Recreate (the prod workflow references `environment: production`). |
+| Repo secrets `STAGING_OS_*`, `SSH_PRIVATE_KEY` | Recreate in the new repo's Settings → Secrets. |
 | Local `.secrets` (for `act`) | Rebuild from `.secrets.template`; it is git-ignored by design. |
 | `.terraform/` cache | Don't copy — `terraform init` rebuilds. |
 
@@ -88,7 +85,7 @@ only record of the live VMs.
 ## 6. Post-move checklist (in the destination repo)
 
 1. [ ] `terraform init` in each `envs/<env>` (picks up the copied lock file).
-2. [ ] Recreate GitHub secrets + the `production` environment.
+2. [ ] Recreate GitHub secrets.
 3. [ ] Root `.gitignore` has `.secrets`; create local `.secrets` from template.
 4. [ ] Decide the state file (copy vs. fresh — step 5).
 5. [ ] `git status` shows **no** `tfstate`, `.terraform/`, `.secrets`,

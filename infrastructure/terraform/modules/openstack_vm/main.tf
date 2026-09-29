@@ -30,7 +30,7 @@ resource "openstack_compute_instance_v2" "vm" {
 }
 
 resource "openstack_networking_floatingip_v2" "fip" {
-  count   = var.assign_floating_ip ? 1 : 0
+  count   = var.connect_via == "floating_ipv4" ? 1 : 0
   pool    = var.floating_ip_pool
   port_id = openstack_compute_instance_v2.vm.network[0].port
 }
