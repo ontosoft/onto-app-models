@@ -1,0 +1,14 @@
+---
+# Ansible dependencies baked into the job image. Keep in sync with
+# infrastructure/ansible/requirements.yml — this copy exists because the
+# forgejo.yml playbook synchronises only the forgejo/ directory to the VM, so
+# a build context pointing outside it would not exist there.
+
+roles:
+  - name: geerlingguy.docker
+    version: 7.1.0
+
+collections:
+  - name: community.docker # docker_compose_v2
+  - name: ansible.posix    # synchronize, mount
+  - name: community.general

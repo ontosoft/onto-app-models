@@ -1,0 +1,29 @@
+log:
+  level: info
+
+runner:
+  file: /data/.runner
+  # One deploy at a time. The staging backend is a *local* tfstate file with
+  # no locking, so two concurrent runs would corrupt it. Revisit when staging
+  # moves to a locking remote backend (pg).
+  capacity: 1
+  timeout: 1h
+  # Must match RUNNER_LABELS in docker-compose.yml. `deploy` is what the
+  # workflow's `runs-on:` selects; everything after `docker://` is the image
+  # jobs execute inside.
+  labels:
+    - "deploy:docker://forgejo-deploy-job:latest"
+
+cache:
+  enabled: true
+
+container:
+  # Job containers join Forgejo's network so `forgejo:3000` resolves inside
+  # them. Without this, actions/checkout cannot reach the instance.
+  network: forgejo
+  privileged: false
+  # Job containers are disposable and may mount nothing from the host. NOTE:
+  # this means a Terraform *local* state written inside a job container is
+  # lost when the job ends — way-2 deploys need the staging state moved to a
+  # remote backend first (see docs/deploy-forgejo.md).
+  valid_volumes: []

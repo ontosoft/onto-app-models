@@ -1,0 +1,171 @@
+# The (optional, self-hosted) Forgejo stack: the forge, its Postgres, the
+# Actions runner, and a Caddy in front. Deployed to the ci-onto-app VM by
+# infrastructure/ansible/forgejo.yml; can also be run locally (without the
+# caddy profile) to try the workflow under Forgejo Actions before spending any
+# OpenStack quota — `docker compose down -v` and starting over costs nothing.
+#
+# ROOT_URL uses the hostname `forgejo` rather than localhost in local testing
+# on purpose: job containers spawned by the runner join this same network and
+# resolve `forgejo:3000`, while a browser resolves it through an /etc/hosts
+# entry. A localhost ROOT_URL would break actions/checkout inside the job
+# container, because localhost there is the container itself.
+
+name: forgejo
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: forgejo
+      POSTGRES_PASSWORD: ${FORGEJO_DB_PASSWORD:?set FORGEJO_DB_PASSWORD in .env}
+      POSTGRES_DB: forgejo
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks: [forgejo]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U forgejo"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  forgejo:
+    image: codeberg.org/forgejo/forgejo:11
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      USER_UID: "1000"
+      USER_GID: "1000"
+      FORGEJO__database__DB_TYPE: postgres
+      FORGEJO__database__HOST: db:5432
+      FORGEJO__database__NAME: forgejo
+      FORGEJO__database__USER: forgejo
+      FORGEJO__database__PASSWD: ${FORGEJO_DB_PASSWORD}
+      FORGEJO__server__DOMAIN: ${FORGEJO_DOMAIN:-forgejo}
+      FORGEJO__server__ROOT_URL: ${FORGEJO_ROOT_URL:-http://forgejo:3000/}
+      FORGEJO__server__SSH_PORT: "2222"
+      # Single-team instance — nobody self-registers.
+      FORGEJO__service__DISABLE_REGISTRATION: "true"
+      FORGEJO__actions__ENABLED: "true"
+      # actions/checkout and friends are fetched from github.com; Forgejo has
+      # no marketplace of its own.
+      FORGEJO__actions__DEFAULT_ACTIONS_URL: https://github.com
+    # Bound to the loopback interface, not published to the world. Caddy
+    # reaches Forgejo as `forgejo:3000` over the compose network below, and so
+    # do the runner's job containers - neither needs a published port. What
+    # remains is local access: an SSH tunnel to the VM, or a local browser
+    # when testing.
+    #
+    # This is what makes the security group in envs/forgejo honest. Without
+    # the 127.0.0.1 prefix, Docker's own iptables rules publish the port on
+    # every interface and bypass the group entirely.
+    ports:
+      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:2222:22"
+    volumes:
+      - forgejo-data:/data
+    networks: [forgejo]
+
+  # TLS termination. Only meaningful on the VM: when testing locally you reach
+  # Forgejo at http://forgejo:3000 directly and this service has nothing to
+  # do, so it sits behind a profile and stays out of a plain
+  # `docker compose up`.
+  #
+  #   docker compose --profile tls up -d
+  #
+  # Start it that way on the VM. infrastructure/ansible/forgejo.yml does.
+  caddy:
+    profiles: [tls]
+    # Built rather than pulled: the stock image has no DNS provider modules,
+    # and dns-01 is the only challenge type available on a host whose 80 and
+    # 443 are campus-restricted. See caddy/Dockerfile.
+    build:
+      context: ./caddy
+    image: forgejo-caddy:rfc2136
+    container_name: forgejo-caddy
+    depends_on: [forgejo]
+    # No :? guards on any of these, for the same reason the runner's token has
+    # none: Compose interpolates every service before it selects which ones to
+    # start, so a required-variable guard here would also block a plain
+    # `docker compose up` in local testing, where caddy is not even meant to
+    # run. infrastructure/ansible/forgejo.yml checks the values instead, on
+    # the host where they actually have to be present.
+    environment:
+      # Must match the host part of FORGEJO_ROOT_URL - see caddy/Caddyfile.
+      FORGEJO_HOSTNAME: ${FORGEJO_HOSTNAME:-}
+      ACME_CA_URL: ${ACME_CA_URL:-https://certificates.dhbw.cloud/directory}
+      ACME_EMAIL: ${ACME_EMAIL:-}
+      # TSIG credentials for the dns-01 challenge, from the zone's TLS
+      # certificates page in the self-service UI.
+      DNS_TSIG_KEY_NAME: ${DNS_TSIG_KEY_NAME:-}
+      DNS_TSIG_KEY_ALG: ${DNS_TSIG_KEY_ALG:-hmac-sha512}
+      DNS_TSIG_KEY: ${DNS_TSIG_KEY:-}
+      DNS_SERVER: ${DNS_SERVER:-ns.cloud-ns.dhbw-mannheim.de.:53}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Issued certificates and the ACME account key. Losing this volume means
+      # re-issuing on every deploy, which runs into the CA's rate limits - it
+      # must persist across redeploys.
+      - caddy-data:/data
+      - caddy-config:/config
+    networks: [forgejo]
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  runner:
+    image: code.forgejo.org/forgejo/runner:6
+    restart: unless-stopped
+    depends_on: [forgejo]
+    # The image runs as uid 1000, but a socket exposed as root:root 0660 is
+    # not openable then. Running the runner as root is the standard workaround
+    # for socket-mounting runners; on a Linux VM, adding the runner user to
+    # the `docker` group (group_add) is the tighter alternative.
+    user: "0:0"
+    environment:
+      FORGEJO_INSTANCE_URL: http://forgejo:3000
+      # No :? guard here — Compose interpolates every service before selecting
+      # which ones to start, so a guard on the runner also blocks
+      # `up -d db forgejo`. entrypoint.sh checks the token instead, where it
+      # can give an error that says what to do about it.
+      FORGEJO_RUNNER_TOKEN: ${FORGEJO_RUNNER_TOKEN:-}
+      RUNNER_NAME: onto-app-deploy
+      RUNNER_LABELS: deploy:docker://forgejo-deploy-job:latest
+    volumes:
+      - runner-data:/data
+      - ./runner/config.yml:/data/config.yml:ro
+      - ./runner/entrypoint.sh:/entrypoint.sh:ro
+      # The runner does not execute jobs itself — it asks the host's Docker to
+      # start a job container per run.
+      - /var/run/docker.sock:/var/run/docker.sock
+    working_dir: /data
+    entrypoint: ["/bin/sh", "/entrypoint.sh"]
+    networks: [forgejo]
+
+networks:
+  forgejo:
+    # Named explicitly so runner/config.yml's container.network does not
+    # depend on the compose project name.
+    name: forgejo
+    # Without this, job containers cannot reach an IPv6-only host at all: SSH
+    # fails with "Network is unreachable" before leaving the machine. The
+    # subnet is a random ULA per RFC 4193 and is never routed anywhere.
+    enable_ipv6: true
+    ipam:
+      config:
+        - subnet: fd42:9c1b:5e73:1::/64
+
+volumes:
+  db-data:
+  forgejo-data:
+  runner-data:
+  caddy-data:
+  caddy-config:

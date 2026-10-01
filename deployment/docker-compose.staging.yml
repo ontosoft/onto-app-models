@@ -1,0 +1,239 @@
+# The staging stack: the full application behind a stock-Caddy reverse proxy.
+#
+# Differences from the dev docker-compose.yml:
+#   - Caddy terminates TLS on 80/443 (ACME http-01) and routes by path on ONE
+#     hostname: /api/* (plus the FastAPI doc endpoints) to the backend,
+#     everything else to the frontend. One shallow hostname needs one
+#     certificate.
+#   - No published ports on any other service - the security group and this
+#     file together keep Postgres, Redis, Ollama and the API off the internet.
+#   - No adminer, no ollama-webui (dev tools), no Traefik labels/network.
+#
+# Variables written as ${VAR?...} abort `compose up` when unset, so the stack
+# refuses to start half-configured. The .env on the VM is written by Ansible
+# from the STAGING_ENV_FILE secret - see deployment/infrastructure/ansible/deploy_staging.yml.
+#
+# Deployed exclusively by the pipeline with an explicit
+# `-f docker-compose.staging.yml`, so the local-dev override never applies.
+
+services:
+
+  model-downloader:
+    image: busybox
+    volumes:
+      - ../model_files:/model_files
+    command: >
+      sh -c '
+        if [ ! -f /model_files/mistral-7b-instruct-v0.1.Q2_K.gguf ]; then
+          echo "Downloading Mistral GGUF model...";
+          wget -O /model_files/mistral-7b-instruct-v0.1.Q2_K.gguf https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/resolve/main/mistral-7b-instruct-v0.1.Q2_K.gguf;
+        else
+          echo "Model already exists, skipping download.";
+        fi
+      '
+
+  ollama:
+    container_name: ollama
+    image: ollama/ollama:latest
+    # No published port: only the API container talks to Ollama.
+    volumes:
+      - ../model_files:/model_files
+    depends_on:
+      model-downloader:
+        condition: service_completed_successfully
+    pull_policy: if_not_present
+    tty: true
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "/model_files/run_ollama.sh"]
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      # First boot must import the multi-GB GGUF (ollama create), which takes
+      # several minutes. start_period suppresses healthcheck failures during
+      # the import.
+      start_period: 300s
+
+  db:
+    image: postgres:17
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+    volumes:
+      - app-db-data:/var/lib/postgresql/data/pgdata
+    env_file:
+      - .env
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
+      - POSTGRES_DB=${POSTGRES_DB?Variable not set}
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Runs migrations + seeds the superuser (scripts/prestart.sh), then exits.
+  prestart:
+    image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
+    build:
+      context: ..
+      dockerfile: llm-model-generator/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+    command: bash scripts/prestart.sh
+    env_file:
+      - .env
+    environment:
+      - DOMAIN=${DOMAIN}
+      - FRONTEND_HOST=${FRONTEND_HOST?Variable not set}
+      - ENVIRONMENT=${ENVIRONMENT}
+      - BACKEND_CORS_ORIGINS=${BACKEND_CORS_ORIGINS}
+      - SECRET_KEY=${SECRET_KEY?Variable not set}
+      - FIRST_SUPERUSER=${FIRST_SUPERUSER?Variable not set}
+      - FIRST_SUPERUSER_PASSWORD=${FIRST_SUPERUSER_PASSWORD?Variable not set}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - EMAILS_FROM_EMAIL=${EMAILS_FROM_EMAIL}
+      - POSTGRES_SERVER=db
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+      - SENTRY_DSN=${SENTRY_DSN}
+
+  llm-model-generator-api:
+    container_name: llm-model-generator-api
+    image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
+    restart: always
+    # No published port: Caddy reaches it on the compose network.
+    depends_on:
+      ollama:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+        restart: true
+      redis:
+        condition: service_healthy
+      prestart:
+        condition: service_completed_successfully
+    env_file:
+      - .env
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+      - DOMAIN=${DOMAIN}
+      - FRONTEND_HOST=${FRONTEND_HOST?Variable not set}
+      - ENVIRONMENT=${ENVIRONMENT}
+      - BACKEND_CORS_ORIGINS=${BACKEND_CORS_ORIGINS}
+      - SECRET_KEY=${SECRET_KEY?Variable not set}
+      - FIRST_SUPERUSER=${FIRST_SUPERUSER?Variable not set}
+      - FIRST_SUPERUSER_PASSWORD=${FIRST_SUPERUSER_PASSWORD?Variable not set}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - EMAILS_FROM_EMAIL=${EMAILS_FROM_EMAIL}
+      - POSTGRES_SERVER=db
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+      - SENTRY_DSN=${SENTRY_DSN}
+      # Run the engine out-of-process in the engine-worker container(s).
+      - ENGINE_TRANSPORT=redis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    healthcheck:
+      # The api image has no curl; use python (always present).
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/api/v1/utils/health-check/').status==200 else 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    build:
+      context: ..
+      dockerfile: llm-model-generator/Dockerfile
+
+  # Runs the OntoUI runtime engines out-of-process. The API
+  # (ENGINE_TRANSPORT=redis) forwards per-session engine ops here over Redis.
+  # DB-less; crash-isolated. Scale with `--scale engine-worker=N`.
+  engine-worker:
+    image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
+    restart: unless-stopped
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: python -m app.engine_worker
+    env_file:
+      - .env
+    environment:
+      - ENGINE_TRANSPORT=redis
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - ENVIRONMENT=${ENVIRONMENT}
+      - SECRET_KEY=${SECRET_KEY?Variable not set}
+      - FIRST_SUPERUSER=${FIRST_SUPERUSER?Variable not set}
+      - FIRST_SUPERUSER_PASSWORD=${FIRST_SUPERUSER_PASSWORD?Variable not set}
+      # Present so Settings validates; the worker never opens a DB connection.
+      - POSTGRES_SERVER=db
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+    build:
+      context: ..
+      dockerfile: llm-model-generator/Dockerfile
+
+  frontend:
+    image: '${DOCKER_IMAGE_FRONTEND?Variable not set}:${TAG-latest}'
+    restart: always
+    build:
+      context: ..
+      dockerfile: frontend/Dockerfile
+      args:
+        # Same-origin API: Caddy routes /api/* to the backend, so the client
+        # talks to the one public hostname (paths in the generated client
+        # already start with /api/v1).
+        - VITE_API_URL=https://${APP_HOSTNAME?Variable not set}
+        - NODE_ENV=production
+
+  caddy:
+    image: caddy:2
+    container_name: caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp" # HTTP/3
+    environment:
+      - APP_HOSTNAME=${APP_HOSTNAME?Variable not set}
+      - ACME_EMAIL=${ACME_EMAIL?Variable not set}
+      # Default: Let's Encrypt. Override in .env with the HARICA directory if
+      # LE's validators turn out to be blocked by the campus firewall.
+      - ACME_CA_URL=${ACME_CA_URL:-https://acme-v02.api.letsencrypt.org/directory}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data # certificates + ACME account; must persist
+      - caddy-config:/config
+    depends_on:
+      - frontend
+      - llm-model-generator-api
+
+volumes:
+  app-db-data:
+  redis_data:
+  caddy-data:
+  caddy-config:

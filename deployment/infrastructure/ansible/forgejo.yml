@@ -1,0 +1,368 @@
+---
+# Sets up the (optional, self-hosted) Forgejo host: the forge itself, its
+# Postgres, and the Actions runner. Counterpart to deploy_staging.yml, but for
+# the machine that triggers the deployment rather than the one the application
+# lands on. Run by hand from a workstation — see docs/deploy-forgejo.md.
+- name: 2. CONFIGURE Forgejo host (forge, database, Actions runner)
+  hosts: forgejo_vm
+  become: yes
+  gather_facts: yes
+
+  vars:
+    docker_users: ["ubuntu"]
+    docker_install_compose: true
+    project_root: "/home/ubuntu/forgejo"
+    local_forgejo_path: "{{ playbook_dir }}/../../forgejo/"
+    # The Cinder volume from envs/forgejo. Set to "" when the VM runs without a
+    # separate volume (docker_data_volume_size_gb = 0) — then /var/lib/docker
+    # stays on the root disk.
+    docker_data_device: /dev/vdb
+
+  pre_tasks:
+    # Terraform attaches the second interface to the running VM, which leaves
+    # it unconfigured - cloud-init only runs on first boot.
+    #
+    # The dedicated routing table is not optional: replies from the IPv4
+    # address have to leave through its own gateway, or Neutron's port
+    # security drops them as spoofed.
+    - name: Write netplan config for the secondary IPv4 interface
+      when: secondary_mac | default('') | length > 0
+      ansible.builtin.copy:
+        dest: /etc/netplan/60-secondary-ipv4.yaml
+        owner: root
+        group: root
+        mode: '0600'
+        content: |
+          network:
+            version: 2
+            ethernets:
+              secondary:
+                match:
+                  macaddress: "{{ secondary_mac }}"
+                dhcp4: true
+                dhcp4-overrides:
+                  use-routes: false
+                routes:
+                  - to: default
+                    via: "{{ secondary_gateway }}"
+                    table: 100
+                routing-policy:
+                  - from: "{{ secondary_ipv4 }}"
+                    table: 100
+      register: netplan_secondary
+      tags: [network]
+
+    # Touches only the new interface; this playbook's own connection runs over
+    # IPv6 on the primary one and survives.
+    - name: Apply netplan
+      when: netplan_secondary is changed
+      ansible.builtin.command: netplan apply
+      changed_when: true
+      tags: [network]
+
+    # The routing-policy rule above only covers replies the host generates
+    # itself, which is why SSH works and a published port does not: Docker
+    # DNATs the request before the routing decision, so the reply still
+    # carries the container's own address as its source and the rule misses
+    # it. Marking the connection instead of matching the address covers both
+    # cases.
+    #
+    # A script rather than the iptables module, because the rules have to come
+    # back after a reboot. mangle is a table Docker does not manage, so
+    # nothing collides with its chains.
+    - name: Install the connmark script
+      when: secondary_mac | default('') | length > 0
+      ansible.builtin.copy:
+        dest: /usr/local/sbin/secondary-ipv4-marks.sh
+        owner: root
+        group: root
+        mode: '0755'
+        content: |
+          #!/bin/sh
+          set -eu
+
+          iface=$(ip -o -4 addr show \
+            | awk '$4 ~ /^{{ secondary_ipv4 }}\// {print $2; exit}')
+          [ -n "$iface" ] || exit 0
+
+          add() {
+            iptables -t mangle -C "$@" 2>/dev/null || iptables -t mangle -A "$@"
+          }
+
+          add PREROUTING -i "$iface" -m conntrack --ctstate NEW \
+            -j CONNMARK --set-mark 100
+
+          # Never on the secondary interface itself. Marking the request too
+          # would send it to the table below instead of on to the container.
+          add PREROUTING ! -i "$iface" -j CONNMARK --restore-mark
+          add OUTPUT -j CONNMARK --restore-mark
+
+          # ip rule prints the mark in hex, hence 0x64.
+          ip rule show | grep -q 'fwmark 0x64 lookup 100' \
+            || ip rule add fwmark 100 table 100 priority 32764
+      register: marks_script
+      tags: [network]
+
+    - name: Install the unit that reapplies the marks at boot
+      when: secondary_mac | default('') | length > 0
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/secondary-ipv4-marks.service
+        owner: root
+        group: root
+        mode: '0644'
+        content: |
+          [Unit]
+          Description=Connection marks for the secondary IPv4 interface
+          After=network-online.target docker.service
+          Wants=network-online.target
+
+          [Service]
+          Type=oneshot
+          RemainAfterExit=yes
+          ExecStart=/usr/local/sbin/secondary-ipv4-marks.sh
+
+          [Install]
+          WantedBy=multi-user.target
+      register: marks_unit
+      tags: [network]
+
+    - name: Enable and run the marks unit
+      when: (marks_script is changed or marks_unit is changed) and secondary_mac | default('') | length > 0
+      ansible.builtin.systemd:
+        name: secondary-ipv4-marks.service
+        enabled: true
+        state: restarted
+        daemon_reload: true
+      tags: [network]
+
+    # The volume has to be mounted BEFORE Docker is installed. Laying it over
+    # an already populated /var/lib/docker hides the existing images and
+    # containers from the daemon — they stay on the root disk, still occupy
+    # space, and are no longer reachable.
+    - name: Check that the data volume is present
+      ansible.builtin.stat:
+        path: "{{ docker_data_device }}"
+      register: data_device
+      when: docker_data_device | length > 0
+
+    - name: Fail if the expected volume is missing
+      ansible.builtin.fail:
+        msg: >-
+          {{ docker_data_device }} does not exist. Either the VM was built
+          without docker_data_volume_size_gb — then set docker_data_device to
+          "" — or the volume is attached under a different name. Present:
+          {{ ansible_devices.keys() | list | join(', ') }}
+      when:
+        - docker_data_device | length > 0
+        - not data_device.stat.exists
+
+    # force: no is the load-bearing line. Without it, a second playbook run
+    # reformats the volume and destroys the Forgejo repositories, the
+    # database, and every image built on this host.
+    - name: Create a filesystem on the data volume
+      community.general.filesystem:
+        fstype: ext4
+        dev: "{{ docker_data_device }}"
+        force: no
+      when: docker_data_device | length > 0
+
+    # By UUID rather than /dev/vdb, because device names can shift on boot
+    # once a second volume is attached. An fstab entry pointing at a
+    # then-wrong name leaves a host that no longer boots.
+    - name: Read the data volume's UUID
+      ansible.builtin.command: blkid -s UUID -o value {{ docker_data_device }}
+      register: data_uuid
+      changed_when: false
+      when: docker_data_device | length > 0
+
+    - name: Mount the data volume at /var/lib/docker
+      ansible.posix.mount:
+        path: /var/lib/docker
+        src: "UUID={{ data_uuid.stdout | trim }}"
+        fstype: ext4
+        opts: defaults,noatime
+        state: mounted
+      when: docker_data_device | length > 0
+
+    - name: Create the directory for the Forgejo stack
+      ansible.builtin.file:
+        path: "{{ project_root }}"
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: '0755'
+
+  roles:
+    - role: geerlingguy.docker
+      tags: [docker_install]
+
+  tasks:
+    # Docker needs real IPv6 on this host. Without it the job containers' SSH
+    # step against the (IPv6-primary) staging VM fails with "Network is
+    # unreachable" before the packet ever leaves the machine.
+    #
+    # fd00:dead:beef::/48 is a ULA per RFC 4193 and is routed nowhere; it only
+    # gives containers an address so the stack speaks IPv6 at all. The path
+    # out goes through ip6tables NAT.
+    - name: Configure the Docker daemon for IPv6
+      ansible.builtin.copy:
+        content: |
+          {
+            "ipv6": true,
+            "fixed-cidr-v6": "fd00:dead:beef::/48",
+            "ip6tables": true,
+            "experimental": true
+          }
+        dest: /etc/docker/daemon.json
+        owner: root
+        group: root
+        mode: '0644'
+      register: docker_daemon_config
+
+    - name: Restart Docker when the daemon configuration changed
+      ansible.builtin.systemd:
+        name: docker
+        state: restarted
+      when: docker_daemon_config.changed
+
+    - name: Copy the Forgejo stack to the VM
+      ansible.posix.synchronize:
+        src: "{{ local_forgejo_path }}"
+        dest: "{{ project_root }}"
+        recursive: yes
+        delete: yes
+        rsync_opts:
+          - "--exclude=.env"
+          - "--exclude=.git"
+          - "--exclude=.DS_Store"
+
+    # As in deploy_staging.yml, the content comes from a secret rather than
+    # the repo. It holds FORGEJO_DB_PASSWORD, FORGEJO_ROOT_URL and — once the
+    # instance has run at least once — FORGEJO_RUNNER_TOKEN.
+    - name: Write the .env to the VM
+      ansible.builtin.copy:
+        content: "{{ lookup('env', 'FORGEJO_ENV_FILE') }}"
+        dest: "{{ project_root }}/.env"
+        owner: ubuntu
+        group: ubuntu
+        mode: '0600'
+
+    # After the first start, ROOT_URL is baked into clone URLs, webhooks and
+    # whatever actions/checkout talks to inside the job container. Changing it
+    # later means chasing it through the database, hence a hard failure here
+    # rather than a warning.
+    - name: Ensure FORGEJO_ROOT_URL is set and is not the local default
+      ansible.builtin.shell:
+        cmd: |
+          set -euo pipefail
+          url=$(grep -E '^FORGEJO_ROOT_URL=' .env | head -n1 | cut -d= -f2- | tr -d '"'"'"'\r')
+          if [ -z "$url" ]; then
+            echo "FORGEJO_ROOT_URL is missing from .env" >&2; exit 1
+          fi
+          case "$url" in
+            *forgejo:3000*|*localhost*)
+              echo "FORGEJO_ROOT_URL is '$url' - that is the local-testing value." >&2
+              echo "On the VM this has to be the real hostname, otherwise wrong URLs" >&2
+              echo "end up in the database permanently." >&2
+              exit 1 ;;
+          esac
+          echo "$url"
+        executable: /bin/bash
+        chdir: "{{ project_root }}"
+      register: forgejo_root_url
+      changed_when: false
+
+    # The job image is in no registry — it is built from job-image/Dockerfile
+    # and tagged locally only. When it is missing the runner still accepts
+    # jobs but cannot find the image named in RUNNER_LABELS. That shows up as
+    # a run that hangs without output, which is hard to tell apart from a real
+    # deployment problem.
+    - name: Build the runner's job image
+      ansible.builtin.command:
+        cmd: docker build -t forgejo-deploy-job:latest job-image/
+        chdir: "{{ project_root }}"
+      register: job_image_build
+      changed_when: "'Using cache' not in job_image_build.stdout"
+
+    # Compose cannot enforce caddy's variables itself: it interpolates every
+    # service before selecting which ones to start, so a ${VAR:?...} guard on
+    # caddy would also block a plain `docker compose up` in a local test
+    # setup, where caddy is not meant to run at all. The same trap is why the
+    # runner's token carries no guard.
+    #
+    # So the check lives here, on the host where the values must be present.
+    # Without it the failure surfaces much later, as a certificate Caddy
+    # cannot obtain, with the cause several log screens away.
+    - name: Ensure the TLS variables are present
+      ansible.builtin.shell:
+        cmd: |
+          set -euo pipefail
+          missing=""
+          for v in FORGEJO_HOSTNAME ACME_EMAIL DNS_TSIG_KEY_NAME DNS_TSIG_KEY; do
+            val=$(grep -E "^${v}=" .env | head -n1 | cut -d= -f2- | tr -d '"'"'"'\r')
+            [ -z "$val" ] && missing="$missing $v"
+          done
+          if [ -n "$missing" ]; then
+            echo "Missing or empty in .env:$missing" >&2
+            echo "dns-01 is the only challenge type available on this host - see" >&2
+            echo "caddy/Caddyfile and envs/forgejo/security_group.tf." >&2
+            exit 1
+          fi
+        executable: /bin/bash
+        chdir: "{{ project_root }}"
+      changed_when: false
+
+    - name: Validate the compose configuration
+      ansible.builtin.command:
+        cmd: docker compose --profile tls config -q
+        chdir: "{{ project_root }}"
+      changed_when: false
+
+    # The caddy service sits behind a profile because it is meaningless when
+    # testing the stack locally over plain HTTP. On the VM it is the only way
+    # in, so it is always started here.
+    - name: Start the Forgejo stack
+      ansible.builtin.command:
+        cmd: docker compose --profile tls up -d --build
+        chdir: "{{ project_root }}"
+      changed_when: true
+
+    - name: Wait for the Forgejo API
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:3000/api/healthz"
+        status_code: [200]
+      register: forgejo_health
+      until: forgejo_health.status == 200
+      retries: 30
+      delay: 2
+
+    # The runner registers itself on first start using FORGEJO_RUNNER_TOKEN.
+    # That token is instance-bound, so on a first setup the .env necessarily
+    # lacks it at this point. entrypoint.sh then exits with a message saying
+    # where to get one; this step turns that into a visible hint rather than
+    # a playbook failure.
+    - name: Determine the runner's registration state
+      ansible.builtin.command:
+        cmd: docker compose ps --format '{% raw %}{{.Service}} {{.State}}{% endraw %}'
+        chdir: "{{ project_root }}"
+      register: compose_ps
+      changed_when: false
+
+    - name: Note when the runner is not running
+      ansible.builtin.debug:
+        msg: >-
+          The runner is not running. On a first setup this is expected: create
+          a token under Site Admin -> Actions -> Runners in the web UI, write
+          it to the .env as FORGEJO_RUNNER_TOKEN, and run
+          `docker compose up -d runner`.
+      when: "'runner running' not in compose_ps.stdout"
+
+    - name: Show the stack's status
+      ansible.builtin.command:
+        cmd: docker compose ps
+        chdir: "{{ project_root }}"
+      register: compose_ps_full
+      changed_when: false
+
+    - ansible.builtin.debug:
+        var: compose_ps_full.stdout_lines

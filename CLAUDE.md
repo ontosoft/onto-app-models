@@ -93,4 +93,4 @@ Top-level `.env` is the single source of truth for the backend and Docker Compos
 
 ## Deployment
 
-`infrastructure/terraform/` provisions OpenStack VMs (envs `staging`, `production`); `infrastructure/ansible/` configures them. GitHub Actions in `.github/workflows/{staging,production}-deploy.yml` drive both. For local CI runs, the README suggests `act --secret-file .secrets`.
+Everything deploy-related lives under `deployment/` (see its README): `deployment/infrastructure/terraform/` provisions OpenStack VMs (env `staging`; cluster specifics are variables in `envs/staging/variables.tf`), `deployment/infrastructure/ansible/` configures them, `deployment/docker-compose.staging.yml` + `deployment/caddy/` run the stack behind TLS. One workflow (`.forgejo/workflows/staging.yml`) drives it all, executed either locally via `act` (way 1, see `deployment/docs/deploy-act.md`) or by a Forgejo runner inside the network (way 2, planned). `.github/workflows/` holds no deploy workflow — GitHub runners cannot reach the VPN-only OpenStack API.
