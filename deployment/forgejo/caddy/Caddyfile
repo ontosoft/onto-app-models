@@ -1,0 +1,43 @@
+# Reverse proxy and TLS termination for the Forgejo host.
+#
+# Simpler than the staging Caddyfile: there is one upstream, not several, and
+# no path routing — Forgejo serves its API, web UI and git-over-HTTP from the
+# same root, so anything clever here would only get in the way.
+#
+# FORGEJO_HOSTNAME must be a DNS name that resolves to this VM. ACME issues
+# certificates for domains, never for bare IP addresses. It must also match
+# FORGEJO_ROOT_URL in the .env — that value is what Forgejo puts in clone URLs
+# and webhooks, and a mismatch produces links that do not resolve.
+{
+	acme_ca {$ACME_CA_URL}
+	email {$ACME_EMAIL}
+}
+
+{$FORGEJO_HOSTNAME} {
+	# dns-01 is not a preference here but the only option: the security group
+	# in envs/forgejo restricts 80 and 443 to the campus range, so the CA can
+	# open neither an http-01 nor a tls-alpn-01 connection. Caddy writes the
+	# TXT record itself over RFC 2136, so nothing has to reach us.
+	#
+	# Needs the rfc2136 module, which is why this image is built rather than
+	# pulled - see Dockerfile.
+	tls {
+		dns rfc2136 {
+			key_name {$DNS_TSIG_KEY_NAME}
+			key_alg {$DNS_TSIG_KEY_ALG}
+			key {$DNS_TSIG_KEY}
+			server {$DNS_SERVER}
+		}
+	}
+
+	reverse_proxy forgejo:3000
+
+	# Forgejo's own default is 0 (unlimited) and it enforces its own limits
+	# per upload type. This cap exists for what the proxy sees: a git push of
+	# a large repository arrives as one request body, and 512 MB is well above
+	# anything this instance is meant to hold while still bounding the damage
+	# a runaway client can do.
+	request_body {
+		max_size 512MB
+	}
+}

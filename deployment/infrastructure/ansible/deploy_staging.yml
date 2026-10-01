@@ -1,0 +1,251 @@
+---
+- name: 2. CONFIGURE Docker and Deploy Application on Staging Environment
+  hosts: docker_vm # Target the host group created by the workflow's inventory
+  become: yes
+  gather_facts: yes
+
+  vars:
+    docker_users: ["ubuntu"]
+    docker_install_compose: true
+    project_root: "/home/ubuntu/app"
+    # Repo root: ansible -> infrastructure -> deployment -> repo.
+    local_compose_path: "{{ playbook_dir }}/../../../"
+    # Compose runs from here; the .env and the Caddyfile live next to the
+    # staging compose file.
+    compose_dir: "{{ project_root }}/deployment"
+    # Passed by the workflow via -e from the Terraform outputs. Empty when the
+    # VM is single-homed; every secondary-interface task is skipped then.
+    secondary_ipv4: ""
+    secondary_gateway: ""
+    secondary_mac: ""
+
+  pre_tasks:
+    # Terraform attaches the second interface to the RUNNING VM, so cloud-init
+    # (first boot only) never configures it.
+    #
+    # The dedicated routing table is not optional: replies from the IPv4
+    # address must leave through its own gateway, otherwise Neutron's port
+    # security drops them as spoofed source addresses.
+    - name: Write netplan for the secondary IPv4 interface
+      when: secondary_mac | length > 0
+      ansible.builtin.copy:
+        dest: /etc/netplan/60-secondary-ipv4.yaml
+        owner: root
+        group: root
+        mode: '0600'
+        content: |
+          network:
+            version: 2
+            ethernets:
+              secondary:
+                match:
+                  macaddress: "{{ secondary_mac }}"
+                dhcp4: true
+                dhcp4-overrides:
+                  use-routes: false
+                routes:
+                  - to: default
+                    via: "{{ secondary_gateway }}"
+                    table: 100
+                routing-policy:
+                  - from: "{{ secondary_ipv4 }}"
+                    table: 100
+      register: netplan_secondary
+      tags: [network]
+
+    # Touches only the new interface; this playbook's own connection runs
+    # over the primary interface and survives.
+    - name: Apply netplan
+      when: netplan_secondary is changed
+      ansible.builtin.command: netplan apply
+      changed_when: true
+      tags: [network]
+
+    # The routing rule above only covers replies the host generates itself -
+    # which is why SSH works while published container ports time out: Docker
+    # DNATs the request before the routing decision, so a container's reply
+    # still carries its own source address and the rule does not match. It
+    # then leaves through the primary interface with an address that port may
+    # not carry, and Neutron silently drops it. Marking the CONNECTION instead
+    # of matching the source address covers both cases.
+    #
+    # A script rather than the iptables module because the rules must survive
+    # a reboot. Docker does not manage the mangle table, so nothing collides
+    # with its chains.
+    - name: Install connmark script
+      when: secondary_mac | length > 0
+      ansible.builtin.copy:
+        dest: /usr/local/sbin/secondary-ipv4-marks.sh
+        owner: root
+        group: root
+        mode: '0755'
+        content: |
+          #!/bin/sh
+          set -eu
+
+          iface=$(ip -o -4 addr show \
+            | awk '$4 ~ /^{{ secondary_ipv4 }}\// {print $2; exit}')
+          [ -n "$iface" ] || exit 0
+
+          add() {
+            iptables -t mangle -C "$@" 2>/dev/null || iptables -t mangle -A "$@"
+          }
+
+          add PREROUTING -i "$iface" -m conntrack --ctstate NEW \
+            -j CONNMARK --set-mark 100
+
+          # Never on the secondary interface itself: if the request were
+          # marked too, it would be routed into the table below instead of on
+          # to the container.
+          add PREROUTING ! -i "$iface" -j CONNMARK --restore-mark
+          add OUTPUT -j CONNMARK --restore-mark
+
+          # ip rule prints the mark in hex, hence 0x64.
+          ip rule show | grep -q 'fwmark 0x64 lookup 100' \
+            || ip rule add fwmark 100 table 100 priority 32764
+      register: marks_script
+      tags: [network]
+
+    - name: Install unit that re-applies the marks on boot
+      when: secondary_mac | length > 0
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/secondary-ipv4-marks.service
+        owner: root
+        group: root
+        mode: '0644'
+        content: |
+          [Unit]
+          Description=Connection marks for the secondary IPv4 interface
+          After=network-online.target docker.service
+          Wants=network-online.target
+
+          [Service]
+          Type=oneshot
+          RemainAfterExit=yes
+          ExecStart=/usr/local/sbin/secondary-ipv4-marks.sh
+
+          [Install]
+          WantedBy=multi-user.target
+      register: marks_unit
+      tags: [network]
+
+    - name: Enable and run the marks unit
+      when: (marks_script is changed or marks_unit is changed) and secondary_mac | length > 0
+      ansible.builtin.systemd:
+        name: secondary-ipv4-marks.service
+        enabled: true
+        state: restarted
+        daemon_reload: true
+      tags: [network]
+
+    # NOTE on the data volume: the Cinder volume is formatted and mounted at
+    # /var/lib/docker by cloud-init (see the user_data in
+    # terraform/envs/staging/main.tf), before Docker is installed. No mount
+    # tasks here - one mechanism, not two.
+
+    - name: Create app directory
+      ansible.builtin.file:
+        path: "{{ project_root }}"
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: '0755'
+
+  roles:
+    - role: geerlingguy.docker
+      tags: [docker_install]
+
+  tasks:
+    - name: Sync repository to the VM
+      ansible.posix.synchronize:
+        src: "{{ local_compose_path }}"
+        dest: "{{ project_root }}"
+        recursive: yes
+        delete: yes
+        rsync_opts:
+          - "--exclude=.ssh"
+          - "--exclude=.git"
+          - "--exclude=.history"
+          - "--exclude=docker-compose.override.yml"
+          - "--exclude=node_modules"
+          - "--exclude=__pycache__"
+          - "--exclude=.venv"
+          - "--exclude=.terraform"
+          - "--exclude=frontend/dist"
+          - "--exclude=frontend/test-results"
+          - "--exclude=frontend/blob-report"
+          # model_files/*.gguf is multi-GB; the compose model-downloader
+          # service fetches the model on the VM, so we never ship it via
+          # rsync.
+          - "--exclude=model_files"
+          - "--exclude=.DS_Store"
+          - "--exclude=*.pyc"
+          # The runtime .env comes from the STAGING_ENV_FILE secret (next
+          # task), never from the operator's working copy. Also keeps
+          # `delete: yes` from removing the deployed one.
+          - "--exclude=.env"
+
+    # Runtime configuration is a deploy input, not repository content: the
+    # whole .env is one secret, written verbatim. Deploys therefore work from
+    # any runner, not only from a machine that happens to have a local .env.
+    - name: Write .env on the VM
+      ansible.builtin.copy:
+        content: "{{ lookup('env', 'STAGING_ENV_FILE') }}"
+        dest: "{{ compose_dir }}/.env"
+        owner: ubuntu
+        group: ubuntu
+        mode: '0600'
+
+    # Interpolates the compose file with the .env just written. On failure it
+    # names the offending ${VAR?...} variable on stderr, which Ansible shows -
+    # far better diagnostics than a failed `up` later.
+    - name: Validate compose configuration
+      ansible.builtin.command:
+        cmd: docker compose -f docker-compose.staging.yml config -q
+        chdir: "{{ compose_dir }}"
+      changed_when: false
+
+    # --ignore-buildable skips services with a build: section (the backend,
+    # worker and frontend images exist in no registry - they are built on the
+    # VM). Without it the pull fails and aborts the playbook.
+    - name: Pull images
+      ansible.builtin.shell:
+        cmd: docker compose -f docker-compose.staging.yml pull --ignore-buildable
+        chdir: "{{ compose_dir }}"
+      changed_when: true
+      async: 600
+      poll: 30
+
+    # An explicit command instead of community.docker.docker_compose_v2: the
+    # module reads state via `compose images --format json` and only looks at
+    # stdout - when compose aborts (e.g. a missing required variable), the
+    # explanation is on stderr and the module reports the useless "Expecting
+    # value: line 1 column 1" instead. `up -d --build` builds and replaces in
+    # one step, so no container is left running on a discarded image ID.
+    - name: Start the application with Docker Compose
+      ansible.builtin.command:
+        cmd: docker compose -f docker-compose.staging.yml up -d --build
+        chdir: "{{ compose_dir }}"
+      register: compose_output
+      changed_when: true
+
+    # The Caddyfile is bind-mounted, so compose does not notice content
+    # changes to it. This reload applies them; Caddy validates the new config
+    # first and keeps the old one on failure. Deliberately NOT failed_when:
+    # false - a failed reload means the proxy runs a stale configuration, and
+    # that should surface here.
+    - name: Reload Caddy configuration
+      ansible.builtin.command:
+        cmd: docker exec caddy caddy reload --config /etc/caddy/Caddyfile
+      register: caddy_reload
+      changed_when: caddy_reload.rc == 0
+
+    - name: Show deployment status
+      ansible.builtin.command:
+        cmd: docker compose -f docker-compose.staging.yml ps
+        chdir: "{{ compose_dir }}"
+      register: compose_ps
+      changed_when: false
+
+    - ansible.builtin.debug:
+        var: compose_ps.stdout_lines

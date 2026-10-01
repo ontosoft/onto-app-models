@@ -5,7 +5,7 @@ Infrastructure-as-code in two layers:
 - **Terraform** (`terraform/`) — provisions OpenStack VMs (one Docker host).
 - **Ansible** (`ansible/`) — installs Docker on the VM and deploys the application via Docker Compose.
 
-GitHub Actions (`.github/workflows/`) chains the two together: Terraform applies the
+The workflow (`.forgejo/workflows/staging.yml` — run by Forgejo Actions or locally via `act`) chains the two together: Terraform applies the
 infrastructure and exposes the VM's reachable IP as the `vm_ip` output; the workflow reads that
 output and writes a small `inventory.ini` that Ansible then deploys onto. The two tools are
 **loosely coupled** — Ansible does not read Terraform state.
@@ -21,7 +21,8 @@ output and writes a small `inventory.ini` that Ansible then deploys onto. The tw
 
 | Environment | Terraform dir            | Ansible playbook     | Inventory                 | Trigger        |
 |-------------|--------------------------|----------------------|---------------------------|----------------|
-| staging     | `terraform/envs/staging` | `deploy_staging.yml` | generated `inventory.ini` | push to `main` |
+| staging     | `terraform/envs/staging` | `deploy_staging.yml` | generated `inventory.ini` | manual dispatch (act or Forgejo) |
+| forgejo     | `terraform/envs/forgejo` | `forgejo.yml`        | `inventory-forgejo.sh`    | by hand from a workstation (optional — only when self-hosting the forge) |
 
 (A production environment existed for a decommissioned cluster and was
 removed; the module is environment-agnostic, so adding `envs/production/`
@@ -116,22 +117,42 @@ into `ansible/inventory.ini`. The deploy playbooks target `hosts: docker_vm`, so
 hard-coded in source — it comes straight from the Terraform run that just executed. The file is
 created per-run and removed in the workflow's cleanup step.
 
-### Deploy playbooks
+### Deploy playbook
 
 `deploy_staging.yml`, against the `docker_vm` host:
 
-1. Creates `/home/ubuntu/app`.
-2. Applies the `geerlingguy.docker` role (installs Docker + Compose).
+1. **Secondary interface** (only when the workflow passes `secondary_mac` from the Terraform
+   outputs): writes a netplan file matching the port's MAC with a dedicated routing table for
+   the IPv4 address, plus a connmark script + systemd unit so replies from DNATed container
+   ports leave through the right gateway (without it SSH works but every published port times
+   out — Neutron's port security silently drops the misrouted replies).
+2. Applies the `geerlingguy.docker` role (installs Docker + Compose). The Cinder data volume is
+   already mounted at `/var/lib/docker` by cloud-init (see the env's `user_data`) — the playbook
+   has no mount tasks on purpose.
 3. rsyncs the **repo root** (`{{ playbook_dir }}/../../` → `/home/ubuntu/app`), excluding `.git`,
-   `.history`, `docker-compose.override.yml`, `node_modules`, `__pycache__`, `.venv`,
-   `.terraform`, `frontend/dist`, `frontend/test-results`, `frontend/blob-report`, and
-   `model_files` (the multi-GB Mistral GGUF — the compose `model-downloader` service fetches it on
-   the VM instead).
-4. Runs `docker compose up --build` via `community.docker.docker_compose_v2` (`build: always`) with
-   an explicit `files: ["docker-compose.yml"]`. `build: always` is required because the custom
+   caches, build outputs, `model_files` (the multi-GB Mistral GGUF — the compose
+   `model-downloader` service fetches it on the VM instead) and **`.env`**.
+4. Writes `/home/ubuntu/app/.env` **verbatim from the `STAGING_ENV_FILE` secret** — runtime
+   configuration is a deploy input, not repository content, so deploys work from any runner.
+   See `.env.staging.example` for the required keys.
+5. Validates the interpolated config (`docker compose -f docker-compose.staging.yml config -q`,
+   which names any missing `${VAR?…}` on stderr), pulls registry images
+   (`pull --ignore-buildable`), then `up -d --build` — an explicit command rather than
+   `community.docker.docker_compose_v2`, which hides compose's stderr on failure. The custom
    images (`llm-model-generator-api`, `frontend`, …) have no registry and are **built on the VM**.
-   The explicit `files:` keeps the local-dev `docker-compose.override.yml` from ever being applied
-   to a server.
+6. Reloads Caddy (`caddy reload`) so changes to the bind-mounted `caddy/Caddyfile` take effect —
+   compose does not notice content changes to bind mounts.
+
+### TLS
+
+Staging runs behind a **stock `caddy:2`** container (`docker-compose.staging.yml` +
+`caddy/Caddyfile`). Caddy obtains and renews the certificate itself via ACME **http-01** on
+port 80; the CA defaults to Let's Encrypt and can be switched to HARICA via `ACME_CA_URL` in
+the `.env` if the campus firewall blocks LE's validators. One **shallow** hostname
+(`APP_HOSTNAME`) serves everything — Caddy routes `/api/*` and the FastAPI doc endpoints to the
+backend and the rest to the frontend — so only one certificate is needed (HARICA refused deep
+subdomains). The hostname needs an A record on `terraform output vm_ipv4` and an AAAA record on
+`terraform output vm_ip`.
 
 Run locally (after a `terraform apply`, from the env dir, gives you the IP):
 
@@ -147,7 +168,7 @@ ansible-playbook -i inventory.ini --private-key /path/to/deploy_key deploy_stagi
 
 ## CI/CD workflows
 
-The staging workflow (`.github/workflows/staging-deploy.yml`) runs on every push to `main` and
+The staging workflow (`.forgejo/workflows/staging.yml`) is dispatched manually — from Forgejo’s Actions tab (way 2) or via `act workflow_dispatch` (way 1), with a `mode` input defaulting to `plan` — and
 follows this shape:
 
 1. **Checkout**.
@@ -159,12 +180,14 @@ follows this shape:
    `ssh-keygen -y -P ''` (the `-P ''` makes a passphrase-protected key fail fast instead of hanging)
    and exports it as `TF_VAR_ssh_public_key` (runs *before* Terraform, which needs it).
 6. **Terraform Init, Validate, Plan & Apply** in the env dir (`plan -out=tfplan` → `apply tfplan`),
-   then exports `VM_IP` from the `vm_ip` output.
+   then exports `VM_IP` from the `vm_ip` output, plus `VM_IPV4` / `VM_IPV4_GW` / `VM_IPV4_MAC`
+   from the secondary-interface outputs (empty on a single-homed VM).
 7. **Install Ansible + rsync** (apt; `pip` is blocked by PEP 668 on Ubuntu 24.04 runners), then
    install the `geerlingguy.docker` role into `roles_external/` and the collections — both from the
    pinned `requirements.yml`.
 8. **Generate Ansible Inventory** — writes `inventory.ini` from `VM_IP`.
-9. **Run Ansible playbook** against `inventory.ini`.
+9. **Run Ansible playbook** against `inventory.ini`, passing the secondary-interface values as
+   `-e` vars and `STAGING_ENV_FILE` through the environment.
 10. **Cleanup** the SSH key + `inventory.ini`.
 
 ### Required secrets
@@ -173,6 +196,12 @@ follows this shape:
 `OS_APPLICATION_CREDENTIAL_SECRET`, `OS_REGION_NAME`. Shared: `SSH_PRIVATE_KEY` — an
 **unencrypted** private key. Terraform registers its derived public half as the OpenStack
 keypair, so there is no separate "key pair" name to keep in sync.
+
+`STAGING_ENV_FILE` holds the stack's entire `.env` as one (multi-line) secret. Ansible writes
+it to the VM verbatim, so it is runtime configuration rather than CI configuration. Fields
+written as `${VAR?…}` in `docker-compose.staging.yml` abort `compose up` when unset, so the
+stack refuses to start half-configured; `.env.staging.example` documents them. Do not define a
+key twice — compose takes the last occurrence.
 
 ### Notes / follow-ups
 
@@ -193,7 +222,7 @@ so the destination must install it from `requirements.yml`).
 Temporary solution while there is no remote state backend using act (https://github.com/nektos/act):
 
 ```bash
-act -W .github/workflows/staging-deploy.yml --bind --secret-file .secrets
+act -W .forgejo/workflows/staging.yml --bind --secret-file .secrets
 ```
 
 With `--bind`, the container writes directly to your host directory, so `terraform.tfstate` lands
@@ -204,6 +233,6 @@ A better way is to create a key for deployment and use it without storing it in 
 
 ```bash
 
-act -W .github/workflows/staging-deploy.yml --bind --secret-file .secrets \
+act -W .forgejo/workflows/staging.yml --bind --secret-file .secrets \
   -s SSH_PRIVATE_KEY="$(cat ~/.ssh/openstack-deploy)"
 ```

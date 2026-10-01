@@ -6,8 +6,8 @@ variable "ssh_public_key" {
 # ---------------------------------------------------------------------------
 # Cluster parameters.
 #
-# Defaults describe the current target: the DHBW cluster the AppStore runs on
-# (IPv6-only primary network, public IPv4 via a second interface). Deploying
+# Defaults describe the current target: the DHBW cluster (IPv6-only primary
+# network, public IPv4 via a second interface). Deploying
 # to another cluster means overriding these with a tfvars file, not editing
 # code: terraform apply -var-file=clusters/<cluster>.tfvars
 # ---------------------------------------------------------------------------
@@ -18,9 +18,8 @@ variable "image" {
   default     = "Ubuntu 24.04"
 }
 
-# The app stack is heavy (Ollama serves a local GGUF model). 
-# gp1.large matches the AppStore staging host; override in tfvars if
-# the model needs more RAM than the flavor provides.
+# The app stack is heavy (Ollama serves a local GGUF model). Override in
+# tfvars if the model needs more RAM than the flavor provides.
 variable "flavor" {
   description = "Nova flavor name for the VM."
   type        = string

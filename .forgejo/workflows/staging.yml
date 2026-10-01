@@ -1,0 +1,175 @@
+# The ONE staging deploy workflow, executed two ways (deployment/README.md):
+#
+#   way 1  act, from an operator's machine on the VPN:
+#            act workflow_dispatch -W .forgejo/workflows/staging.yml \
+#              -P deploy=catthehacker/ubuntu:act-latest ... --input mode=apply
+#          (deployment/Makefile wraps this as `make deploy-staging`.)
+#   way 2  Forgejo Actions: a runner labeled `deploy` inside the network runs
+#          it in the forgejo-deploy-job image (tools baked in).
+#
+# Manual dispatch rather than push: Forgejo does not reliably fire Actions on
+# pull-mirror sync, and `mode` defaulting to plan means a mis-click cannot
+# change infrastructure. Plan mode still exercises job dispatch, checkout,
+# every secret and a real Keystone authentication - it just stops before
+# anything is created or modified.
+#
+# There is deliberately no second copy of this file under .github/workflows:
+# GitHub-hosted runners cannot reach the VPN-only OpenStack API, and a second
+# copy would only drift.
+name: CD - Staging Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "plan = stop before any change; apply = full deploy"
+        type: choice
+        options: [plan, apply]
+        default: plan
+        required: true
+
+jobs:
+  deploy:
+    name: Staging Deploy
+    runs-on: deploy
+    env:
+      OS_AUTH_URL: ${{ secrets.STAGING_OS_AUTH_URL }}
+      OS_APPLICATION_CREDENTIAL_ID: ${{ secrets.STAGING_OS_APPLICATION_CREDENTIAL_ID }}
+      OS_APPLICATION_CREDENTIAL_SECRET: ${{ secrets.STAGING_OS_APPLICATION_CREDENTIAL_SECRET }}
+      OS_REGION_NAME: ${{ secrets.STAGING_OS_REGION_NAME }}
+      # Only read once envs/staging/backend.tf moves to the pg backend
+      # (prerequisite for way-2 deploys - the local state file would die with
+      # the job container). Harmless while empty.
+      PG_CONN_STR: ${{ secrets.PG_CONN_STR }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # All branches are no-ops inside the baked job image (way 2); installs
+      # happen only under act's generic image (way 1). Both environments run
+      # as root - no sudo anywhere, the job image has none.
+      - name: Ensure deploy tools are present
+        run: |
+          if ! command -v unzip >/dev/null || ! command -v rsync >/dev/null; then
+            apt-get update
+            apt-get install -y --no-install-recommends unzip rsync
+          fi
+          if ! command -v terraform >/dev/null; then
+            curl -fsSL "https://releases.hashicorp.com/terraform/1.9.8/terraform_1.9.8_linux_amd64.zip" -o /tmp/tf.zip
+            unzip -o -d /usr/local/bin /tmp/tf.zip && rm /tmp/tf.zip
+          fi
+          if ! command -v trivy >/dev/null; then
+            curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+          fi
+          if ! command -v ansible-playbook >/dev/null; then
+            apt-get update
+            apt-get install -y --no-install-recommends ansible
+          fi
+          if [ -d /opt/ansible-roles ]; then
+            # Roles are baked into the job image; the env var beats
+            # ansible.cfg's roles_path in ansible's precedence order.
+            echo "ANSIBLE_ROLES_PATH=/opt/ansible-roles" >> "$GITHUB_ENV"
+          else
+            ansible-galaxy role install -r deployment/infrastructure/ansible/requirements.yml -p deployment/infrastructure/ansible/roles_external
+            ansible-galaxy collection install -r deployment/infrastructure/ansible/requirements.yml
+          fi
+
+      # Cheap canary: if the job image is wrong or a tool is missing, fail
+      # here rather than twenty minutes into a terraform apply.
+      - name: Tool versions
+        run: |
+          terraform version
+          ansible --version | head -1
+          trivy --version
+
+      - name: Terraform Format Check
+        working-directory: deployment/infrastructure/terraform
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Security Scan (Trivy)
+        # Non-blocking for now: surfaces HIGH/CRITICAL IaC findings without
+        # failing the deploy. Flip to blocking by removing continue-on-error.
+        continue-on-error: true
+        run: trivy config --severity HIGH,CRITICAL deployment/infrastructure/terraform
+
+      - name: Set up SSH Key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          # printf preserves the multi-line PEM newlines; quoting the env var
+          # keeps the key out of the rendered script text.
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/openstack-key
+          chmod 600 ~/.ssh/openstack-key
+          # Derive the matching public key and hand it to Terraform so the
+          # OpenStack keypair always matches this private key.
+          # -P '' forces an empty passphrase: passphrase-protected keys fail
+          # fast with a clear error instead of hanging on /dev/tty in CI.
+          ssh-keygen -y -P '' -f ~/.ssh/openstack-key > ~/.ssh/openstack-key.pub
+          echo "TF_VAR_ssh_public_key=$(cat ~/.ssh/openstack-key.pub)" >> "$GITHUB_ENV"
+
+      - name: Terraform Init, Validate & Plan
+        working-directory: deployment/infrastructure/terraform/envs/staging
+        run: |
+          terraform init
+          terraform validate
+          terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        if: github.event.inputs.mode == 'apply'
+        working-directory: deployment/infrastructure/terraform/envs/staging
+        run: |
+          terraform apply tfplan
+          echo "VM_IP=$(terraform output -raw vm_ip)" >> "$GITHUB_ENV"
+          # Secondary-interface outputs are null on a single-homed VM;
+          # `output -raw` fails on null, so default to empty (the playbook
+          # skips the network tasks then).
+          echo "VM_IPV4=$(terraform output -raw vm_ipv4 2>/dev/null || true)" >> "$GITHUB_ENV"
+          echo "VM_IPV4_GW=$(terraform output -raw vm_ipv4_gateway 2>/dev/null || true)" >> "$GITHUB_ENV"
+          echo "VM_IPV4_MAC=$(terraform output -raw vm_ipv4_mac 2>/dev/null || true)" >> "$GITHUB_ENV"
+
+      - name: Generate Ansible Inventory
+        if: github.event.inputs.mode == 'apply'
+        working-directory: deployment/infrastructure/ansible
+        run: |
+          # Empty here means terraform produced no output, and ansible-playbook
+          # would still exit 0 with "no hosts matched" - a green run that
+          # deployed nothing.
+          if [ -z "$VM_IP" ]; then
+            echo "VM_IP is empty - terraform output produced nothing" >&2
+            exit 1
+          fi
+          # The address goes in ansible_host behind an alias rather than being
+          # the host name itself: the ini plugin reads a bracketed IPv6
+          # literal as a host range pattern and fails. An alias is identical
+          # for IPv4 and IPv6.
+          cat > inventory.ini <<EOF
+          [docker_vm]
+          staging ansible_host=${VM_IP} ansible_user=ubuntu
+          EOF
+          echo "Inventory:" && cat inventory.ini
+
+      - name: Run Ansible Playbook
+        if: github.event.inputs.mode == 'apply'
+        working-directory: deployment/infrastructure/ansible
+        run: |
+          ansible-playbook -i inventory.ini \
+            --private-key ~/.ssh/openstack-key \
+            -e "secondary_ipv4=${VM_IPV4}" \
+            -e "secondary_gateway=${VM_IPV4_GW}" \
+            -e "secondary_mac=${VM_IPV4_MAC}" \
+            deploy_staging.yml
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: 'False'
+          ANSIBLE_FORCE_COLOR: 'True'
+          # The stack's entire runtime .env as one secret; the playbook
+          # writes it to the VM verbatim. See deployment/infrastructure/README.md.
+          STAGING_ENV_FILE: ${{ secrets.STAGING_ENV_FILE }}
+
+      - name: Cleanup Sensitive Files
+        if: always()
+        run: |
+          rm -f ~/.ssh/openstack-key ~/.ssh/openstack-key.pub
+          rm -f deployment/infrastructure/ansible/inventory.ini
+          echo "Sensitive deployment artifacts removed."

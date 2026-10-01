@@ -10,4 +10,6 @@ roles:
 
 collections:
   - name: community.docker # docker_compose_v2
-  - name: ansible.posix    # synchronize
+  - name: ansible.posix    # synchronize, mount
+  # filesystem, used by forgejo.yml to prepare the Cinder data volume.
+  - name: community.general
