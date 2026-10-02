@@ -4,37 +4,45 @@ from .app_model import AppInternalStaticModel
 from .communication import AppExchangeFrontEndData, AppExchangeGetOutput
 from pathlib import Path
 import logging
-from app.core.config import settings, Settings 
+from app.core.config import settings, Settings
 
 
 logger = logging.getLogger('ontoui_app')
 
 class AppEngine():
     """
-    Represents the entry point for the backend model.
+    One loaded application: its static model plus the running process.
+    Represents the entry point for the OWL processor.
 
+    The entry point the API/session layer talks to. Lifecycle:
+    'load_inner_app_model' parses the RDF model into the static model,
+    'run_application' starts a ProcessEngine over it, and the
+    'app_exchange' calls drive that process until it finishes or
+    'reset' drops it.
+
+    Attributes:
+        internal_app_static_model (AppInternalStaticModel): The internal
+            representation of the application model that is read from an RDF graph
+            (UI blocks, SHACL shapes, BBO controls) and is used to generate the UI
+            and App functionality. This is a static model of data which is not
+            changed during the application execution.
+        process_engine_instance (ProcessEngine): An object that represents
+            the current state of the running application.
+            It is generated from the internal_app_static_model and is used to
+            generate the UI and App functionality. It is a dynamic representation of
+            the application model and is changed during the application run.
+            It is an execution of the BPMN process.
+        model_name (str | None): Name of the loaded model, used in status
+            and user-facing messages; set by load_inner_app_model from the
+            given model name or the file name.
+        model_directory (Path): Directory where model files are looked up
+            when a model is loaded by file name; taken from
+            settings.MODEL_DIRECTORY.
     """
     def __init__(self) -> None:
-        """_summary_
 
-        Attributes:
-        - inner_app_static_model (AppInternalModel): The internal representation of the
-        application model that is read from an RDF graph 
-        and is used to generate the UI and App functionality. It is
-        a static model of data and is not changed during the application run.
-
-        - local_app_interaction_model_instance (AppInteractionModel)
-         is an object that represents the current state of the application. 
-         It is generated from the inner_app_static_model and is used to 
-         generate the UI and App functionality. It is a dynamic model of
-         data and is changed during the application run.  
-
-        """
-        self.internal_app_static_model: AppInternalStaticModel = None 
+        self.internal_app_static_model: AppInternalStaticModel = None
         self.process_engine_instance: ProcessEngine = None
-        # The interaction model instance is created from the inner_app_static_model
-        # and is used to represents the running application. It is basically a dynamic
-        # representation of the application model
         self.model_name = None
         self.model_directory : Path = settings.MODEL_DIRECTORY
 
@@ -49,7 +57,7 @@ class AppEngine():
              file name.
         """
 
-        logger.debug("Loading the server-side application model.")
+        logger.debug("Loading the server-side static application model.")
         # Record what is being loaded so status()/user-facing messages can name
         # it (previously never assigned -> "The model is loaded None by force.").
         self.model_name = model_name or (
@@ -72,22 +80,21 @@ class AppEngine():
 
     def run_application(self)-> None:
         """
-        Starts the application interaction model instance. The main part is
-        the process that generates an instance of the application interaction model
+        Starts the process_engine_instance which is the application interaction model instance.
 
         """
         if self is not None and self.internal_app_static_model is not None and \
             self.internal_app_static_model.is_loaded and \
             self.process_engine_instance is None:
             self.process_engine_instance = ProcessEngine(self.internal_app_static_model)
-            logger.debug("A new application interaction is started.")
+            logger.debug("A new proceess engine instance is started.")
             # The application state is updated to indicate that the application is running
-            # and is waiting to get initiated data from the frontend 
+            # and is waiting to get initiated data from the frontend
             self.process_engine_instance.app_state.set_running_initiated()
         elif self is not None and self.internal_app_static_model is not None and \
             self.internal_app_static_model.is_loaded and \
             self.process_engine_instance is not None and \
-                 self.process_engine_instance.app_state.is_running_initiated: 
+                 self.process_engine_instance.app_state.is_running_initiated:
             logger.debug("The application is already running.")
             #logger.debug(json.dumps(self.processGenerator.__dict__))
             #logger.debug(jsonpickle.encode(self.app_interaction_model_instance))
@@ -102,7 +109,7 @@ class AppEngine():
                 message_type ="error",
                 layout_type="message_box",
                 message_content = {"message" : "An application model is not loaded."})
-        elif self.process_engine_instance is None: 
+        elif self.process_engine_instance is None:
             return AppExchangeGetOutput(
                 message_type ="notification",
                 layout_type="message_box",
@@ -113,7 +120,7 @@ class AppEngine():
 
     def process_received_client_data(self, frontend_state: any):
         """
-        Precesses the new data from the frontend and stores it into the output 
+        Precesses the new data from the frontend and stores it into the output
         knowledge graph
         """
         if self.internal_app_static_model is None:
@@ -123,7 +130,7 @@ class AppEngine():
                 message_content = {"message" : "An application model is not loaded."})
 
 
-        elif self.process_engine_instance is None: 
+        elif self.process_engine_instance is None:
             return AppExchangeGetOutput(
                 message_type ="error",
                 layout_type="message_box",
@@ -133,5 +140,5 @@ class AppEngine():
             received_data = AppExchangeFrontEndData(**frontend_state)
             processing_result = self.process_engine_instance.process_received_client_data(received_data)
         return processing_result
-  
-    
+
+

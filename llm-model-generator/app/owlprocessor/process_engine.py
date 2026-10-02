@@ -32,8 +32,29 @@ logger = logging.getLogger("ontoui_app")
 
 class ProcessEngine:
     """
-    This class represents the running application. It is reposible for
-    generating the next layout in the control flow of the application.
+    The running application: a dynamic representation of the application
+    model, changed during the application run.
+
+    A ProcessEngine is generated from the static model (an
+    AppInternalStaticModel read from the RDF graph, which is not changed
+    during execution) when the application is started. It executes the
+    BPMN process described by that model: it walks the control flow,
+    generates the next form layout for the frontend, processes the data
+    the user submits, and stores it in the output knowledge graph. One
+    instance exists per application run; 'reset' drops it.
+
+    Attributes:
+        _internal_app_static_model (AppInternalStaticModel): The immutable
+            static model this run executes, shared with the AppEngine
+            that created this instance.
+        _output_knowledge_graph (Graph): The knowledge graph populated
+            with the data the user enters; grows during the run.
+        _app_state (ApplicationState): The current position in the BPMN
+            control flow (token, waiting state, and a live view of the
+            collected instances for the instance pickers).
+        output_message (AppExchangeGetOutput | None): The pending message
+            for the frontend (form, notification or error), set while
+            moving through the flow and read by generate_layout.
     """
 
     def __init__(self, uimodel: AppInternalStaticModel):
