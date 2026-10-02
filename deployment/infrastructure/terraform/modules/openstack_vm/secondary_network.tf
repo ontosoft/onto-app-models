@@ -19,14 +19,6 @@ data "openstack_networking_subnet_v2" "secondary_v4" {
   name       = var.secondary_subnet_name
 }
 
-# The instance takes security groups by name, a port takes IDs - hence the
-# lookup. Without it the port would fall back to "default", which allows no
-# ingress at all, and the address would be up and unreachable.
-data "openstack_networking_secgroup_v2" "secondary" {
-  for_each = var.secondary_network_name == null ? toset([]) : toset(var.security_groups)
-  name     = each.value
-}
-
 resource "openstack_networking_port_v2" "secondary" {
   count      = var.secondary_network_name == null ? 0 : 1
   name       = "${var.name}-secondary"
@@ -39,9 +31,20 @@ resource "openstack_networking_port_v2" "secondary" {
     subnet_id = data.openstack_networking_subnet_v2.secondary_v4[0].id
   }
 
-  security_group_ids = [
-    for g in data.openstack_networking_secgroup_v2.secondary : g.id
-  ]
+  # IDs, not names: a port takes IDs, and a name lookup via a data source
+  # fails at plan time for a group that this same plan creates. The caller
+  # passes resource references, which also gives Terraform the dependency.
+  # Without any group the port would fall back to "default", which allows no
+  # ingress at all, and the address would be up and unreachable - hence the
+  # precondition.
+  security_group_ids = var.secondary_security_group_ids
+
+  lifecycle {
+    precondition {
+      condition     = length(var.secondary_security_group_ids) > 0
+      error_message = "secondary_security_group_ids must name at least one security group ID when secondary_network_name is set."
+    }
+  }
 }
 
 resource "openstack_compute_interface_attach_v2" "secondary" {

@@ -23,6 +23,12 @@
 # owns 22) is also not opened. Pushing over HTTPS works without it. Add a rule
 # restricted to the campus ranges if the team wants key-based pushes.
 
+# The tenant's pre-existing default group; looked up for its ID because the
+# secondary port takes IDs, not names.
+data "openstack_networking_secgroup_v2" "default" {
+  name = "default"
+}
+
 resource "openstack_networking_secgroup_v2" "forgejo_vm" {
   name        = "ci-onto-app-sg"
   description = "CI host: SSH for Ansible, HTTP/HTTPS for the web UI, campus-only"

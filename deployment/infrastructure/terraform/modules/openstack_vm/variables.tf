@@ -54,6 +54,15 @@ variable "secondary_subnet_name" {
   default = null
 }
 
+# Security group IDs for the secondary port - required when
+# secondary_network_name is set. IDs rather than names, because a port takes
+# IDs and a name lookup cannot resolve a group created in the same plan;
+# pass resource references (e.g. openstack_networking_secgroup_v2.x.id).
+variable "secondary_security_group_ids" {
+  type    = list(string)
+  default = []
+}
+
 variable "metadata" {
   type = map(string)
 }

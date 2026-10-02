@@ -51,6 +51,14 @@ module "vm" {
   # built.
   security_groups = ["default", openstack_networking_secgroup_v2.ontoapp_vm.name]
 
+  # The secondary port needs IDs (a plan-time name lookup cannot resolve the
+  # group this plan creates). "default" pre-exists in every tenant, so its
+  # lookup is safe at plan time.
+  secondary_security_group_ids = [
+    data.openstack_networking_secgroup_v2.default.id,
+    openstack_networking_secgroup_v2.ontoapp_vm.id,
+  ]
+
   docker_data_volume_size_gb = var.docker_data_volume_size_gb
   user_data                  = local.user_data
 

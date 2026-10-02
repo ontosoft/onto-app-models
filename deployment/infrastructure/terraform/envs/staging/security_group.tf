@@ -13,6 +13,12 @@
 # public entry point is the reverse proxy on 80/443; use an SSH tunnel for
 # anything else.
 
+# The tenant's pre-existing default group; looked up for its ID because the
+# secondary port takes IDs, not names.
+data "openstack_networking_secgroup_v2" "default" {
+  name = "default"
+}
+
 resource "openstack_networking_secgroup_v2" "ontoapp_vm" {
   name        = "staging-onto-app-sg"
   description = "Staging Docker host: SSH for Ansible, HTTP/HTTPS for the app"
