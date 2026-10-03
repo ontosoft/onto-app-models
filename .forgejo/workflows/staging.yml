@@ -129,6 +129,25 @@ jobs:
           echo "VM_IPV4_GW=$(terraform output -raw vm_ipv4_gateway 2>/dev/null || true)" >> "$GITHUB_ENV"
           echo "VM_IPV4_MAC=$(terraform output -raw vm_ipv4_mac 2>/dev/null || true)" >> "$GITHUB_ENV"
 
+      # A freshly created instance reports ACTIVE well before sshd accepts
+      # connections (first boot also runs cloud-init's volume format). Without
+      # this wait, Ansible's first SSH races the boot and times out.
+      # ssh-keyscan rather than nc: openssh-client is present in the job
+      # image and in act's image; netcat is not.
+      - name: Wait for SSH on the new VM
+        if: github.event.inputs.mode == 'apply'
+        run: |
+          echo "Waiting for sshd on ${VM_IP} ..."
+          for i in $(seq 1 60); do
+            if ssh-keyscan -T 5 "$VM_IP" >/dev/null 2>&1; then
+              echo "SSH is up (after ~$((i*5))s)"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "SSH not reachable after 5 minutes" >&2
+          exit 1
+
       - name: Generate Ansible Inventory
         if: github.event.inputs.mode == 'apply'
         working-directory: deployment/infrastructure/ansible
