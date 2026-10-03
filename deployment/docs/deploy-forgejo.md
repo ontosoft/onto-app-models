@@ -39,26 +39,29 @@ VM admin rights. Steps:
 4. **Run it**: Actions tab → "CD - Staging Deployment" → Run workflow →
    `mode: plan` first, then `apply`.
 
-### Terraform state on a Forgejo runner
+### Terraform state
 
-`envs/staging/backend.tf` currently declares a **local** backend — right for
-way 1, where `act --bind` keeps the state file on the operator's machine. On
-a Forgejo runner, job containers are destroyed after every run, so a local
-state file dies with them. Before way-2 `apply` runs become routine, the
-state must move to a remote backend; the established pattern on the DHBW
-forge is Terraform's `pg` backend against the Postgres the CI host runs:
+`envs/staging/backend.tf` declares the **`pg` backend**: state lives in the
+`terraform_state` database on the forge stack's Postgres, in this project's
+own schema (`onto_app_staging`, created automatically on the first init,
+next to the sibling project's `staging` schema). Job containers stay
+disposable — on a Forgejo runner a local state file would die with the
+container after every run.
 
-1. Get a database — or just a schema; one Postgres holds many projects'
-   states side by side (`schema_name` in the backend block) — on the forge's
-   Postgres, with its own credentials.
-2. Set the connection string as the `PG_CONN_STR` Actions secret (the
-   workflow already passes it through to Terraform).
-3. Flip `envs/staging/backend.tf` from `backend "local"` to `backend "pg"`
-   and migrate: `terraform init -migrate-state`.
+The seventh Actions secret supplies the connection:
 
-After the flip, way-1 `apply` runs also need to reach that Postgres (an SSH
-tunnel to the forge host, since its database is deliberately not exposed).
-Until the flip is done, use way 2 for `plan` only.
+```
+PG_CONN_STR = postgres://<user>:<password>@db:5432/terraform_state?sslmode=disable
+```
+
+`db` resolves inside the forge's compose network, which is exactly where
+job containers run — the database is reachable from deploys and from
+nowhere else. The pg backend takes an advisory lock per operation, so
+concurrent runs cannot corrupt the state.
+
+Consequence for way 1: `act` runs now also need `PG_CONN_STR`, and a
+laptop cannot resolve `db` — see the state note in
+[deploy-act.md](deploy-act.md).
 
 ## B. Self-hosting the forge (optional)
 
@@ -98,6 +101,5 @@ sits behind a compose profile and stays out of local runs.
 
 ## Follow-ups this enables
 
-- Terraform state to the `pg` backend (see above).
 - Narrow `ssh_source_cidr_*` in `envs/staging` from campus-wide to the
   runner's address.

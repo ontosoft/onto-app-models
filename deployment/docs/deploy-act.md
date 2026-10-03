@@ -56,10 +56,22 @@ act workflow_dispatch -W .forgejo/workflows/staging.yml --bind \
 a generic act image; the workflow's tool-install steps fill in what that image
 lacks.)
 
-`--bind` makes the container write into your working directory, so the
-Terraform state (`deployment/infrastructure/terraform/envs/staging/terraform.tfstate`)
-persists on your machine and is reused by the next run. **This is only safe
-for a single operator** — the state file is the only record of the VM.
+**Terraform state** does not live on your machine: `envs/staging` uses the
+`pg` backend against the forge's Postgres (see
+[deploy-forgejo.md](deploy-forgejo.md)), so way 1 and way 2 share one
+locked state. That means act runs need `PG_CONN_STR` too — and a laptop
+cannot resolve the in-network host `db`. For a plan/apply from outside,
+tunnel through the forge host (requires its Postgres to be published on
+the forge's loopback) and point the connection at the tunnel:
+
+```bash
+ssh -i ~/.ssh/openstack-deploy -L 15432:127.0.0.1:5432 ubuntu@<forge-host> -N &
+# in deployment/.secrets:
+# PG_CONN_STR=postgres://<user>:<pw>@host.docker.internal:15432/terraform_state?sslmode=disable
+```
+
+In day-to-day use, prefer running deploys from Forgejo (way 2) and keep
+act for bootstrap and emergencies.
 
 ## After the first apply
 

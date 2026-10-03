@@ -43,8 +43,7 @@ Each env dir has:
 - `main.tf` — instantiates the `openstack_vm` module (name, image, flavor, **`public_key`**,
   network, security groups, metadata). Outputs `vm_ip`.
 - `backend.tf` — `required_version` (`>= 1.5.0`), the OpenStack provider pin
-  (`~> 3.4`), and a **local** state backend (`terraform.tfstate` in the env dir). See
-  "Local state assumption" below.
+  (`~> 3.4`), and the state backend. See "Terraform state" below.
 - `providers.tf` — OpenStack provider; credentials come entirely from `OS_*` environment variables.
 - `variables.tf` — `ssh_public_key` (supplied by CI via `TF_VAR_ssh_public_key`) plus the
   **cluster parameters** (image, flavor, networks, `connect_via`, SSH source CIDRs). Defaults
@@ -83,14 +82,18 @@ terraform apply
 Requires `OS_AUTH_URL`, `OS_APPLICATION_CREDENTIAL_ID`, `OS_APPLICATION_CREDENTIAL_SECRET`,
 `OS_REGION_NAME` in the environment (stored as GitHub secrets prefixed `STAGING_*`).
 
-### Local state assumption
+### Terraform state
 
-State is intentionally kept in a **local** backend (`terraform.tfstate` in each env dir) rather
-than a remote backend. This is a deliberate, temporary choice: deploys are driven from a single
-operator's machine via `act` (see below) with `--bind`, so the state file persists on the host
-and is reused across runs. **This is only safe for one person** — concurrent runs from different
-machines/runners would diverge. Moving to a remote backend  is
-a possible next step .
+`envs/staging` uses the **`pg` backend**: state lives in the `terraform_state` database on the
+forge's Postgres, in this project's own schema (`onto_app_staging`), locked per operation. The
+connection string comes from the `PG_CONN_STR` environment variable / secret — never from a
+`.tf` file, since it carries the database password. On a Forgejo runner this is what makes job
+containers disposable without losing the state; for `act` runs see the tunnel note in
+[`../docs/deploy-act.md`](../docs/deploy-act.md).
+
+`envs/forgejo` (the optional self-hosted forge) deliberately stays on a **local** backend: it is
+the bootstrap environment — storing its state in the database it hosts would be circular. That
+state file exists only where the last apply ran; back it up.
 
 ## Ansible
 
