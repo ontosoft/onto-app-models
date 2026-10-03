@@ -136,7 +136,7 @@ created per-run and removed in the workflow's cleanup step.
    `/mnt/docker-data` and bind-mounts `/var/lib/docker` and `/var/lib/containerd` onto it —
    all **before** the `geerlingguy.docker` role installs Docker + Compose.
 3. rsyncs the **repo root** (`{{ playbook_dir }}/../../` → `/home/ubuntu/app`), excluding `.git`,
-   caches, build outputs, `model_files` (the multi-GB Mistral GGUF — the compose
+   caches, build outputs, `model_files/*.gguf` (the multi-GB Mistral GGUF — the compose
    `model-downloader` service fetches it on the VM instead) and **`.env`**.
 4. Writes `/home/ubuntu/app/.env` **verbatim from the `STAGING_ENV_FILE` secret** — runtime
    configuration is a deploy input, not repository content, so deploys work from any runner.

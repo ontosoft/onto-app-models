@@ -287,10 +287,13 @@
           - "--exclude=frontend/dist"
           - "--exclude=frontend/test-results"
           - "--exclude=frontend/blob-report"
-          # model_files/*.gguf is multi-GB; the compose model-downloader
-          # service fetches the model on the VM, so we never ship it via
-          # rsync.
-          - "--exclude=model_files"
+          # Only the multi-GB GGUF stays out (the compose model-downloader
+          # fetches it on the VM; the exclude also protects the downloaded
+          # copy from `delete: yes`). The rest of model_files/ MUST ship:
+          # run_ollama.sh is the ollama container's entrypoint and Modelfile
+          # its import recipe - excluding the whole directory left the
+          # container dying on a missing script.
+          - "--exclude=model_files/*.gguf"
           - "--exclude=.DS_Store"
           - "--exclude=*.pyc"
           # The runtime .env comes from the STAGING_ENV_FILE secret (next
