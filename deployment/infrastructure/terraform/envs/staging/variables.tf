@@ -12,10 +12,14 @@ variable "ssh_public_key" {
 # code: terraform apply -var-file=clusters/<cluster>.tfvars
 # ---------------------------------------------------------------------------
 
+# 22.04 deliberately: with the 24.04 image the guest never configured its
+# DHBWV6 IPv6 address (unreachable even for neighbor ping from the same
+# /64), while 22.04 is proven on this cluster. Revisit newer images with a
+# throwaway VM, not with staging.
 variable "image" {
   description = "Glance image name for the VM."
   type        = string
-  default     = "Ubuntu 24.04"
+  default     = "Ubuntu 22.04"
 }
 
 # The app stack is heavy (Ollama serves a local GGUF model). Override in

@@ -64,9 +64,11 @@ the VM — no dependency on a pre-existing laptop key), then creates an
   dual-stack (public IPv4 next to the IPv6 primary; the A record and ACME http-01 reachability).
   The port is pinned to the named subnet and gets the same security groups explicitly, and the
   interface is attached to the running instance so it never forces a VM replacement.
-- **`docker_data_volume_size_gb`** (staging: `50`) — attaches a Cinder volume that the env's
-  cloud-init (`user_data`) formats and mounts at `/var/lib/docker`, because the flavor root disk
-  is small.
+- **`docker_data_volume_size_gb`** (staging: `50`) — attaches a Cinder volume for the container
+  data, because the flavor root disk is small. The **playbook** formats and mounts it (bind
+  mounts for `/var/lib/docker` and `/var/lib/containerd`); cloud-init cannot, since the module
+  attaches the volume only after the instance is ACTIVE — a race cloud-init lost on this
+  cluster. The env's `user_data` only sets up swap.
 
 Only the **public** key half ever reaches OpenStack/state.
 
@@ -129,9 +131,10 @@ created per-run and removed in the workflow's cleanup step.
    the IPv4 address, plus a connmark script + systemd unit so replies from DNATed container
    ports leave through the right gateway (without it SSH works but every published port times
    out — Neutron's port security silently drops the misrouted replies).
-2. Applies the `geerlingguy.docker` role (installs Docker + Compose). The Cinder data volume is
-   already mounted at `/var/lib/docker` by cloud-init (see the env's `user_data`) — the playbook
-   has no mount tasks on purpose.
+2. **Data volume**: checks the Cinder device exists (failing with the list of present devices if
+   not), formats it (`force: no` — a second run never reformats), mounts it by UUID at
+   `/mnt/docker-data` and bind-mounts `/var/lib/docker` and `/var/lib/containerd` onto it —
+   all **before** the `geerlingguy.docker` role installs Docker + Compose.
 3. rsyncs the **repo root** (`{{ playbook_dir }}/../../` → `/home/ubuntu/app`), excluding `.git`,
    caches, build outputs, `model_files` (the multi-GB Mistral GGUF — the compose
    `model-downloader` service fetches it on the VM instead) and **`.env`**.

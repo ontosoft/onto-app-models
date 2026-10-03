@@ -3,31 +3,20 @@
 # the module.
 
 locals {
-  cloud_init_base = <<-EOT
+  # Swap only. The Cinder volume is formatted and mounted by the deploy
+  # playbook, NOT here: the module attaches the volume only after the
+  # instance reports ACTIVE, and whether /dev/vdb exists by the time
+  # cloud-init's final stage runs is a race - it lost on this cluster
+  # (cloud-final failed after the 120 s wait expired). Ansible runs
+  # strictly after `terraform apply` returns, so the device is guaranteed
+  # to be there.
+  user_data = <<-EOT
     #cloud-config
     swap:
       filename: /swapfile
       size: 4294967296
       maxsize: 4294967296
   EOT
-
-  # Format and mount the attached Cinder volume at /var/lib/docker BEFORE
-  # Docker is installed by Ansible. Only appended when a volume is attached;
-  # without it the wait loop below would stall the first boot for two
-  # minutes and then error.
-  cloud_init_docker_volume = <<-EOT
-    runcmd:
-      - |
-        set -eu
-        for _ in $(seq 1 60); do [ -b /dev/vdb ] && break; sleep 2; done
-        blkid /dev/vdb >/dev/null 2>&1 || mkfs.ext4 -F -L docker-data /dev/vdb
-        mkdir -p /var/lib/docker
-        mountpoint -q /var/lib/docker || mount /dev/vdb /var/lib/docker
-        grep -q '^/dev/vdb /var/lib/docker ' /etc/fstab \
-          || echo '/dev/vdb /var/lib/docker ext4 defaults,nofail 0 2' >> /etc/fstab
-  EOT
-
-  user_data = var.docker_data_volume_size_gb > 0 ? "${local.cloud_init_base}${local.cloud_init_docker_volume}" : local.cloud_init_base
 }
 
 module "vm" {

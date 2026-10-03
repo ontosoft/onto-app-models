@@ -18,6 +18,10 @@
     secondary_ipv4: ""
     secondary_gateway: ""
     secondary_mac: ""
+    # The Cinder volume from envs/staging. Set to "" when the VM runs without
+    # a separate volume (docker_data_volume_size_gb = 0) - then
+    # /var/lib/docker stays on the root disk.
+    docker_data_device: /dev/vdb
 
   pre_tasks:
     # Terraform attaches the second interface to the RUNNING VM, so cloud-init
@@ -138,10 +142,119 @@
         daemon_reload: true
       tags: [network]
 
-    # NOTE on the data volume: the Cinder volume is formatted and mounted at
-    # /var/lib/docker by cloud-init (see the user_data in
-    # terraform/envs/staging/main.tf), before Docker is installed. No mount
-    # tasks here - one mechanism, not two.
+    # The volume carries the Docker data because the root disk is too small.
+    # Mounted here rather than by cloud-init: the module attaches the volume
+    # only after the instance reports ACTIVE, and whether the device exists
+    # by the time cloud-init runs is a race (it lost on this cluster -
+    # cloud-final failed after its wait expired). Ansible runs strictly
+    # after `terraform apply`, so the device is guaranteed to be there.
+    # It must be mounted BEFORE Docker is installed: laying it over an
+    # already populated /var/lib/docker hides existing images from the
+    # daemon while they keep occupying the root disk.
+    - name: Check that the data volume is present
+      ansible.builtin.stat:
+        path: "{{ docker_data_device }}"
+      register: data_device
+      when: docker_data_device | length > 0
+
+    - name: Fail if the expected volume is missing
+      ansible.builtin.fail:
+        msg: >-
+          {{ docker_data_device }} does not exist. Either the VM was built
+          without docker_data_volume_size_gb — then set docker_data_device to
+          "" — or the volume is attached under a different name. Present:
+          {{ ansible_devices.keys() | list | join(', ') }}
+      when:
+        - docker_data_device | length > 0
+        - not data_device.stat.exists
+
+    # force: no is the load-bearing line. Without it, a second playbook run
+    # reformats the volume and destroys the database and every image built
+    # on this host.
+    - name: Create a filesystem on the data volume
+      community.general.filesystem:
+        fstype: ext4
+        dev: "{{ docker_data_device }}"
+        force: no
+      when: docker_data_device | length > 0
+
+    # By UUID rather than /dev/vdb, because device names can shift on boot
+    # once a second volume is attached.
+    - name: Read the data volume's UUID
+      ansible.builtin.command: blkid -s UUID -o value {{ docker_data_device }}
+      register: data_uuid
+      changed_when: false
+      when: docker_data_device | length > 0
+
+    - name: Mount the data volume
+      ansible.posix.mount:
+        path: /mnt/docker-data
+        src: "UUID={{ data_uuid.stdout | trim }}"
+        fstype: ext4
+        opts: defaults,noatime
+        state: mounted
+      when: docker_data_device | length > 0
+
+    # Images can land under /var/lib/containerd, named volumes under
+    # /var/lib/docker. Both go onto the volume via bind mounts, or the root
+    # disk fills up anyway.
+    - name: Are the data directories already on the volume?
+      ansible.builtin.command: mountpoint -q /var/lib/containerd
+      register: data_bound
+      changed_when: false
+      failed_when: false
+      when: docker_data_device | length > 0
+
+    - name: Stop services before overlaying the directories
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        state: stopped
+      loop: [docker.socket, docker.service, containerd.service]
+      # On a freshly built VM the services do not exist yet.
+      failed_when: false
+      when:
+        - docker_data_device | length > 0
+        - data_bound.rc | default(1) != 0
+
+    # Without this step the old content keeps occupying the root disk,
+    # invisible under the mount.
+    - name: Remove old content of the data directories
+      ansible.builtin.shell: rm -rf /var/lib/docker/* /var/lib/docker/.[!.]* /var/lib/containerd/* /var/lib/containerd/.[!.]*
+      changed_when: true
+      failed_when: false
+      when:
+        - docker_data_device | length > 0
+        - data_bound.rc | default(1) != 0
+
+    - name: Create target directories on the volume
+      ansible.builtin.file:
+        path: "/mnt/docker-data/{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0711'
+      loop: [docker, containerd]
+      when: docker_data_device | length > 0
+
+    - name: Bind the directories to their usual paths
+      ansible.posix.mount:
+        path: "/var/lib/{{ item }}"
+        src: "/mnt/docker-data/{{ item }}"
+        fstype: none
+        opts: bind
+        state: mounted
+      loop: [docker, containerd]
+      when: docker_data_device | length > 0
+
+    - name: Start the services again
+      ansible.builtin.systemd_service:
+        name: "{{ item }}"
+        state: started
+      loop: [containerd.service, docker.socket, docker.service]
+      failed_when: false
+      when:
+        - docker_data_device | length > 0
+        - data_bound.rc | default(1) != 0
 
     - name: Create app directory
       ansible.builtin.file:
