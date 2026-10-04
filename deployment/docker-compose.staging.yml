@@ -70,9 +70,9 @@ services:
       - .env
     environment:
       - PGDATA=/var/lib/postgresql/data/pgdata
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
-      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
-      - POSTGRES_DB=${POSTGRES_DB?Variable not set}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?Variable not set}
+      - POSTGRES_USER=${POSTGRES_USER:?Variable not set}
+      - POSTGRES_DB=${POSTGRES_DB:?Variable not set}
 
   redis:
     image: redis:7-alpine
@@ -87,7 +87,7 @@ services:
 
   # Runs migrations + seeds the superuser (scripts/prestart.sh), then exits.
   prestart:
-    image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
+    image: '${DOCKER_IMAGE_BACKEND:?Variable not set}:${TAG-latest}'
     build:
       context: ..
       dockerfile: llm-model-generator/Dockerfile
@@ -100,12 +100,12 @@ services:
       - .env
     environment:
       - DOMAIN=${DOMAIN}
-      - FRONTEND_HOST=${FRONTEND_HOST?Variable not set}
+      - FRONTEND_HOST=${FRONTEND_HOST:?Variable not set}
       - ENVIRONMENT=${ENVIRONMENT}
       - BACKEND_CORS_ORIGINS=${BACKEND_CORS_ORIGINS}
-      - SECRET_KEY=${SECRET_KEY?Variable not set}
-      - FIRST_SUPERUSER=${FIRST_SUPERUSER?Variable not set}
-      - FIRST_SUPERUSER_PASSWORD=${FIRST_SUPERUSER_PASSWORD?Variable not set}
+      - SECRET_KEY=${SECRET_KEY:?Variable not set}
+      - FIRST_SUPERUSER=${FIRST_SUPERUSER:?Variable not set}
+      - FIRST_SUPERUSER_PASSWORD=${FIRST_SUPERUSER_PASSWORD:?Variable not set}
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_USER=${SMTP_USER}
       - SMTP_PASSWORD=${SMTP_PASSWORD}
@@ -113,13 +113,13 @@ services:
       - POSTGRES_SERVER=db
       - POSTGRES_PORT=${POSTGRES_PORT}
       - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+      - POSTGRES_USER=${POSTGRES_USER:?Variable not set}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?Variable not set}
       - SENTRY_DSN=${SENTRY_DSN}
 
   llm-model-generator-api:
     container_name: llm-model-generator-api
-    image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
+    image: '${DOCKER_IMAGE_BACKEND:?Variable not set}:${TAG-latest}'
     restart: always
     # No published port: Caddy reaches it on the compose network.
     depends_on:
@@ -137,12 +137,12 @@ services:
     environment:
       - OLLAMA_HOST=http://ollama:11434
       - DOMAIN=${DOMAIN}
-      - FRONTEND_HOST=${FRONTEND_HOST?Variable not set}
+      - FRONTEND_HOST=${FRONTEND_HOST:?Variable not set}
       - ENVIRONMENT=${ENVIRONMENT}
       - BACKEND_CORS_ORIGINS=${BACKEND_CORS_ORIGINS}
-      - SECRET_KEY=${SECRET_KEY?Variable not set}
-      - FIRST_SUPERUSER=${FIRST_SUPERUSER?Variable not set}
-      - FIRST_SUPERUSER_PASSWORD=${FIRST_SUPERUSER_PASSWORD?Variable not set}
+      - SECRET_KEY=${SECRET_KEY:?Variable not set}
+      - FIRST_SUPERUSER=${FIRST_SUPERUSER:?Variable not set}
+      - FIRST_SUPERUSER_PASSWORD=${FIRST_SUPERUSER_PASSWORD:?Variable not set}
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_USER=${SMTP_USER}
       - SMTP_PASSWORD=${SMTP_PASSWORD}
@@ -150,8 +150,8 @@ services:
       - POSTGRES_SERVER=db
       - POSTGRES_PORT=${POSTGRES_PORT}
       - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+      - POSTGRES_USER=${POSTGRES_USER:?Variable not set}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?Variable not set}
       - SENTRY_DSN=${SENTRY_DSN}
       # Run the engine out-of-process in the engine-worker container(s).
       - ENGINE_TRANSPORT=redis
@@ -171,7 +171,7 @@ services:
   # (ENGINE_TRANSPORT=redis) forwards per-session engine ops here over Redis.
   # DB-less; crash-isolated. Scale with `--scale engine-worker=N`.
   engine-worker:
-    image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
+    image: '${DOCKER_IMAGE_BACKEND:?Variable not set}:${TAG-latest}'
     restart: unless-stopped
     depends_on:
       redis:
@@ -184,21 +184,21 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - ENVIRONMENT=${ENVIRONMENT}
-      - SECRET_KEY=${SECRET_KEY?Variable not set}
-      - FIRST_SUPERUSER=${FIRST_SUPERUSER?Variable not set}
-      - FIRST_SUPERUSER_PASSWORD=${FIRST_SUPERUSER_PASSWORD?Variable not set}
+      - SECRET_KEY=${SECRET_KEY:?Variable not set}
+      - FIRST_SUPERUSER=${FIRST_SUPERUSER:?Variable not set}
+      - FIRST_SUPERUSER_PASSWORD=${FIRST_SUPERUSER_PASSWORD:?Variable not set}
       # Present so Settings validates; the worker never opens a DB connection.
       - POSTGRES_SERVER=db
       - POSTGRES_PORT=${POSTGRES_PORT}
       - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+      - POSTGRES_USER=${POSTGRES_USER:?Variable not set}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?Variable not set}
     build:
       context: ..
       dockerfile: llm-model-generator/Dockerfile
 
   frontend:
-    image: '${DOCKER_IMAGE_FRONTEND?Variable not set}:${TAG-latest}'
+    image: '${DOCKER_IMAGE_FRONTEND:?Variable not set}:${TAG-latest}'
     restart: always
     build:
       context: ..
@@ -207,7 +207,7 @@ services:
         # Same-origin API: Caddy routes /api/* to the backend, so the client
         # talks to the one public hostname (paths in the generated client
         # already start with /api/v1).
-        - VITE_API_URL=https://${APP_HOSTNAME?Variable not set}
+        - VITE_API_URL=https://${APP_HOSTNAME:?Variable not set}
         - NODE_ENV=production
 
   caddy:
@@ -219,8 +219,8 @@ services:
       - "443:443"
       - "443:443/udp" # HTTP/3
     environment:
-      - APP_HOSTNAME=${APP_HOSTNAME?Variable not set}
-      - ACME_EMAIL=${ACME_EMAIL?Variable not set}
+      - APP_HOSTNAME=${APP_HOSTNAME:?Variable not set}
+      - ACME_EMAIL=${ACME_EMAIL:?Variable not set}
       # Default: Let's Encrypt. Override in .env with the HARICA directory if
       # LE's validators turn out to be blocked by the campus firewall.
       - ACME_CA_URL=${ACME_CA_URL:-https://acme-v02.api.letsencrypt.org/directory}
