@@ -2,22 +2,12 @@
 # how Ansible connects) live in variables.tf; this file only wires them to
 # the module.
 
-locals {
-  # Swap only. The Cinder volume is formatted and mounted by the deploy
-  # playbook, NOT here: the module attaches the volume only after the
-  # instance reports ACTIVE, and whether /dev/vdb exists by the time
-  # cloud-init's final stage runs is a race - it lost on this cluster
-  # (cloud-final failed after the 120 s wait expired). Ansible runs
-  # strictly after `terraform apply` returns, so the device is guaranteed
-  # to be there.
-  user_data = <<-EOT
-    #cloud-config
-    swap:
-      filename: /swapfile
-      size: 4294967296
-      maxsize: 4294967296
-  EOT
-}
+# No user_data: everything that prepares the host lives in the deploy
+# playbook. cloud-init cannot handle the Cinder volume (it is attached only
+# after the instance reports ACTIVE - a race cloud-init lost on this
+# cluster), and its swapfile necessarily landed on the 10 GB root disk,
+# which it filled to 100% together with the GGUF. The playbook puts both
+# swap and model_files on the data volume instead.
 
 module "vm" {
   source = "../../modules/openstack_vm"
@@ -49,7 +39,6 @@ module "vm" {
   ]
 
   docker_data_volume_size_gb = var.docker_data_volume_size_gb
-  user_data                  = local.user_data
 
   metadata = {
     env  = "staging"

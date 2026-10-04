@@ -68,7 +68,9 @@ the VM — no dependency on a pre-existing laptop key), then creates an
   data, because the flavor root disk is small. The **playbook** formats and mounts it (bind
   mounts for `/var/lib/docker` and `/var/lib/containerd`); cloud-init cannot, since the module
   attaches the volume only after the instance is ACTIVE — a race cloud-init lost on this
-  cluster. The env's `user_data` only sets up swap.
+  cluster. The playbook also places swap and `model_files` (the GGUF) on the
+  volume - the 10 GB root disk cannot hold them; the env passes no
+  `user_data` at all.
 
 Only the **public** key half ever reaches OpenStack/state.
 

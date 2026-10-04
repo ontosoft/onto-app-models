@@ -256,6 +256,45 @@
         - docker_data_device | length > 0
         - data_bound.rc | default(1) != 0
 
+    # Swap lives on the data volume, NOT on the 10 GB root disk - a 4 GB
+    # swapfile there filled root to 100% (no usable temp dir left; even
+    # Ansible's fact gathering failed). An earlier cloud-init swapfile on /
+    # is removed if present.
+    - name: Disable legacy root swapfile
+      ansible.builtin.shell: swapoff /swapfile 2>/dev/null; rm -f /swapfile
+      args:
+        removes: /swapfile
+      when: docker_data_device | length > 0
+
+    - name: Remove legacy swapfile from fstab
+      ansible.builtin.lineinfile:
+        path: /etc/fstab
+        regexp: '^/swapfile\s'
+        state: absent
+      when: docker_data_device | length > 0
+
+    - name: Create swapfile on the data volume
+      ansible.builtin.shell: |
+        set -e
+        fallocate -l 4G /mnt/docker-data/swapfile
+        chmod 600 /mnt/docker-data/swapfile
+        mkswap /mnt/docker-data/swapfile
+      args:
+        creates: /mnt/docker-data/swapfile
+      when: docker_data_device | length > 0
+
+    - name: Enable swapfile in fstab
+      ansible.builtin.lineinfile:
+        path: /etc/fstab
+        line: '/mnt/docker-data/swapfile none swap sw 0 0'
+      when: docker_data_device | length > 0
+
+    - name: Activate swap
+      ansible.builtin.shell: swapon --show=NAME --noheadings | grep -q /mnt/docker-data/swapfile || swapon /mnt/docker-data/swapfile
+      register: swap_on
+      changed_when: "'swapfile' not in (swap_on.stdout | default(''))"
+      when: docker_data_device | length > 0
+
     - name: Create app directory
       ansible.builtin.file:
         path: "{{ project_root }}"
@@ -263,6 +302,29 @@
         owner: ubuntu
         group: ubuntu
         mode: '0755'
+
+    # The multi-GB GGUF the model-downloader fetches must not land on the
+    # root disk either; model_files is a bind mount onto the volume.
+    - name: Create model_files on the volume and as mountpoint
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: '0755'
+      loop:
+        - /mnt/docker-data/model_files
+        - "{{ project_root }}/model_files"
+      when: docker_data_device | length > 0
+
+    - name: Bind model_files to the volume
+      ansible.posix.mount:
+        path: "{{ project_root }}/model_files"
+        src: /mnt/docker-data/model_files
+        fstype: none
+        opts: bind
+        state: mounted
+      when: docker_data_device | length > 0
 
   roles:
     - role: geerlingguy.docker
