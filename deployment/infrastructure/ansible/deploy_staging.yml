@@ -412,11 +412,17 @@
     # first and keeps the old one on failure. Deliberately NOT failed_when:
     # false - a failed reload means the proxy runs a stale configuration, and
     # that should surface here.
+    # Retries because a caddy container recreated by the preceding `up` may
+    # still be starting - its admin socket (localhost:2019) answers only
+    # once the process is up.
     - name: Reload Caddy configuration
       ansible.builtin.command:
         cmd: docker exec caddy caddy reload --config /etc/caddy/Caddyfile
       register: caddy_reload
       changed_when: caddy_reload.rc == 0
+      until: caddy_reload.rc == 0
+      retries: 5
+      delay: 3
 
     - name: Show deployment status
       ansible.builtin.command:
