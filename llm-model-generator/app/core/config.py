@@ -123,8 +123,6 @@ class Settings(BaseSettings):
     NEO4J_USERNAME: str
     NEO4J_PASSWORD: str
 
-    OPENAI_API_KEY: str
-
     # --- Engine transport (Stage 2b) ---
     # "local": run engines in this process (default; local dev / tests / single
     # container). "redis": forward per-session engine ops to an engine_worker
