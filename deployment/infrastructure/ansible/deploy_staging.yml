@@ -30,6 +30,26 @@
     # The dedicated routing table is not optional: replies from the IPv4
     # address must leave through its own gateway, otherwise Neutron's port
     # security drops them as spoofed source addresses.
+    #
+    # The netplan definition ID below must be the REAL interface name, not an
+    # arbitrary label: cloud-init renders its own definition for this NIC
+    # (plain dhcp4, routes into main) under the interface name, and netplan
+    # only merges definitions that share an ID. Under a different ID this
+    # file is silently ignored and off-subnet clients get no replies -
+    # same-subnet hosts still work, which makes the breakage easy to miss.
+    - name: Find the secondary interface name by MAC
+      when: secondary_mac | length > 0
+      ansible.builtin.shell: |
+        set -o pipefail
+        ip -o link | awk -v mac="{{ secondary_mac | lower }}" \
+          'tolower($0) ~ mac {sub(":$","",$2); print $2; exit}'
+      args:
+        executable: /bin/bash
+      register: secondary_iface
+      changed_when: false
+      failed_when: secondary_iface.stdout | trim | length == 0
+      tags: [network]
+
     - name: Write netplan for the secondary IPv4 interface
       when: secondary_mac | length > 0
       ansible.builtin.copy:
@@ -41,7 +61,7 @@
           network:
             version: 2
             ethernets:
-              secondary:
+              {{ secondary_iface.stdout | trim }}:
                 match:
                   macaddress: "{{ secondary_mac }}"
                 dhcp4: true
@@ -133,8 +153,14 @@
       register: marks_unit
       tags: [network]
 
+    # Also re-run after a netplan apply: that flushes the fwmark ip rule the
+    # script installs, and the unit is RemainAfterExit, so only a restart
+    # puts the rule back.
     - name: Enable and run the marks unit
-      when: (marks_script is changed or marks_unit is changed) and secondary_mac | length > 0
+      when: >-
+        (marks_script is changed or marks_unit is changed
+         or netplan_secondary is changed)
+        and secondary_mac | length > 0
       ansible.builtin.systemd:
         name: secondary-ipv4-marks.service
         enabled: true
