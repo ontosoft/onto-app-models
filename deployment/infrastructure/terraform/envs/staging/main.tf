@@ -20,8 +20,8 @@ module "vm" {
   network_name = var.network_name
   connect_via  = var.connect_via
 
-  # Second interface for public IPv4 next to the IPv6 primary (A record and
-  # ACME http-01 reachability). null = single-homed.
+  # Second interface for public IPv4 next to the IPv6 primary (this is what
+  # the A record points at). null = single-homed.
   secondary_network_name = var.secondary_network_name
   secondary_subnet_name  = var.secondary_subnet_name
 

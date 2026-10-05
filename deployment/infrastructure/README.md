@@ -61,7 +61,7 @@ the VM — no dependency on a pre-existing laptop key), then creates an
   `DHBWV6`); `floating_ipv4` allocates from `floating_ip_pool` for clusters whose fixed IPv4
   is private.
 - **`secondary_network_name`** / **`secondary_subnet_name`** — optional second interface for
-  dual-stack (public IPv4 next to the IPv6 primary; the A record and ACME http-01 reachability).
+  dual-stack (public IPv4 next to the IPv6 primary; this is what the A record points at).
   The port is pinned to the named subnet and gets the same security groups explicitly, and the
   interface is attached to the running instance so it never forces a VM replacement.
 - **`docker_data_volume_size_gb`** (staging: `50`) — attaches a Cinder volume for the container
@@ -153,14 +153,16 @@ created per-run and removed in the workflow's cleanup step.
 
 ### TLS
 
-Staging runs behind a **stock `caddy:2`** container (`docker-compose.staging.yml` +
-`caddy/Caddyfile`). Caddy obtains and renews the certificate itself via ACME **http-01** on
-port 80; the CA defaults to Let's Encrypt and can be switched to HARICA via `ACME_CA_URL` in
-the `.env` if the campus firewall blocks LE's validators. One **shallow** hostname
-(`APP_HOSTNAME`) serves everything — Caddy routes `/api/*` and the FastAPI doc endpoints to the
-backend and the rest to the frontend — so only one certificate is needed (HARICA refused deep
-subdomains). The hostname needs an A record on `terraform output vm_ipv4` and an AAAA record on
-`terraform output vm_ip`.
+Staging runs behind a Caddy **built with the rfc2136 module** (`docker-compose.staging.yml` +
+`caddy/Dockerfile` + `caddy/Caddyfile`). Caddy obtains and renews the certificate itself via
+ACME **dns-01**: it writes the `_acme-challenge` TXT record over RFC 2136 with the zone's TSIG
+key (`DNS_TSIG_*` in the `.env`, from the DNS self-service "TLS Certificates" page). The
+inbound challenge types do not work here — the public CAs are blocked by the campus firewall,
+and the internal CA's validators cannot reach the VM on 80/443 either, although campus hosts
+can. One hostname (`APP_HOSTNAME`) serves everything — Caddy routes `/api/*` and the FastAPI
+doc endpoints to the backend and the rest to the frontend — so only one certificate is needed.
+The hostname needs an A record on `terraform output vm_ipv4`; do **not** add an AAAA record
+(the IPv6 address changes with every VM replacement).
 
 Run locally (after a `terraform apply`, from the env dir, gives you the IP):
 

@@ -75,12 +75,12 @@ act for bootstrap and emergencies.
 
 ## After the first apply
 
-1. Read the addresses: `terraform output vm_ip` (IPv6) and
-   `terraform output vm_ipv4` (IPv4) in the staging env dir.
-2. Create DNS records for `APP_HOSTNAME`: an AAAA record on `vm_ip`, an A
-   record on `vm_ipv4`. Keep the hostname a **shallow** subdomain.
-3. Caddy then obtains the certificate on its own (ACME http-01). If the CA's
-   validators are blocked by the firewall, set `ACME_CA_URL` in the env file
-   to the HARICA directory and redeploy.
+1. Read the address: `terraform output vm_ipv4` in the staging env dir.
+2. Create an A record for `APP_HOSTNAME` on `vm_ipv4`. Do **not** add an
+   AAAA record — the IPv6 address changes with every VM replacement.
+3. Caddy then obtains the certificate on its own via ACME dns-01, using the
+   `DNS_TSIG_*` credentials from the env file (see
+   `deployment/.env.staging.example`). No CA reaches this VM inbound, so the
+   DNS route is the only one that works.
 4. The first boot downloads the multi-GB GGUF model and imports it into
    Ollama — expect several minutes before the API container reports healthy.

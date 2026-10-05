@@ -1,10 +1,11 @@
-# Reverse proxy for staging. Stock caddy:2 image - no plugins.
+# Reverse proxy for staging. Built image with the rfc2136 module - see
+# caddy/Dockerfile for why the stock image does not work here.
 #
-# Caddy obtains and renews the certificate itself over ACME http-01: the CA
-# fetches http://<APP_HOSTNAME>/.well-known/acme-challenge/... on port 80,
-# which Caddy answers automatically. This requires the hostname's A/AAAA
-# records to point at the VM and port 80 to be reachable (the security group
-# opens it).
+# Caddy obtains and renews the certificate itself over ACME dns-01: it writes
+# a TXT record under _acme-challenge.<APP_HOSTNAME> via RFC 2136 (TSIG key
+# from the zone's self-service "TLS Certificates" page) and the CA reads it
+# from DNS. No inbound connection from the CA is needed; the hostname's A
+# record only has to point at the VM for the actual visitors.
 #
 # All variables come from the caddy service's environment in
 # docker-compose.staging.yml, which reads them from the deployed .env.
@@ -15,11 +16,22 @@
 }
 
 {$APP_HOSTNAME} {
+	# dns-01 is the only challenge type that works here; the CA's validators
+	# cannot open a connection to this VM (campus firewall outside, blocked
+	# segment inside). Needs the rfc2136 module from the built image.
+	tls {
+		dns rfc2136 {
+			key_name {$DNS_TSIG_KEY_NAME}
+			key_alg {$DNS_TSIG_KEY_ALG}
+			key {$DNS_TSIG_KEY}
+			server {$DNS_SERVER}
+		}
+	}
+
 	encode gzip zstd
 
-	# Path-based routing on one hostname: one shallow hostname, one
-	# certificate (HARICA's ACME endpoint refused deep subdomains, so no
-	# api.<host> / dashboard.<host> split).
+	# Path-based routing on one hostname: one hostname, one certificate,
+	# one set of DNS records (no api.<host> / dashboard.<host> split).
 
 	# The generated frontend client calls /api/v1/...; the doc endpoints
 	# live at the backend root.

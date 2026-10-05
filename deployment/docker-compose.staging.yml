@@ -211,7 +211,12 @@ services:
         - NODE_ENV=production
 
   caddy:
-    image: caddy:2
+    # Built rather than pulled: the stock image has no DNS provider modules,
+    # and dns-01 is the only challenge type whose validator can succeed here
+    # (no CA reaches this VM inbound on 80/443). See caddy/Dockerfile.
+    build:
+      context: ./caddy
+    image: ontoapp-caddy:rfc2136
     container_name: caddy
     restart: always
     ports:
@@ -221,9 +226,15 @@ services:
     environment:
       - APP_HOSTNAME=${APP_HOSTNAME:?Variable not set}
       - ACME_EMAIL=${ACME_EMAIL:?Variable not set}
-      # Default: Let's Encrypt. Override in .env with the HARICA directory if
-      # LE's validators turn out to be blocked by the campus firewall.
-      - ACME_CA_URL=${ACME_CA_URL:-https://acme-v02.api.letsencrypt.org/directory}
+      # The internal CA; with dns-01 Let's Encrypt would work too (it reads
+      # the TXT record over public DNS), so .env may override.
+      - ACME_CA_URL=${ACME_CA_URL:-https://certificates.dhbw.cloud/directory}
+      # TSIG credentials for the dns-01 challenge, from the zone's "TLS
+      # Certificates" page in the DNS self-service UI.
+      - DNS_TSIG_KEY_NAME=${DNS_TSIG_KEY_NAME:?Variable not set}
+      - DNS_TSIG_KEY_ALG=${DNS_TSIG_KEY_ALG:-hmac-sha512}
+      - DNS_TSIG_KEY=${DNS_TSIG_KEY:?Variable not set}
+      - DNS_SERVER=${DNS_SERVER:-ns.cloud-ns.dhbw-mannheim.de.:53}
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data # certificates + ACME account; must persist
