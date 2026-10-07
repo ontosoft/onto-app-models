@@ -204,10 +204,9 @@ services:
       context: ..
       dockerfile: frontend/Dockerfile
       args:
-        # Same-origin API: Caddy routes /api/* to the backend, so the client
-        # talks to the one public hostname (paths in the generated client
-        # already start with /api/v1).
-        - VITE_API_URL=https://${APP_HOSTNAME:?Variable not set}
+        # No VITE_API_URL: the client then uses same-origin URLs, and Caddy
+        # routes /api/* to the backend. This keeps the image free of any
+        # environment-specific value (one build serves every environment).
         - NODE_ENV=production
 
   caddy:

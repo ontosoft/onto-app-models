@@ -1,0 +1,5 @@
+# Env files must never end up inside an image: they carry secrets, and the
+# frontend build would silently bake a developer's VITE_API_URL into the
+# bundle (production builds are same-origin and set no API URL at all).
+**/.env
+**/.env.*

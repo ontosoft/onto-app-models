@@ -13,7 +13,10 @@ import { ApiError, OpenAPI } from "./client"
 import "./index.css"
 import { routeTree } from "./routeTree.gen"
 
-OpenAPI.BASE = import.meta.env.VITE_API_URL
+// Unset in production builds: "" means same-origin, and the reverse proxy
+// routes /api/* to the backend. Set it (frontend/.env) only when the API
+// runs on another origin, e.g. the local vite dev server against :8000.
+OpenAPI.BASE = import.meta.env.VITE_API_URL ?? ""
 OpenAPI.TOKEN = async () => {
   return localStorage.getItem("access_token") || ""
 }
