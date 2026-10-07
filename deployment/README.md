@@ -8,6 +8,11 @@ The application itself lives in the repository root (`llm-model-generator/`,
 `frontend/`); local development keeps using the root `docker-compose.yml` and
 is not affected by anything in this directory.
 
+The deployed app is reachable **only from the campus network or the VPN** —
+the perimeter firewall blocks public-internet traffic to the VM. TLS still
+works because the certificate is obtained via ACME dns-01 (no inbound
+validation; see `infrastructure/README.md`, "TLS").
+
 ## The two ways to deploy
 
 Both ways execute the **same** workflow (`.forgejo/workflows/staging.yml`) and
@@ -34,7 +39,7 @@ deployment/
 ├── README.md                  # this file
 ├── Makefile                   # one-liner entry points (make deploy-staging)
 ├── docker-compose.staging.yml # the staging stack (app + Caddy TLS)
-├── caddy/Caddyfile            # reverse proxy: one hostname, path routing, ACME http-01
+├── caddy/                     # reverse proxy: one hostname, path routing, ACME dns-01 (built image, rfc2136)
 ├── .env.staging.example       # documents the STAGING_ENV_FILE secret's keys
 ├── .secrets.template          # template for the act secrets file
 ├── docs/                      # the two deploy guides

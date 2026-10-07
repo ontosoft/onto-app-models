@@ -31,13 +31,21 @@ VM admin rights. Steps:
    `STAGING_OS_APPLICATION_CREDENTIAL_SECRET`, `STAGING_OS_REGION_NAME`
    (*your* OpenStack project's application credentials), `SSH_PRIVATE_KEY`
    (unencrypted), and `STAGING_ENV_FILE` (the whole runtime `.env`, see
-   `../.env.staging.example`).
+   `../.env.staging.example` — TLS needs `DNS_TSIG_KEY_NAME`/`DNS_TSIG_KEY`
+   in it, the zone's TSIG key from the DNS self-service "TLS Certificates"
+   page).
 3. **Check the runner label**: the workflow's `runs-on: deploy` must match a
    runner on that instance. The job image the runner uses should bake the
    deploy tools (see `../forgejo/job-image/`); on a bare image, the
    workflow's guarded install steps fetch them instead.
 4. **Run it**: Actions tab → "CD - Staging Deployment" → Run workflow →
-   `mode: plan` first, then `apply`.
+   `mode: plan` first, then `apply`. Remember to **sync the mirror first**
+   (Repository → Mirror settings → "Synchronize now") — pull mirrors only
+   refresh on their schedule, and a run on a stale mirror checks out the
+   previous commit without complaining.
+5. **After the first apply**: create the A record (no AAAA) and expect ~10
+   minutes for the first certificate — see "After the first apply" in
+   [deploy-act.md](deploy-act.md), which applies to both ways.
 
 ### Terraform state
 

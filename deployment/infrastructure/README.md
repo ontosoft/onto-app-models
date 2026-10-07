@@ -133,6 +133,15 @@ created per-run and removed in the workflow's cleanup step.
    the IPv4 address, plus a connmark script + systemd unit so replies from DNATed container
    ports leave through the right gateway (without it SSH works but every published port times
    out — Neutron's port security silently drops the misrouted replies).
+   Two traps this playbook now defends against (both found the hard way, 2026-10-05):
+   the netplan definition **ID must be the real interface name** — cloud-init renders its own
+   definition for the NIC under that name, netplan only merges same-ID definitions, and a
+   definition under any other ID is silently ignored. The resulting breakage is subtle:
+   **same-subnet clients work, every off-subnet client times out** (VPN users, CA validators).
+   Diagnose with `ip rule` (the `from <ipv4>` and `fwmark 0x64` rules must exist) and
+   `ip route show table 100` (must hold the default via the secondary gateway). And
+   `netplan apply` flushes the fwmark rule, so the marks unit is restarted whenever the
+   netplan file changed.
 2. **Data volume**: checks the Cinder device exists (failing with the list of present devices if
    not), formats it (`force: no` — a second run never reformats), mounts it by UUID at
    `/mnt/docker-data` and bind-mounts `/var/lib/docker` and `/var/lib/containerd` onto it —
@@ -157,12 +166,30 @@ Staging runs behind a Caddy **built with the rfc2136 module** (`docker-compose.s
 `caddy/Dockerfile` + `caddy/Caddyfile`). Caddy obtains and renews the certificate itself via
 ACME **dns-01**: it writes the `_acme-challenge` TXT record over RFC 2136 with the zone's TSIG
 key (`DNS_TSIG_*` in the `.env`, from the DNS self-service "TLS Certificates" page). The
-inbound challenge types do not work here — the public CAs are blocked by the campus firewall,
-and the internal CA's validators cannot reach the VM on 80/443 either, although campus hosts
-can. One hostname (`APP_HOSTNAME`) serves everything — Caddy routes `/api/*` and the FastAPI
+inbound challenge types do not work here: the public CAs are blocked by the campus perimeter
+firewall (re-verified from external nodes after all VM-side issues were fixed), and dns-01
+keeps the certificate path independent of inbound reachability altogether. One hostname (`APP_HOSTNAME`) serves everything — Caddy routes `/api/*` and the FastAPI
 doc endpoints to the backend and the rest to the frontend — so only one certificate is needed.
 The hostname needs an A record on `terraform output vm_ipv4`; do **not** add an AAAA record
-(the IPv6 address changes with every VM replacement).
+(the IPv6 address changes with every VM replacement, and both clients and CA validators pin a
+stale one). Expect the **first issuance to take ~10 minutes**: validation completes in seconds,
+but the CA's finalize step is slow — the caddy log sits at "finalizing order" and that is
+normal, not a failure.
+
+### Operational notes
+
+- **The application is reachable only from the campus network or the VPN.** The perimeter
+  firewall drops public-internet traffic to 80/443; the certificate does not change that.
+- **Changing `POSTGRES_*` in the secret does not change the database.** Postgres applies those
+  values only when its data directory is first initialized; afterwards the named volume
+  (`deployment_app-db-data`, which lives on the Cinder volume and survives VM replacement)
+  keeps the old credentials and `prestart` fails with `password authentication failed` while
+  the db container still reports healthy (`pg_isready` checks no password). Either keep the
+  credentials stable, or wipe the volume (fresh install) / `ALTER USER` inside the db
+  container (live data).
+- `llm-model-generator-api` and `engine-worker` are recreated on **every** apply: the backend
+  image is rebuilt on the VM and the rsynced context never hashes identically. A few seconds
+  of API downtime per deploy — acceptable for staging, worth revisiting for anything more.
 
 Run locally (after a `terraform apply`, from the env dir, gives you the IP):
 
@@ -217,8 +244,6 @@ key twice — compose takes the last occurrence.
 
 - The Trivy scan is intentionally non-blocking; review its findings and remove
   `continue-on-error` to enforce once the IaC is clean.
-- State is local by design (see "Local state assumption"). A remote backend is the main
-  remaining hardening item.
 
 ### Reusing this tooling in another repo
 
@@ -229,20 +254,5 @@ so the destination must install it from `requirements.yml`).
 
 ### Deployment using act
 
-Temporary solution while there is no remote state backend using act (https://github.com/nektos/act):
-
-```bash
-act -W .forgejo/workflows/staging.yml --bind --secret-file .secrets
-```
-
-With `--bind`, the container writes directly to your host directory, so `terraform.tfstate` lands
-back in `infrastructure/terraform/envs/<env>/` on your machine and is reused next run. As noted
-above, this is safe only for one person.
-
-A better way is to create a key for deployment and use it without storing it in the .secrets file:
-
-```bash
-
-act -W .forgejo/workflows/staging.yml --bind --secret-file .secrets \
-  -s SSH_PRIVATE_KEY="$(cat ~/.ssh/openstack-deploy)"
-```
+See [`../docs/deploy-act.md`](../docs/deploy-act.md) — the state lives in the pg backend
+either way, so act runs and Forgejo runs share one locked state.

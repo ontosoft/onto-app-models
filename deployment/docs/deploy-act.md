@@ -81,6 +81,8 @@ act for bootstrap and emergencies.
 3. Caddy then obtains the certificate on its own via ACME dns-01, using the
    `DNS_TSIG_*` credentials from the env file (see
    `deployment/.env.staging.example`). No CA reaches this VM inbound, so the
-   DNS route is the only one that works.
+   DNS route is the only one that works. The first issuance takes **~10
+   minutes**: validation is done in seconds, then the caddy log sits at
+   "finalizing order" while the CA's pipeline runs — that is normal.
 4. The first boot downloads the multi-GB GGUF model and imports it into
    Ollama — expect several minutes before the API container reports healthy.
