@@ -409,9 +409,9 @@
         chdir: "{{ compose_dir }}"
       changed_when: false
 
-    # --ignore-buildable skips services with a build: section (the backend,
-    # worker and frontend images exist in no registry - they are built on the
-    # VM). Without it the pull fails and aborts the playbook.
+    # --ignore-buildable skips services with a build: section - only caddy
+    # now, whose rfc2136 image exists in no registry and is built on the VM.
+    # Backend and frontend are pulled from GHCR like everything else.
     - name: Pull images
       ansible.builtin.shell:
         cmd: docker compose -f docker-compose.staging.yml pull --ignore-buildable

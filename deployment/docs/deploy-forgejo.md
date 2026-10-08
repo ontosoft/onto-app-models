@@ -39,7 +39,10 @@ VM admin rights. Steps:
    deploy tools (see `../forgejo/job-image/`); on a bare image, the
    workflow's guarded install steps fetch them instead.
 4. **Run it**: Actions tab → "CD - Staging Deployment" → Run workflow →
-   `mode: plan` first, then `apply`. Remember to **sync the mirror first**
+   `mode: plan` first, then `apply`. Backend and frontend images are pulled
+   from GHCR, so check that the "Build images" workflow for the commit you
+   deploy has finished on GitHub (with `TAG` unset, `latest` simply takes
+   the newest finished build). Remember to **sync the mirror first**
    (Repository → Mirror settings → "Synchronize now") — pull mirrors only
    refresh on their schedule, and a run on a stale mirror checks out the
    previous commit without complaining.

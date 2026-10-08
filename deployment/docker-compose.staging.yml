@@ -1,10 +1,12 @@
 # The staging stack: the full application behind a stock-Caddy reverse proxy.
 #
 # Differences from the dev docker-compose.yml:
-#   - Caddy terminates TLS on 80/443 (ACME http-01) and routes by path on ONE
-#     hostname: /api/* (plus the FastAPI doc endpoints) to the backend,
-#     everything else to the frontend. One shallow hostname needs one
-#     certificate.
+#   - Caddy terminates TLS on 80/443 (ACME dns-01, see caddy/) and routes by
+#     path on ONE hostname: /api/* (plus the FastAPI doc endpoints) to the
+#     backend, everything else to the frontend. One hostname, one certificate.
+#   - Backend and frontend are PULLED from GHCR (built by
+#     .github/workflows/build-images.yml on every main push; TAG pins a
+#     commit). Only the caddy image is built here - it has no registry.
 #   - No published ports on any other service - the security group and this
 #     file together keep Postgres, Redis, Ollama and the API off the internet.
 #   - No adminer, no ollama-webui (dev tools), no Traefik labels/network.
@@ -87,10 +89,7 @@ services:
 
   # Runs migrations + seeds the superuser (scripts/prestart.sh), then exits.
   prestart:
-    image: '${DOCKER_IMAGE_BACKEND:?Variable not set}:${TAG-latest}'
-    build:
-      context: ..
-      dockerfile: llm-model-generator/Dockerfile
+    image: '${DOCKER_IMAGE_BACKEND:-ghcr.io/ontosoft/onto-app-models/backend}:${TAG:-latest}'
     depends_on:
       db:
         condition: service_healthy
@@ -119,7 +118,7 @@ services:
 
   llm-model-generator-api:
     container_name: llm-model-generator-api
-    image: '${DOCKER_IMAGE_BACKEND:?Variable not set}:${TAG-latest}'
+    image: '${DOCKER_IMAGE_BACKEND:-ghcr.io/ontosoft/onto-app-models/backend}:${TAG:-latest}'
     restart: always
     # No published port: Caddy reaches it on the compose network.
     depends_on:
@@ -163,15 +162,12 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    build:
-      context: ..
-      dockerfile: llm-model-generator/Dockerfile
 
   # Runs the OntoUI runtime engines out-of-process. The API
   # (ENGINE_TRANSPORT=redis) forwards per-session engine ops here over Redis.
   # DB-less; crash-isolated. Scale with `--scale engine-worker=N`.
   engine-worker:
-    image: '${DOCKER_IMAGE_BACKEND:?Variable not set}:${TAG-latest}'
+    image: '${DOCKER_IMAGE_BACKEND:-ghcr.io/ontosoft/onto-app-models/backend}:${TAG:-latest}'
     restart: unless-stopped
     depends_on:
       redis:
@@ -193,21 +189,10 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER:?Variable not set}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?Variable not set}
-    build:
-      context: ..
-      dockerfile: llm-model-generator/Dockerfile
 
   frontend:
-    image: '${DOCKER_IMAGE_FRONTEND:?Variable not set}:${TAG-latest}'
+    image: '${DOCKER_IMAGE_FRONTEND:-ghcr.io/ontosoft/onto-app-models/frontend}:${TAG:-latest}'
     restart: always
-    build:
-      context: ..
-      dockerfile: frontend/Dockerfile
-      args:
-        # No VITE_API_URL: the client then uses same-origin URLs, and Caddy
-        # routes /api/* to the backend. This keeps the image free of any
-        # environment-specific value (one build serves every environment).
-        - NODE_ENV=production
 
   caddy:
     # Built rather than pulled: the stock image has no DNS provider modules,

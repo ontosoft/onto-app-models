@@ -153,10 +153,12 @@ created per-run and removed in the workflow's cleanup step.
    configuration is a deploy input, not repository content, so deploys work from any runner.
    See `.env.staging.example` for the required keys.
 5. Validates the interpolated config (`docker compose -f docker-compose.staging.yml config -q`,
-   which names any missing `${VAR?…}` on stderr), pulls registry images
+   which names any missing `${VAR?…}` on stderr), pulls the images
    (`pull --ignore-buildable`), then `up -d --build` — an explicit command rather than
-   `community.docker.docker_compose_v2`, which hides compose's stderr on failure. The custom
-   images (`llm-model-generator-api`, `frontend`, …) have no registry and are **built on the VM**.
+   `community.docker.docker_compose_v2`, which hides compose's stderr on failure. Backend and
+   frontend come **prebuilt from GHCR** (`.github/workflows/build-images.yml` pushes them on
+   every main push — so a deploy of commit X needs that build to have finished; `TAG` in the
+   `.env` pins a `sha-<short>` tag, default `latest`). Only the caddy image is built on the VM.
 6. Reloads Caddy (`caddy reload`) so changes to the bind-mounted `caddy/Caddyfile` take effect —
    compose does not notice content changes to bind mounts.
 
@@ -187,9 +189,8 @@ normal, not a failure.
   the db container still reports healthy (`pg_isready` checks no password). Either keep the
   credentials stable, or wipe the volume (fresh install) / `ALTER USER` inside the db
   container (live data).
-- `llm-model-generator-api` and `engine-worker` are recreated on **every** apply: the backend
-  image is rebuilt on the VM and the rsynced context never hashes identically. A few seconds
-  of API downtime per deploy — acceptable for staging, worth revisiting for anything more.
+- Containers are recreated only when their pulled image actually changed; an apply with the
+  same `TAG` resolving to the same digest leaves the stack running untouched.
 
 Run locally (after a `terraform apply`, from the env dir, gives you the IP):
 
