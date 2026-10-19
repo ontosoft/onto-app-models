@@ -4,7 +4,7 @@ This workspace contains a full-stack application for generating web applications
 
 ## Core Directories & Focus Areas
 
-### 1. Backend: `llm-model-generator/`
+### 1. Backend: `backend/`
 **Stack:** Python 3.10+, FastAPI, SQLModel (SQLAlchemy + Pydantic), PostgreSQL.
 - **Key Responsibilities:**
   - Managing application models (stored as RDF/Turtle and JSON-LD).

@@ -124,7 +124,7 @@ services:
     image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
     build:
       context: .
-      dockerfile: llm-model-generator/Dockerfile
+      dockerfile: backend/Dockerfile
     networks:
       - traefik-public
       - default
@@ -154,8 +154,8 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
       - SENTRY_DSN=${SENTRY_DSN}
 
-  llm-model-generator-api:
-    container_name: llm-model-generator-api
+  backend-api:
+    container_name: backend-api
     image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
     restart: always
     networks:
@@ -207,7 +207,7 @@ services:
 
     build:
       context: .
-      dockerfile: llm-model-generator/Dockerfile
+      dockerfile: backend/Dockerfile
     labels:
       - traefik.enable=true
       - traefik.docker.network=traefik-public
@@ -257,7 +257,7 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
     build:
       context: .
-      dockerfile: llm-model-generator/Dockerfile
+      dockerfile: backend/Dockerfile
 
   frontend:
     image: '${DOCKER_IMAGE_FRONTEND?Variable not set}:${TAG-latest}'

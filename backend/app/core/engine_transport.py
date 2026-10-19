@@ -59,7 +59,7 @@ class _Session:
     def __init__(self) -> None:
         # Imported lazily so an API process configured with the Redis transport
         # never loads the heavy engine (owlready2/reasoners) at all.
-        from app.owlprocessor.app_engine import AppEngine
+        from app.app_engine.app_engine import AppEngine
 
         self.engine = AppEngine()
         self.lock = threading.Lock()  # serialize ops on this one engine

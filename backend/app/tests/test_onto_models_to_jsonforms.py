@@ -3,8 +3,8 @@ from pythonjsonlogger import jsonlogger
 from rdflib import Literal, Graph, URIRef
 from rdflib.namespace import XSD
 from main import app
-from owlprocessor.app_engine import AppEngine
-from owlprocessor.communication import AppExchangeGetOutput
+from app_engine.app_engine import AppEngine
+from app_engine.communication import AppExchangeGetOutput
 import jsonpickle
 import logging
 from deepdiff import DeepDiff

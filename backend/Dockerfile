@@ -47,13 +47,13 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --frozen --no-install-workspace --package app
 
-COPY ./llm-model-generator/scripts /app/llm-model-generator/scripts
+COPY ./backend/scripts /app/backend/scripts
 
-COPY ./llm-model-generator/pyproject.toml ./llm-model-generator/alembic.ini ./llm-model-generator/README.md /app/llm-model-generator/
+COPY ./backend/pyproject.toml ./backend/alembic.ini ./backend/README.md /app/backend/
 
-COPY ./llm-model-generator/app /app/llm-model-generator/app
+COPY ./backend/app /app/backend/app
 
-COPY ./llm-model-generator/app_models /app/llm-model-generator/app_models
+COPY ./backend/app_models /app/backend/app_models
 
 # Sync the project
 # Ref: https://docs.astral.sh/uv/guides/integration/docker/#intermediate-layers
@@ -62,6 +62,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --frozen --package app 
 
-WORKDIR /app/llm-model-generator/
+WORKDIR /app/backend/
 
 CMD ["fastapi", "run", "--workers", "4", "app/main.py"]

@@ -116,8 +116,8 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?Variable not set}
       - SENTRY_DSN=${SENTRY_DSN}
 
-  llm-model-generator-api:
-    container_name: llm-model-generator-api
+  backend-api:
+    container_name: backend-api
     image: '${DOCKER_IMAGE_BACKEND:-ghcr.io/ontosoft/onto-app-models/backend}:${TAG:-latest}'
     restart: always
     # No published port: Caddy reaches it on the compose network.
@@ -225,7 +225,7 @@ services:
       - caddy-config:/config
     depends_on:
       - frontend
-      - llm-model-generator-api
+      - backend-api
 
 volumes:
   app-db-data:

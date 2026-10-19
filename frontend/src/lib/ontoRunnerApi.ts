@@ -115,7 +115,7 @@ export interface UiAction {
 
 /**
  * Build the `message_content` for an action exchange, mirroring the contract the
- * backend ProcessEngine expects (see owlprocessor/process_engine.py).
+ * backend ProcessEngine expects (see app_engine/process_engine.py).
  */
 export function buildActionMessage(
   action: UiAction,

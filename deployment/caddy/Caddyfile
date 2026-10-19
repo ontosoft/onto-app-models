@@ -36,13 +36,13 @@
 	# The generated frontend client calls /api/v1/...; the doc endpoints
 	# live at the backend root.
 	handle /api/* {
-		reverse_proxy llm-model-generator-api:8000
+		reverse_proxy backend-api:8000
 	}
 	handle /docs* {
-		reverse_proxy llm-model-generator-api:8000
+		reverse_proxy backend-api:8000
 	}
 	handle /openapi.json {
-		reverse_proxy llm-model-generator-api:8000
+		reverse_proxy backend-api:8000
 	}
 
 	# Everything else is the frontend SPA.

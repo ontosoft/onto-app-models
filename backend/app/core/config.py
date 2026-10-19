@@ -27,7 +27,7 @@ def parse_cors(v: Any) -> list[str] | str:
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        # Use top level .env file (one level above ./llm-model-generator/)
+        # Use top level .env file (one level above ./backend/)
         env_file="../.env",
         env_ignore_empty=True,
         extra="ignore",
@@ -148,7 +148,7 @@ class Settings(BaseSettings):
     BASE_DIR :Path= Path(__file__).resolve().parent.parent
 
     TEMPORARY_MODELS_DIRECTORY : ClassVar[Path] = BASE_DIR /"temporary_models"
-    # app_models sits at the package root (llm-model-generator/app_models), one
+    # app_models sits at the package root (backend/app_models), one
     # level ABOVE app/ — unlike ontologies/ and temporary_models/, which live
     # under app/. BASE_DIR/"app_models" pointed at the non-existent
     # app/app_models, breaking load_inner_uimodel_from_server (FileNotFoundError

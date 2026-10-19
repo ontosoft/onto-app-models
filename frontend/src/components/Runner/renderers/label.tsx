@@ -9,7 +9,7 @@ import { withJsonFormsRendererProps } from "@jsonforms/react"
 
 /**
  * The backend emits notification text as a uischema element of type "Label"
- * with a `text` field (see owlprocessor/form_elements.py OBOP.Label). Without a
+ * with a `text` field (see app_engine/form_elements.py OBOP.Label). Without a
  * renderer for it, JsonForms shows "No applicable renderer found", which blocks
  * every notification screen.
  */

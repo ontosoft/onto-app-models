@@ -11,8 +11,8 @@ from rdflib import RDF, Graph, Namespace, URIRef
 
 import model_generator
 from model_generator import generate_appmodel_from_shacl
-from owlprocessor.app_engine import AppEngine
-from owlprocessor.validate_model import validate_model
+from app_engine.app_engine import AppEngine
+from app_engine.validate_model import validate_model
 
 EXAMPLES = Path(model_generator.__file__).parent / "examples"
 

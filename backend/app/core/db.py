@@ -20,7 +20,7 @@ engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI))
 # for more details: https://github.com/fastapi/full-stack-fastapi-template/issues/28
 
 
-# Repo-level example models (llm-model-generator/app_models), shipped in the image.
+# Repo-level example models (backend/app_models), shipped in the image.
 EXAMPLE_MODELS_DIR = Path(__file__).resolve().parents[2] / "app_models"
 
 # Demo models seeded only in local/dev. Each entry: (title, description, filename).

@@ -7,7 +7,7 @@ to those shapes.
 ```
 SHACL shapes  ──►  model_generator  ──►  OntoUI model (BBO process + OBOP UI + SHACL)
                                           │
-                                          └─► owlprocessor runs it as a real app
+                                          └─► app_engine runs it as a real app
                                               (multi-step forms → validated knowledge graph)
 ```
 
@@ -104,7 +104,7 @@ gm.jsonld   # JSON-LD object (-> knowledge_graph_json, JSONB)
 ```
 
 ```bash
-# CLI (run from llm-model-generator/app)
+# CLI (run from backend/app)
 python -m model_generator model_generator/examples/restaurant.shapes.ttl -o model.ttl
 ```
 

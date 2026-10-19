@@ -65,13 +65,13 @@ services:
     ports:
       - "8080:8080"
 
-  llm-model-generator-api:
+  backend-api:
     restart: "no"
     ports:
       - "8000:8000"
     build:
       context: .
-      dockerfile: llm-model-generator/Dockerfile
+      dockerfile: backend/Dockerfile
     # command: sleep infinity  # Infinite loop to keep container alive doing nothing
     command:
       - fastapi
@@ -80,17 +80,17 @@ services:
       - "app/main.py"
     develop:
       watch:
-        - path: ./llm-model-generator
+        - path: ./backend
           action: sync
-          target: /app/llm-model-generator
+          target: /app/backend
           ignore:
-            - ./llm-model-generator/.venv
+            - ./backend/.venv
             - .venv
-        - path: ./llm-model-generator/pyproject.toml
+        - path: ./backend/pyproject.toml
           action: rebuild
     # TODO: remove once coverage is done locally
     volumes:
-      - ./llm-model-generator/htmlcov:/app/llm-model-generator/htmlcov
+      - ./backend/htmlcov:/app/backend/htmlcov
     environment:
       SMTP_HOST: "mailcatcher"
       SMTP_PORT: "1025"
@@ -106,13 +106,13 @@ services:
     restart: "no"
     develop:
       watch:
-        - path: ./llm-model-generator
+        - path: ./backend
           action: sync+restart
-          target: /app/llm-model-generator
+          target: /app/backend
           ignore:
-            - ./llm-model-generator/.venv
+            - ./backend/.venv
             - .venv
-        - path: ./llm-model-generator/pyproject.toml
+        - path: ./backend/pyproject.toml
           action: rebuild
 
   mailcatcher:
@@ -166,7 +166,7 @@ services:
         - NODE_ENV=production
     ipc: host
     depends_on:
-      - llm-model-generator-api
+      - backend-api
       - mailcatcher
     env_file:
       - .env

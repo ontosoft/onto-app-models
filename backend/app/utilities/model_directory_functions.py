@@ -6,7 +6,7 @@ from rdflib.plugins.sparql import prepareQuery
 from owlready2 import World, sync_reasoner_pellet
 from owlready2 import sync_reasoner_hermit
 from app.core.config import settings
-from app.owlprocessor.static_model_cache import (
+from app.app_engine.static_model_cache import (
     reasoned_world_cache,
     serialize_world,
     load_world,

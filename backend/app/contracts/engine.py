@@ -1,8 +1,8 @@
 """The engine I/O DTOs — the messages exchanged between the frontend/API and the
 runtime engine.
 
-These live here (not in owlprocessor) so the API and the Stage-2 engine worker
-share one definition without either importing the engine package. owlprocessor's
+These live here (not in app_engine) so the API and the Stage-2 engine worker
+share one definition without either importing the engine package. app_engine's
 ``communication`` module re-exports these for backward compatibility, so engine
 internals keep importing them unchanged.
 """

@@ -190,7 +190,7 @@ wheels = [
 [[package]]
 name = "app"
 version = "0.1.0"
-source = { editable = "llm-model-generator" }
+source = { editable = "backend" }
 dependencies = [
     { name = "alembic" },
     { name = "argon2-cffi" },

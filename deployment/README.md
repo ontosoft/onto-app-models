@@ -4,7 +4,7 @@ Everything needed to run OntoUI on a server lives here: the staging compose
 stack, the Caddy reverse proxy, the Terraform and Ansible definitions of the
 infrastructure, and the (optional) Forgejo forge host that automates deploys.
 
-The application itself lives in the repository root (`llm-model-generator/`,
+The application itself lives in the repository root (`backend/`,
 `frontend/`); local development keeps using the root `docker-compose.yml` and
 is not affected by anything in this directory.
 

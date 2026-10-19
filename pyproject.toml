@@ -1,2 +1,2 @@
 [tool.uv.workspace]
-members = ["llm-model-generator"]
+members = ["backend"]
