@@ -433,6 +433,14 @@
       register: compose_output
       changed_when: true
 
+    # Each deploy pulls fresh :latest layers; without pruning, the replaced
+    # images accumulate until the data volume runs full. "Unused" means not
+    # referenced by any container, so the running stack keeps its images.
+    - name: Prune unused images and build cache
+      ansible.builtin.shell:
+        cmd: docker image prune -af && docker builder prune -af
+      changed_when: true
+
     # The Caddyfile is bind-mounted, so compose does not notice content
     # changes to it. This reload applies them; Caddy validates the new config
     # first and keeps the old one on failure. Deliberately NOT failed_when:
