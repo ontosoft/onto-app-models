@@ -428,7 +428,7 @@
     # one step, so no container is left running on a discarded image ID.
     - name: Start the application with Docker Compose
       ansible.builtin.command:
-        cmd: docker compose -f docker-compose.staging.yml up -d --build
+        cmd: docker compose -f docker-compose.staging.yml up -d --build --remove-orphans
         chdir: "{{ compose_dir }}"
       register: compose_output
       changed_when: true
