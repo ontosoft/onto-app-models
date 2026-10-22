@@ -59,11 +59,18 @@ def seed_example_appmodels(session: Session, owner_id: uuid.UUID) -> None:
     left untouched, so restarts don't create duplicates.
     """
     created = 0
+    updated = 0
     for title, description, filename in EXAMPLE_APPMODELS:
         existing = session.exec(
             select(AppModel).where(AppModel.title == title)
         ).first()
         if existing:
+            # Rows seeded before the is_public flag existed stay private
+            # otherwise; examples are meant to be visible to everyone.
+            if not existing.is_public:
+                existing.is_public = True
+                session.add(existing)
+                updated += 1
             continue
 
         path = EXAMPLE_MODELS_DIR / filename
@@ -85,13 +92,16 @@ def seed_example_appmodels(session: Session, owner_id: uuid.UUID) -> None:
                 knowledge_graph_rdf=rdf_str,
                 knowledge_graph_json=jsonld,
                 owner_id=owner_id,
+                is_public=True,
             )
         )
         created += 1
 
-    if created:
+    if created or updated:
         session.commit()
-        logger.info("Seeded %d example app model(s).", created)
+        logger.info(
+            "Seeded %d example app model(s), marked %d public.", created, updated
+        )
 
 
 def init_db(session: Session) -> None:

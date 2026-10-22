@@ -4,7 +4,7 @@ from typing import Any
 from rdflib import Graph
 
 from fastapi import APIRouter, HTTPException, Header
-from sqlmodel import func, select
+from sqlmodel import func, or_, select
 
 from app.core.session_service import engine_sessions, DEFAULT_SESSION
 from app.api.deps import SessionDep, CurrentUser
@@ -36,18 +36,16 @@ def read_app_models(
         statement = select(AppModel).offset(skip).limit(limit)
         app_models = session.exec(statement).all()
     else:
+        # Regular users see their own models plus public ones.
+        visible = or_(
+            AppModel.owner_id == current_user.id,
+            AppModel.is_public == True,  # noqa: E712 - SQL expression, not a bool
+        )
         count_statement = (
-            select(func.count())
-            .select_from(AppModel)
-            .where(AppModel.owner_id == current_user.id)
+            select(func.count()).select_from(AppModel).where(visible)
         )
         count = session.exec(count_statement).one()
-        statement = (
-            select(AppModel)
-            .where(AppModel.owner_id == current_user.id)
-            .offset(skip)
-            .limit(limit)
-        )
+        statement = select(AppModel).where(visible).offset(skip).limit(limit)
         app_models = session.exec(statement).all()
     return AppModelsPublic(data=app_models, count=count)
 
@@ -61,7 +59,11 @@ def read_app_model(
     app_model = session.get(AppModel, id)
     if not app_model:
         raise HTTPException(status_code=404, detail="App model not found")
-    if not current_user.is_superuser and app_model.owner_id != current_user.id:
+    if (
+        not current_user.is_superuser
+        and app_model.owner_id != current_user.id
+        and not app_model.is_public
+    ):
         raise HTTPException(status_code=403, detail="Not enough permissions")
     return app_model
 
@@ -104,10 +106,19 @@ def update_app_model(
     if not current_user.is_superuser and app_model.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not enough permissions")
     
+    # Only fields the client actually sent; a full dump would overwrite
+    # unset optional fields with None.
+    app_model_data = app_model_in.model_dump(exclude_unset=True)
+    if app_model_data.get("is_public") is None:
+        app_model_data.pop("is_public", None)
+    elif not current_user.is_superuser:
+        raise HTTPException(
+            status_code=403, detail="Only superusers can change model visibility"
+        )
+
     # Update the JSON-LD  field based on the new RDF input
-    app_model_data = app_model_in.model_dump()
     app_model.knowledge_graph_json = convert_rdf_to_jsonld(app_model_in.knowledge_graph_rdf)
-        
+
     app_model.sqlmodel_update(app_model_data)
     session.add(app_model)
     session.commit()
@@ -145,7 +156,11 @@ def run_app_model(
     app_model = session.get(AppModel, id)
     if not app_model:
         raise HTTPException(status_code=404, detail="App model not found")
-    if not current_user.is_superuser and app_model.owner_id != current_user.id:
+    if (
+        not current_user.is_superuser
+        and app_model.owner_id != current_user.id
+        and not app_model.is_public
+    ):
         raise HTTPException(status_code=403, detail="Not enough permissions")
 
     try:

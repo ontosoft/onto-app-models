@@ -25,10 +25,10 @@ export const AppExchangeGetOutputSchema = {
     type: 'object',
     required: ['message_type', 'layout_type', 'message_content', 'output_knowledge_graph'],
     title: 'AppExchangeGetOutput',
-    description: `This class represents the data which is sent from the backend
-to the frontend. If the frontend has to show the form then
-an object of this class contains JSONForm elements to 
-create that form.`
+    description: `Data sent from the backend to the frontend.
+
+When the frontend has to render a form, \`\`message_content\`\` carries the
+JSONForm schema/uischema; otherwise it carries a notification/message.`
 } as const;
 
 export const AppModelCreateSchema = {
@@ -50,10 +50,14 @@ export const AppModelCreateSchema = {
                 }
             ],
             title: 'Description'
+        },
+        knowledge_graph_rdf: {
+            type: 'string',
+            title: 'Knowledge Graph Rdf'
         }
     },
     type: 'object',
-    required: ['title'],
+    required: ['title', 'knowledge_graph_rdf'],
     title: 'AppModelCreate'
 } as const;
 
@@ -77,6 +81,17 @@ export const AppModelPublicSchema = {
             ],
             title: 'Description'
         },
+        knowledge_graph_rdf: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Knowledge Graph Rdf'
+        },
         id: {
             type: 'string',
             format: 'uuid',
@@ -99,13 +114,14 @@ export const AppModelPublicSchema = {
             ],
             title: 'Created At'
         },
-        knowledge_graph_rdf: {
-            type: 'string',
-            title: 'Knowledge Graph Rdf'
+        is_public: {
+            type: 'boolean',
+            title: 'Is Public',
+            default: false
         }
     },
     type: 'object',
-    required: ['title', 'id', 'owner_id', 'knowledge_graph_rdf'],
+    required: ['title', 'id', 'owner_id'],
     title: 'AppModelPublic'
 } as const;
 
@@ -140,6 +156,17 @@ export const AppModelUpdateSchema = {
             type: 'string',
             minLength: 2,
             title: 'Knowledge Graph Rdf'
+        },
+        is_public: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Is Public'
         }
     },
     type: 'object',
@@ -227,7 +254,7 @@ export const Body_onto_model_generator_upload_model_fileSchema = {
     properties: {
         file: {
             type: 'string',
-            format: 'binary',
+            contentMediaType: 'application/octet-stream',
             title: 'File'
         }
     },
@@ -600,6 +627,13 @@ export const ValidationErrorSchema = {
         type: {
             type: 'string',
             title: 'Error Type'
+        },
+        input: {
+            title: 'Input'
+        },
+        ctx: {
+            type: 'object',
+            title: 'Context'
         }
     },
     type: 'object',

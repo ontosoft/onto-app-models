@@ -1,6 +1,7 @@
 import type { ColumnDef } from "@tanstack/react-table"
 import { Check, Copy } from "lucide-react"
 import type { AppModelPublic } from "~/client"
+import { Badge } from "~/components/ui/badge"
 import { Button } from "~/components/ui/button"
 import { useCopyToClipboard } from "~/hooks/useCopyToClipboard"
 import { cn } from "~/lib/utils"
@@ -66,6 +67,16 @@ export const columns: ColumnDef<AppModelPublic>[] = [
         </span>
       )
     },
+  },
+  {
+    accessorKey: "is_public",
+    header: "Visibility",
+    cell: ({ row }) =>
+      row.original.is_public ? (
+        <Badge variant="secondary">public</Badge>
+      ) : (
+        <span className="text-muted-foreground text-xs">private</span>
+      ),
   },
   {
     id: "actions",

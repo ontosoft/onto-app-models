@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { AppmodelsReadAppModelsData, AppmodelsReadAppModelsResponse, AppmodelsCreateAppModelData, AppmodelsCreateAppModelResponse, AppmodelsReadAppModelData, AppmodelsReadAppModelResponse, AppmodelsUpdateAppModelData, AppmodelsUpdateAppModelResponse, AppmodelsDeleteAppModelData, AppmodelsDeleteAppModelResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, OntoModelGeneratorUploadModelFileData, OntoModelGeneratorUploadModelFileResponse, OntoModelGeneratorRunApplicationResponse, OntoModelGeneratorStopApplicationResponse, OntoModelGeneratorProcessDataSentFromFrontendResponse, OntoModelGeneratorReadCurrentAppDataFromModelResponse, OntoModelGeneratorReadTheListOfAppModelsResponse, OntoModelGeneratorLoadInnerServerModelData, OntoModelGeneratorLoadInnerServerModelResponse, PrivateCreateUserData, PrivateCreateUserResponse, StreamStreamAiData, StreamStreamAiResponse, TextProcessingGetWordCountData, TextProcessingGetWordCountResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { AppmodelsReadAppModelsData, AppmodelsReadAppModelsResponse, AppmodelsCreateAppModelData, AppmodelsCreateAppModelResponse, AppmodelsReadAppModelData, AppmodelsReadAppModelResponse, AppmodelsUpdateAppModelData, AppmodelsUpdateAppModelResponse, AppmodelsDeleteAppModelData, AppmodelsDeleteAppModelResponse, AppmodelsRunAppModelData, AppmodelsRunAppModelResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, OntoModelGeneratorUploadModelFileData, OntoModelGeneratorUploadModelFileResponse, OntoModelGeneratorRunApplicationData, OntoModelGeneratorRunApplicationResponse, OntoModelGeneratorStopApplicationData, OntoModelGeneratorStopApplicationResponse, OntoModelGeneratorProcessDataSentFromFrontendData, OntoModelGeneratorProcessDataSentFromFrontendResponse, OntoModelGeneratorReadCurrentAppDataFromModelData, OntoModelGeneratorReadCurrentAppDataFromModelResponse, OntoModelGeneratorReadTheListOfAppModelsResponse, OntoModelGeneratorLoadInnerServerModelData, OntoModelGeneratorLoadInnerServerModelResponse, PrivateCreateUserData, PrivateCreateUserResponse, StreamStreamAiData, StreamStreamAiResponse, TextProcessingGetWordCountData, TextProcessingGetWordCountResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
 
 export class AppmodelsService {
     /**
@@ -108,6 +108,31 @@ export class AppmodelsService {
             url: '/api/v1/appmodels/{id}',
             path: {
                 id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Run App Model
+     * Run an app model in the caller's engine session (X-Onto-Session header).
+     * @param data The data for the request.
+     * @param data.id
+     * @param data.xOntoSession
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static runAppModel(data: AppmodelsRunAppModelData): CancelablePromise<AppmodelsRunAppModelResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/appmodels/run/{id}',
+            path: {
+                id: data.id
+            },
+            headers: {
+                'X-Onto-Session': data.xOntoSession
             },
             errors: {
                 422: 'Validation Error'
@@ -236,29 +261,44 @@ export class OntoModelGeneratorService {
     
     /**
      * Run Application
-     * Runs the application by creating an instance of the ProcessEngine.
-     * If the application was already run before, it displays a message
-     * indicating that the application is running.
+     * Runs the application by creating a ProcessEngine for this session.
+     * If the session's model is already running, reports that instead.
+     * @param data The data for the request.
+     * @param data.xOntoSession
      * @returns unknown Run the application
      * @throws ApiError
      */
-    public static runApplication(): CancelablePromise<OntoModelGeneratorRunApplicationResponse> {
+    public static runApplication(data: OntoModelGeneratorRunApplicationData = {}): CancelablePromise<OntoModelGeneratorRunApplicationResponse> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/generator/run_application'
+            url: '/api/v1/generator/run_application',
+            headers: {
+                'X-Onto-Session': data.xOntoSession
+            },
+            errors: {
+                422: 'Validation Error'
+            }
         });
     }
     
     /**
      * Stop Application
-     * This function stops the application if it is already running.
+     * This function stops the application for this session if it is running.
+     * @param data The data for the request.
+     * @param data.xOntoSession
      * @returns unknown Shut down the running application
      * @throws ApiError
      */
-    public static stopApplication(): CancelablePromise<OntoModelGeneratorStopApplicationResponse> {
+    public static stopApplication(data: OntoModelGeneratorStopApplicationData = {}): CancelablePromise<OntoModelGeneratorStopApplicationResponse> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/generator/stop_application'
+            url: '/api/v1/generator/stop_application',
+            headers: {
+                'X-Onto-Session': data.xOntoSession
+            },
+            errors: {
+                422: 'Validation Error'
+            }
         });
     }
     
@@ -267,13 +307,21 @@ export class OntoModelGeneratorService {
      * Receiving the current data form the frontend (e.g. UI page). This method is called
      * before reading the data from the interactive model and then is used the method
      * app_exchange_get are used to complete data exchange between the frontend and the backend.
+     * @param data The data for the request.
+     * @param data.xOntoSession
      * @returns unknown Process the data sent from the frontend
      * @throws ApiError
      */
-    public static processDataSentFromFrontend(): CancelablePromise<OntoModelGeneratorProcessDataSentFromFrontendResponse> {
+    public static processDataSentFromFrontend(data: OntoModelGeneratorProcessDataSentFromFrontendData = {}): CancelablePromise<OntoModelGeneratorProcessDataSentFromFrontendResponse> {
         return __request(OpenAPI, {
             method: 'POST',
-            url: '/api/v1/generator/app_exchange_post'
+            url: '/api/v1/generator/app_exchange_post',
+            headers: {
+                'X-Onto-Session': data.xOntoSession
+            },
+            errors: {
+                422: 'Validation Error'
+            }
         });
     }
     
@@ -283,13 +331,21 @@ export class OntoModelGeneratorService {
      * returns it in the json format to the frontend. This route is called after
      * processing the data sent from the frontend and both methods are used to
      * make data exchange between the frontend and the backend.
+     * @param data The data for the request.
+     * @param data.xOntoSession
      * @returns AppExchangeGetOutput Get current UI page
      * @throws ApiError
      */
-    public static readCurrentAppDataFromModel(): CancelablePromise<OntoModelGeneratorReadCurrentAppDataFromModelResponse> {
+    public static readCurrentAppDataFromModel(data: OntoModelGeneratorReadCurrentAppDataFromModelData = {}): CancelablePromise<OntoModelGeneratorReadCurrentAppDataFromModelResponse> {
         return __request(OpenAPI, {
             method: 'GET',
-            url: '/api/v1/generator/app_exchange_get'
+            url: '/api/v1/generator/app_exchange_get',
+            headers: {
+                'X-Onto-Session': data.xOntoSession
+            },
+            errors: {
+                422: 'Validation Error'
+            }
         });
     }
     
@@ -309,7 +365,7 @@ export class OntoModelGeneratorService {
     
     /**
      * Load Inner Server Model
-     * Load the chosen inner UI model from the server.
+     * Load the chosen inner UI model from the server into this session's engine.
      *
      * Args:
      * filename (str): The name of the UI model file to be loaded.
@@ -317,6 +373,7 @@ export class OntoModelGeneratorService {
      * @param data The data for the request.
      * @param data.filename
      * @param data.forceLoad Force reload the model
+     * @param data.xOntoSession
      * @returns unknown Load the chosen app model on the server
      * @throws ApiError
      */
@@ -324,6 +381,9 @@ export class OntoModelGeneratorService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/generator/load_inner_uimodel_from_server',
+            headers: {
+                'X-Onto-Session': data.xOntoSession
+            },
             query: {
                 filename: data.filename,
                 force_load: data.forceLoad

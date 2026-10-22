@@ -80,10 +80,15 @@ class AppModelUpdate(SQLModel):
     title: str | None = Field(default=None, min_length=1, max_length=255)
     description: str | None = Field(default=None, max_length=1024)
     knowledge_graph_rdf: str = Field(min_length=2)  # type: ignore
+    # Only superusers may change this (enforced in the route).
+    is_public: bool | None = None
 
 class AppModel(AppModelBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     owner_id: uuid.UUID = Field(foreign_key="user.id", nullable=False)
+    # Public models are visible (read/run) to every authenticated user;
+    # editing and deleting stay owner/superuser-only.
+    is_public: bool = Field(default=False, nullable=False)
     owner: User = Relationship(back_populates="appmodels")  # type: ignore
     created_at: datetime | None = Field(
         default_factory=get_datetime_utc,
@@ -101,6 +106,7 @@ class AppModelPublic(AppModelBase):
     owner_id: uuid.UUID
     created_at: datetime | None = None
     knowledge_graph_rdf: str | None = None
+    is_public: bool = False
 
 class AppModelsPublic(SQLModel):
     data: list[AppModelPublic]
