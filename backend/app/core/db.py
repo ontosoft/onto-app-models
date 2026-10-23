@@ -23,7 +23,9 @@ engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI))
 # Repo-level example models (backend/app_models), shipped in the image.
 EXAMPLE_MODELS_DIR = Path(__file__).resolve().parents[2] / "app_models"
 
-# Demo models seeded only in local/dev. Each entry: (title, description, filename).
+# Repo example models, seeded as public in every environment so all users
+# can see and run them. Each entry: (title, description, filename).
+# (enter-string-form_shacl_shape.ttl is a validation sidecar, not a model.)
 EXAMPLE_APPMODELS: list[tuple[str, str, str]] = [
     (
         "Enter String Form",
@@ -34,6 +36,21 @@ EXAMPLE_APPMODELS: list[tuple[str, str, str]] = [
         "Complete Restaurant",
         "Larger restaurant data-entry model.",
         "restaurant-preprocessed.ttl",
+    ),
+    (
+        "Restaurant (SHACL)",
+        "Restaurant model driven by SHACL shapes.",
+        "restaurant-shacl.ttl",
+    ),
+    (
+        "Restaurant (SHACL, explicit bnodes)",
+        "SHACL restaurant variant with explicitly named blank nodes.",
+        "restaurant-shacl_explicite-bnodes.ttl",
+    ),
+    (
+        "Restaurant (nested bnodes)",
+        "Restaurant variant with blank nodes defined through nesting.",
+        "restaurant_model_ttl_with_bnodes_defined_with_nesting.ttl",
     ),
 ]
 
@@ -52,7 +69,7 @@ def _rdf_to_jsonld(rdf_str: str) -> object:
 
 
 def seed_example_appmodels(session: Session, owner_id: uuid.UUID) -> None:
-    """Idempotently seed a few known-good example AppModels (local/dev only).
+    """Idempotently seed the repo's example AppModels as public.
 
     Honors the dual-write invariant: both knowledge_graph_rdf and
     knowledge_graph_json are populated. Existing rows (matched by title) are
@@ -124,6 +141,6 @@ def init_db(session: Session) -> None:
         )
         user = crud.create_user(session=session, user_create=user_in)
 
-    # Demo data only in local/dev; never in staging/production.
-    if settings.ENVIRONMENT == "local":
-        seed_example_appmodels(session, owner_id=user.id)
+    # The repo examples are reference models for every environment; they are
+    # seeded as public so non-superusers see them too. Idempotent by title.
+    seed_example_appmodels(session, owner_id=user.id)
