@@ -1,14 +1,18 @@
 import hashlib
+import json
 import uuid
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from rdflib import Graph
+from rdflib import RDF, Graph, Namespace, URIRef
 from sqlmodel import func, or_, select
 
 from app.api.deps import SessionDep, CurrentUser
+from app.model_generator.builder import generate_model_graph
+from app.model_generator.templates import OBOP
 from app.models import (
     AppModel,
+    AppModelPublic,
     AppModelsPublic,
     Message,
     ShapesDocument,
@@ -16,6 +20,8 @@ from app.models import (
     ShapesDocumentPublic,
     ShapesDocumentsPublic,
 )
+
+PROV = Namespace("http://www.w3.org/ns/prov#")
 
 router = APIRouter(prefix="/shapes", tags=["shapes"])
 
@@ -131,6 +137,55 @@ def read_shapes_document_appmodels(
     ).one()
     candidates = session.exec(select(AppModel).where(*conditions)).all()
     return AppModelsPublic(data=candidates, count=count)
+
+
+@router.post("/{id}/generate", response_model=AppModelPublic)
+def generate_appmodel_from_shapes_document(
+    *, session: SessionDep, current_user: CurrentUser, id: uuid.UUID
+) -> Any:
+    """
+    Generate a FAM candidate from this shapes document (rule-based converter).
+
+    The new AppModel belongs to the caller, records its provenance
+    (shapes_id + generation_method) and carries a prov:wasDerivedFrom triple
+    in the graph itself, so the origin survives a Turtle export.
+    """
+    shapes = _get_visible_shapes_document(session, current_user, id)
+    if shapes.format != "shacl":
+        raise HTTPException(
+            status_code=422,
+            detail=f"No converter registered for format '{shapes.format}'",
+        )
+
+    try:
+        graph = generate_model_graph(shapes.content)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+    # In-graph provenance; urn:uuid:<shapes_id> resolves to the DB row.
+    model_node = next(graph.subjects(RDF.type, OBOP.Model), None)
+    if model_node is not None:
+        graph.add(
+            (model_node, PROV.wasDerivedFrom, URIRef(f"urn:uuid:{shapes.id}"))
+        )
+
+    # Number the candidate within this document's existing ones.
+    existing = session.exec(
+        select(func.count()).select_from(AppModel).where(AppModel.shapes_id == id)
+    ).one()
+    app_model = AppModel(
+        title=f"{shapes.name} (rule-based v{existing + 1})",
+        description=f"Generated from shapes document '{shapes.name}'.",
+        knowledge_graph_rdf=graph.serialize(format="turtle"),
+        knowledge_graph_json=json.loads(graph.serialize(format="json-ld")),
+        owner_id=current_user.id,
+        shapes_id=shapes.id,
+        generation_method="rule-based",
+    )
+    session.add(app_model)
+    session.commit()
+    session.refresh(app_model)
+    return app_model
 
 
 @router.delete("/{id}", response_model=Message)

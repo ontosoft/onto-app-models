@@ -320,6 +320,12 @@ export type ShapesReadShapesDocumentAppmodelsData = {
 
 export type ShapesReadShapesDocumentAppmodelsResponse = (AppModelsPublic);
 
+export type ShapesGenerateAppmodelFromShapesDocumentData = {
+    id: string;
+};
+
+export type ShapesGenerateAppmodelFromShapesDocumentResponse = (AppModelPublic);
+
 export type StreamStreamAiData = {
     prompt: string;
 };

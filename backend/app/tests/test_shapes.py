@@ -122,3 +122,48 @@ def test_upload_dedupe_and_visibility() -> None:
         for doc, headers in ((su_doc, superuser), (power_doc, power_user)):
             if doc is not None:
                 client.delete(f"{SHAPES_URL}/{doc['id']}", headers=headers)
+
+
+def test_generate_appmodel_from_shapes() -> None:
+    power_user = ensure_power_user()
+    content = MINIMAL_SHACL + f"\n# run {uuid.uuid4()}\n"
+    doc = upload(power_user, "person.shapes.ttl", content)
+
+    model = None
+    try:
+        response = client.post(
+            f"{SHAPES_URL}/{doc['id']}/generate", headers=power_user
+        )
+        assert response.status_code == 200, response.text
+        model = response.json()
+
+        # Provenance is recorded in the row ...
+        assert model["shapes_id"] == doc["id"]
+        assert model["generation_method"] == "rule-based"
+        assert model["is_public"] is False
+        # ... and inside the graph itself (survives a Turtle export).
+        assert "wasDerivedFrom" in model["knowledge_graph_rdf"]
+        assert f"urn:uuid:{doc['id']}" in model["knowledge_graph_rdf"]
+
+        # The candidate shows up under its shapes document.
+        candidates = client.get(
+            f"{SHAPES_URL}/{doc['id']}/appmodels", headers=power_user
+        ).json()
+        assert candidates["count"] == 1
+        assert candidates["data"][0]["id"] == model["id"]
+
+        # The generated model actually runs in the engine: the real load+start
+        # path (static model factory -> ProcessEngine), i.e. validator level
+        # V4 - the generator's output is engine-runnable, not just valid RDF.
+        response = client.post(
+            f"{settings.API_V1_STR}/appmodels/run/{model['id']}",
+            headers={**power_user, "X-Onto-Session": f"test-{uuid.uuid4()}"},
+        )
+        assert response.status_code == 200, response.text
+    finally:
+        if model is not None:
+            client.delete(
+                f"{settings.API_V1_STR}/appmodels/{model['id']}",
+                headers=power_user,
+            )
+        client.delete(f"{SHAPES_URL}/{doc['id']}", headers=power_user)

@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { AppmodelsReadAppModelsData, AppmodelsReadAppModelsResponse, AppmodelsCreateAppModelData, AppmodelsCreateAppModelResponse, AppmodelsReadAppModelData, AppmodelsReadAppModelResponse, AppmodelsUpdateAppModelData, AppmodelsUpdateAppModelResponse, AppmodelsDeleteAppModelData, AppmodelsDeleteAppModelResponse, AppmodelsRunAppModelData, AppmodelsRunAppModelResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, OntoModelGeneratorUploadModelFileData, OntoModelGeneratorUploadModelFileResponse, OntoModelGeneratorRunApplicationData, OntoModelGeneratorRunApplicationResponse, OntoModelGeneratorStopApplicationData, OntoModelGeneratorStopApplicationResponse, OntoModelGeneratorProcessDataSentFromFrontendData, OntoModelGeneratorProcessDataSentFromFrontendResponse, OntoModelGeneratorReadCurrentAppDataFromModelData, OntoModelGeneratorReadCurrentAppDataFromModelResponse, OntoModelGeneratorReadTheListOfAppModelsResponse, OntoModelGeneratorLoadInnerServerModelData, OntoModelGeneratorLoadInnerServerModelResponse, PrivateCreateUserData, PrivateCreateUserResponse, ShapesCreateShapesDocumentData, ShapesCreateShapesDocumentResponse, ShapesReadShapesDocumentsData, ShapesReadShapesDocumentsResponse, ShapesReadShapesDocumentData, ShapesReadShapesDocumentResponse, ShapesDeleteShapesDocumentData, ShapesDeleteShapesDocumentResponse, ShapesReadShapesDocumentAppmodelsData, ShapesReadShapesDocumentAppmodelsResponse, StreamStreamAiData, StreamStreamAiResponse, TextProcessingGetWordCountData, TextProcessingGetWordCountResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { AppmodelsReadAppModelsData, AppmodelsReadAppModelsResponse, AppmodelsCreateAppModelData, AppmodelsCreateAppModelResponse, AppmodelsReadAppModelData, AppmodelsReadAppModelResponse, AppmodelsUpdateAppModelData, AppmodelsUpdateAppModelResponse, AppmodelsDeleteAppModelData, AppmodelsDeleteAppModelResponse, AppmodelsRunAppModelData, AppmodelsRunAppModelResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, OntoModelGeneratorUploadModelFileData, OntoModelGeneratorUploadModelFileResponse, OntoModelGeneratorRunApplicationData, OntoModelGeneratorRunApplicationResponse, OntoModelGeneratorStopApplicationData, OntoModelGeneratorStopApplicationResponse, OntoModelGeneratorProcessDataSentFromFrontendData, OntoModelGeneratorProcessDataSentFromFrontendResponse, OntoModelGeneratorReadCurrentAppDataFromModelData, OntoModelGeneratorReadCurrentAppDataFromModelResponse, OntoModelGeneratorReadTheListOfAppModelsResponse, OntoModelGeneratorLoadInnerServerModelData, OntoModelGeneratorLoadInnerServerModelResponse, PrivateCreateUserData, PrivateCreateUserResponse, ShapesCreateShapesDocumentData, ShapesCreateShapesDocumentResponse, ShapesReadShapesDocumentsData, ShapesReadShapesDocumentsResponse, ShapesReadShapesDocumentData, ShapesReadShapesDocumentResponse, ShapesDeleteShapesDocumentData, ShapesDeleteShapesDocumentResponse, ShapesReadShapesDocumentAppmodelsData, ShapesReadShapesDocumentAppmodelsResponse, ShapesGenerateAppmodelFromShapesDocumentData, ShapesGenerateAppmodelFromShapesDocumentResponse, StreamStreamAiData, StreamStreamAiResponse, TextProcessingGetWordCountData, TextProcessingGetWordCountResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
 
 export class AppmodelsService {
     /**
@@ -524,6 +524,31 @@ export class ShapesService {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/api/v1/shapes/{id}/appmodels',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Generate Appmodel From Shapes Document
+     * Generate a FAM candidate from this shapes document (rule-based converter).
+     *
+     * The new AppModel belongs to the caller, records its provenance
+     * (shapes_id + generation_method) and carries a prov:wasDerivedFrom triple
+     * in the graph itself, so the origin survives a Turtle export.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns AppModelPublic Successful Response
+     * @throws ApiError
+     */
+    public static generateAppmodelFromShapesDocument(data: ShapesGenerateAppmodelFromShapesDocumentData): CancelablePromise<ShapesGenerateAppmodelFromShapesDocumentResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/shapes/{id}/generate',
             path: {
                 id: data.id
             },

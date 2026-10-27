@@ -2,6 +2,7 @@ import type { ColumnDef } from "@tanstack/react-table"
 import type { ShapesDocumentPublic } from "~/client"
 import { Badge } from "~/components/ui/badge"
 import DeleteShapesDocument from "./DeleteShapesDocument"
+import GenerateAppModel from "./GenerateAppModel"
 
 export const columns: ColumnDef<ShapesDocumentPublic>[] = [
   {
@@ -30,7 +31,8 @@ export const columns: ColumnDef<ShapesDocumentPublic>[] = [
     id: "actions",
     header: () => <span className="sr-only">Actions</span>,
     cell: ({ row }) => (
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        <GenerateAppModel id={row.original.id} />
         <DeleteShapesDocument id={row.original.id} />
       </div>
     ),

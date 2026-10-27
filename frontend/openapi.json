@@ -947,6 +947,41 @@
         }
       }
     },
+    "/api/v1/shapes/{id}/generate": {
+      "post": {
+        "tags": ["shapes"],
+        "summary": "Generate Appmodel From Shapes Document",
+        "description": "Generate a FAM candidate from this shapes document (rule-based converter).\n\nThe new AppModel belongs to the caller, records its provenance\n(shapes_id + generation_method) and carries a prov:wasDerivedFrom triple\nin the graph itself, so the origin survives a Turtle export.",
+        "operationId": "shapes-generate_appmodel_from_shapes_document",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid", "title": "Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AppModelPublic" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/stream/stream": {
       "get": {
         "tags": ["stream"],

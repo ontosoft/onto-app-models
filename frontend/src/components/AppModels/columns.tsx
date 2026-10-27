@@ -69,6 +69,16 @@ export const columns: ColumnDef<AppModelPublic>[] = [
     },
   },
   {
+    accessorKey: "generation_method",
+    header: "Origin",
+    cell: ({ row }) =>
+      row.original.generation_method ? (
+        <Badge variant="outline">{row.original.generation_method}</Badge>
+      ) : (
+        <span className="text-muted-foreground text-xs">manual</span>
+      ),
+  },
+  {
     accessorKey: "is_public",
     header: "Visibility",
     cell: ({ row }) =>
