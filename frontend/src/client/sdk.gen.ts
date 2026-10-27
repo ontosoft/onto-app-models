@@ -3,7 +3,7 @@
 import type { CancelablePromise } from './core/CancelablePromise';
 import { OpenAPI } from './core/OpenAPI';
 import { request as __request } from './core/request';
-import type { AppmodelsReadAppModelsData, AppmodelsReadAppModelsResponse, AppmodelsCreateAppModelData, AppmodelsCreateAppModelResponse, AppmodelsReadAppModelData, AppmodelsReadAppModelResponse, AppmodelsUpdateAppModelData, AppmodelsUpdateAppModelResponse, AppmodelsDeleteAppModelData, AppmodelsDeleteAppModelResponse, AppmodelsRunAppModelData, AppmodelsRunAppModelResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, OntoModelGeneratorUploadModelFileData, OntoModelGeneratorUploadModelFileResponse, OntoModelGeneratorRunApplicationData, OntoModelGeneratorRunApplicationResponse, OntoModelGeneratorStopApplicationData, OntoModelGeneratorStopApplicationResponse, OntoModelGeneratorProcessDataSentFromFrontendData, OntoModelGeneratorProcessDataSentFromFrontendResponse, OntoModelGeneratorReadCurrentAppDataFromModelData, OntoModelGeneratorReadCurrentAppDataFromModelResponse, OntoModelGeneratorReadTheListOfAppModelsResponse, OntoModelGeneratorLoadInnerServerModelData, OntoModelGeneratorLoadInnerServerModelResponse, PrivateCreateUserData, PrivateCreateUserResponse, StreamStreamAiData, StreamStreamAiResponse, TextProcessingGetWordCountData, TextProcessingGetWordCountResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
+import type { AppmodelsReadAppModelsData, AppmodelsReadAppModelsResponse, AppmodelsCreateAppModelData, AppmodelsCreateAppModelResponse, AppmodelsReadAppModelData, AppmodelsReadAppModelResponse, AppmodelsUpdateAppModelData, AppmodelsUpdateAppModelResponse, AppmodelsDeleteAppModelData, AppmodelsDeleteAppModelResponse, AppmodelsRunAppModelData, AppmodelsRunAppModelResponse, LoginLoginAccessTokenData, LoginLoginAccessTokenResponse, LoginTestTokenResponse, LoginRecoverPasswordData, LoginRecoverPasswordResponse, LoginResetPasswordData, LoginResetPasswordResponse, LoginRecoverPasswordHtmlContentData, LoginRecoverPasswordHtmlContentResponse, OntoModelGeneratorUploadModelFileData, OntoModelGeneratorUploadModelFileResponse, OntoModelGeneratorRunApplicationData, OntoModelGeneratorRunApplicationResponse, OntoModelGeneratorStopApplicationData, OntoModelGeneratorStopApplicationResponse, OntoModelGeneratorProcessDataSentFromFrontendData, OntoModelGeneratorProcessDataSentFromFrontendResponse, OntoModelGeneratorReadCurrentAppDataFromModelData, OntoModelGeneratorReadCurrentAppDataFromModelResponse, OntoModelGeneratorReadTheListOfAppModelsResponse, OntoModelGeneratorLoadInnerServerModelData, OntoModelGeneratorLoadInnerServerModelResponse, PrivateCreateUserData, PrivateCreateUserResponse, ShapesCreateShapesDocumentData, ShapesCreateShapesDocumentResponse, ShapesReadShapesDocumentsData, ShapesReadShapesDocumentsResponse, ShapesReadShapesDocumentData, ShapesReadShapesDocumentResponse, ShapesDeleteShapesDocumentData, ShapesDeleteShapesDocumentResponse, ShapesReadShapesDocumentAppmodelsData, ShapesReadShapesDocumentAppmodelsResponse, StreamStreamAiData, StreamStreamAiResponse, TextProcessingGetWordCountData, TextProcessingGetWordCountResponse, UsersReadUsersData, UsersReadUsersResponse, UsersCreateUserData, UsersCreateUserResponse, UsersReadUserMeResponse, UsersDeleteUserMeResponse, UsersUpdateUserMeData, UsersUpdateUserMeResponse, UsersUpdatePasswordMeData, UsersUpdatePasswordMeResponse, UsersRegisterUserData, UsersRegisterUserResponse, UsersReadUserByIdData, UsersReadUserByIdResponse, UsersUpdateUserData, UsersUpdateUserResponse, UsersDeleteUserData, UsersDeleteUserResponse, UtilsTestEmailData, UtilsTestEmailResponse, UtilsHealthCheckResponse } from './types.gen';
 
 export class AppmodelsService {
     /**
@@ -410,6 +410,123 @@ export class PrivateService {
             url: '/api/v1/private/users/',
             body: data.requestBody,
             mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+}
+
+export class ShapesService {
+    /**
+     * Create Shapes Document
+     * Upload a shapes document (SHACL Turtle for now).
+     *
+     * Dedupe is per user: if the SAME user uploads identical content (by
+     * sha256) again, their existing document is returned instead, so their FAM
+     * candidates keep grouping under one document. Different users may each
+     * keep their own copy of the same shapes - that is fine and intended.
+     * @param data The data for the request.
+     * @param data.requestBody
+     * @returns ShapesDocumentPublic Successful Response
+     * @throws ApiError
+     */
+    public static createShapesDocument(data: ShapesCreateShapesDocumentData): CancelablePromise<ShapesCreateShapesDocumentResponse> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/api/v1/shapes/',
+            body: data.requestBody,
+            mediaType: 'application/json',
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Shapes Documents
+     * Retrieve shapes documents (own ones; superusers see all).
+     * @param data The data for the request.
+     * @param data.skip
+     * @param data.limit
+     * @returns ShapesDocumentsPublic Successful Response
+     * @throws ApiError
+     */
+    public static readShapesDocuments(data: ShapesReadShapesDocumentsData = {}): CancelablePromise<ShapesReadShapesDocumentsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/shapes/',
+            query: {
+                skip: data.skip,
+                limit: data.limit
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Shapes Document
+     * Get a shapes document by ID.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns ShapesDocumentPublic Successful Response
+     * @throws ApiError
+     */
+    public static readShapesDocument(data: ShapesReadShapesDocumentData): CancelablePromise<ShapesReadShapesDocumentResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/shapes/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Delete Shapes Document
+     * Delete a shapes document. Generated models survive (their shapes_id
+     * becomes NULL via the FK's ON DELETE SET NULL).
+     * @param data The data for the request.
+     * @param data.id
+     * @returns Message Successful Response
+     * @throws ApiError
+     */
+    public static deleteShapesDocument(data: ShapesDeleteShapesDocumentData): CancelablePromise<ShapesDeleteShapesDocumentResponse> {
+        return __request(OpenAPI, {
+            method: 'DELETE',
+            url: '/api/v1/shapes/{id}',
+            path: {
+                id: data.id
+            },
+            errors: {
+                422: 'Validation Error'
+            }
+        });
+    }
+    
+    /**
+     * Read Shapes Document Appmodels
+     * List the FAM candidates generated from this shapes document.
+     *
+     * Follows the AppModel visibility rules: own and public candidates;
+     * superusers see all of them.
+     * @param data The data for the request.
+     * @param data.id
+     * @returns AppModelsPublic Successful Response
+     * @throws ApiError
+     */
+    public static readShapesDocumentAppmodels(data: ShapesReadShapesDocumentAppmodelsData): CancelablePromise<ShapesReadShapesDocumentAppmodelsResponse> {
+        return __request(OpenAPI, {
+            method: 'GET',
+            url: '/api/v1/shapes/{id}/appmodels',
+            path: {
+                id: data.id
+            },
             errors: {
                 422: 'Validation Error'
             }

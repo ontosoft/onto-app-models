@@ -118,6 +118,29 @@ export const AppModelPublicSchema = {
             type: 'boolean',
             title: 'Is Public',
             default: false
+        },
+        shapes_id: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'uuid'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Shapes Id'
+        },
+        generation_method: {
+            anyOf: [
+                {
+                    type: 'string'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Generation Method'
         }
     },
     type: 'object',
@@ -330,6 +353,95 @@ export const PrivateUserCreateSchema = {
     type: 'object',
     required: ['email', 'password', 'full_name'],
     title: 'PrivateUserCreate'
+} as const;
+
+export const ShapesDocumentCreateSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Name'
+        },
+        format: {
+            type: 'string',
+            const: 'shacl',
+            title: 'Format',
+            default: 'shacl'
+        },
+        content: {
+            type: 'string',
+            minLength: 1,
+            title: 'Content'
+        }
+    },
+    type: 'object',
+    required: ['name', 'content'],
+    title: 'ShapesDocumentCreate'
+} as const;
+
+export const ShapesDocumentPublicSchema = {
+    properties: {
+        name: {
+            type: 'string',
+            maxLength: 255,
+            minLength: 1,
+            title: 'Name'
+        },
+        format: {
+            type: 'string',
+            maxLength: 32,
+            title: 'Format'
+        },
+        content: {
+            type: 'string',
+            title: 'Content'
+        },
+        id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Id'
+        },
+        owner_id: {
+            type: 'string',
+            format: 'uuid',
+            title: 'Owner Id'
+        },
+        created_at: {
+            anyOf: [
+                {
+                    type: 'string',
+                    format: 'date-time'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Created At'
+        }
+    },
+    type: 'object',
+    required: ['name', 'format', 'content', 'id', 'owner_id'],
+    title: 'ShapesDocumentPublic'
+} as const;
+
+export const ShapesDocumentsPublicSchema = {
+    properties: {
+        data: {
+            items: {
+                '$ref': '#/components/schemas/ShapesDocumentPublic'
+            },
+            type: 'array',
+            title: 'Data'
+        },
+        count: {
+            type: 'integer',
+            title: 'Count'
+        }
+    },
+    type: 'object',
+    required: ['data', 'count'],
+    title: 'ShapesDocumentsPublic'
 } as const;
 
 export const TextProcessRequestSchema = {

@@ -15,6 +15,7 @@ import { Route as RecoverPasswordRouteImport } from './routes/recover-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LayoutRouteImport } from './routes/_layout'
 import { Route as LayoutIndexRouteImport } from './routes/_layout/index'
+import { Route as LayoutShapesRouteImport } from './routes/_layout/shapes'
 import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutRunRouteImport } from './routes/_layout/run'
 import { Route as LayoutAppmodelsRouteImport } from './routes/_layout/appmodels'
@@ -49,6 +50,11 @@ const LayoutIndexRoute = LayoutIndexRouteImport.update({
   path: '/',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutShapesRoute = LayoutShapesRouteImport.update({
+  id: '/shapes',
+  path: '/shapes',
+  getParentRoute: () => LayoutRoute,
+} as any)
 const LayoutSettingsRoute = LayoutSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -80,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/appmodels': typeof LayoutAppmodelsRoute
   '/run': typeof LayoutRunRoute
   '/settings': typeof LayoutSettingsRoute
+  '/shapes': typeof LayoutShapesRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -90,6 +97,7 @@ export interface FileRoutesByTo {
   '/appmodels': typeof LayoutAppmodelsRoute
   '/run': typeof LayoutRunRoute
   '/settings': typeof LayoutSettingsRoute
+  '/shapes': typeof LayoutShapesRoute
   '/': typeof LayoutIndexRoute
 }
 export interface FileRoutesById {
@@ -103,6 +111,7 @@ export interface FileRoutesById {
   '/_layout/appmodels': typeof LayoutAppmodelsRoute
   '/_layout/run': typeof LayoutRunRoute
   '/_layout/settings': typeof LayoutSettingsRoute
+  '/_layout/shapes': typeof LayoutShapesRoute
   '/_layout/': typeof LayoutIndexRoute
 }
 export interface FileRouteTypes {
@@ -117,6 +126,7 @@ export interface FileRouteTypes {
     | '/appmodels'
     | '/run'
     | '/settings'
+    | '/shapes'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -127,6 +137,7 @@ export interface FileRouteTypes {
     | '/appmodels'
     | '/run'
     | '/settings'
+    | '/shapes'
     | '/'
   id:
     | '__root__'
@@ -139,6 +150,7 @@ export interface FileRouteTypes {
     | '/_layout/appmodels'
     | '/_layout/run'
     | '/_layout/settings'
+    | '/_layout/shapes'
     | '/_layout/'
   fileRoutesById: FileRoutesById
 }
@@ -194,6 +206,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutIndexRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/shapes': {
+      id: '/_layout/shapes'
+      path: '/shapes'
+      fullPath: '/shapes'
+      preLoaderRoute: typeof LayoutShapesRouteImport
+      parentRoute: typeof LayoutRoute
+    }
     '/_layout/settings': {
       id: '/_layout/settings'
       path: '/settings'
@@ -230,6 +249,7 @@ interface LayoutRouteChildren {
   LayoutAppmodelsRoute: typeof LayoutAppmodelsRoute
   LayoutRunRoute: typeof LayoutRunRoute
   LayoutSettingsRoute: typeof LayoutSettingsRoute
+  LayoutShapesRoute: typeof LayoutShapesRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
 }
 
@@ -238,6 +258,7 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutAppmodelsRoute: LayoutAppmodelsRoute,
   LayoutRunRoute: LayoutRunRoute,
   LayoutSettingsRoute: LayoutSettingsRoute,
+  LayoutShapesRoute: LayoutShapesRoute,
   LayoutIndexRoute: LayoutIndexRoute,
 }
 

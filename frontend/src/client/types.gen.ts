@@ -33,6 +33,8 @@ export type AppModelPublic = {
     owner_id: string;
     created_at?: (string | null);
     is_public?: boolean;
+    shapes_id?: (string | null);
+    generation_method?: (string | null);
 };
 
 export type AppModelsPublic = {
@@ -78,6 +80,26 @@ export type PrivateUserCreate = {
     password: string;
     full_name: string;
     is_verified?: boolean;
+};
+
+export type ShapesDocumentCreate = {
+    name: string;
+    format?: "shacl";
+    content: string;
+};
+
+export type ShapesDocumentPublic = {
+    name: string;
+    format: string;
+    content: string;
+    id: string;
+    owner_id: string;
+    created_at?: (string | null);
+};
+
+export type ShapesDocumentsPublic = {
+    data: Array<ShapesDocumentPublic>;
+    count: number;
 };
 
 export type TextProcessRequest = {
@@ -266,6 +288,37 @@ export type PrivateCreateUserData = {
 };
 
 export type PrivateCreateUserResponse = (UserPublic);
+
+export type ShapesCreateShapesDocumentData = {
+    requestBody: ShapesDocumentCreate;
+};
+
+export type ShapesCreateShapesDocumentResponse = (ShapesDocumentPublic);
+
+export type ShapesReadShapesDocumentsData = {
+    limit?: number;
+    skip?: number;
+};
+
+export type ShapesReadShapesDocumentsResponse = (ShapesDocumentsPublic);
+
+export type ShapesReadShapesDocumentData = {
+    id: string;
+};
+
+export type ShapesReadShapesDocumentResponse = (ShapesDocumentPublic);
+
+export type ShapesDeleteShapesDocumentData = {
+    id: string;
+};
+
+export type ShapesDeleteShapesDocumentResponse = (Message);
+
+export type ShapesReadShapesDocumentAppmodelsData = {
+    id: string;
+};
+
+export type ShapesReadShapesDocumentAppmodelsResponse = (AppModelsPublic);
 
 export type StreamStreamAiData = {
     prompt: string;
