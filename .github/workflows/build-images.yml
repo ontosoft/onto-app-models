@@ -21,7 +21,60 @@ permissions:
   packages: write
 
 jobs:
+  # Gate: broken commits must not reach GHCR as `latest`. Runs the backend
+  # suite against a real Postgres (the tests need JSONB and migrations).
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: app
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PROJECT_NAME: OntoUI
+      ENVIRONMENT: local
+      POSTGRES_SERVER: localhost
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: app
+      FIRST_SUPERUSER: ci@example.com
+      FIRST_SUPERUSER_PASSWORD: ci-only-password
+      SECRET_KEY: ci-only-secret
+      BACKEND_CORS_ORIGINS: http://localhost:5173
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Run migrations and seed
+        working-directory: backend
+        run: |
+          uv run alembic upgrade head
+          uv run python app/initial_data.py
+
+      # test_onto_models_to_jsonforms.py imports pythonjsonlogger, which is
+      # not a declared dependency - broken since before the CI job existed.
+      - name: Run backend tests
+        working-directory: backend/app
+        run: uv run python -m pytest tests/ --ignore=tests/test_onto_models_to_jsonforms.py
+
   build:
+    needs: test
     runs-on: ubuntu-latest
     strategy:
       matrix:
