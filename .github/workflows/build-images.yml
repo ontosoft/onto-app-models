@@ -51,6 +51,10 @@ jobs:
       FIRST_SUPERUSER_PASSWORD: ci-only-password
       SECRET_KEY: ci-only-secret
       BACKEND_CORS_ORIGINS: http://localhost:5173
+      # Required by Settings but unused in the tests (no Neo4j in CI).
+      NEO4J_URI: bolt://localhost:7687
+      NEO4J_USERNAME: ci
+      NEO4J_PASSWORD: ci-only-password
     steps:
       - name: Checkout
         uses: actions/checkout@v4
