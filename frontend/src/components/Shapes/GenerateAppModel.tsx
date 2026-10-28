@@ -8,24 +8,28 @@ import { handleError } from "~/utils"
 
 interface GenerateAppModelProps {
   id: string
+  onSuccess?: () => void
 }
 
 /**
  * Generates a FAM candidate from a shapes document with the rule-based
- * converter. The result appears under App-models (origin "rule-based").
+ * converter. The candidate shows up in the row's expanded sub-list (and
+ * under App-models, origin "rule-based").
  */
-const GenerateAppModel = ({ id }: GenerateAppModelProps) => {
+const GenerateAppModel = ({ id, onSuccess }: GenerateAppModelProps) => {
   const queryClient = useQueryClient()
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
   const mutation = useMutation({
     mutationFn: () => ShapesService.generateAppmodelFromShapesDocument({ id }),
     onSuccess: (model) => {
-      showSuccessToast(`Model "${model.title}" generated - see App-models`)
+      showSuccessToast(`Model "${model.title}" generated`)
+      onSuccess?.()
     },
     onError: handleError.bind(showErrorToast),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["appmodels"] })
+      // Prefix match also invalidates ["shapes", id, "appmodels"].
       queryClient.invalidateQueries({ queryKey: ["shapes"] })
     },
   })

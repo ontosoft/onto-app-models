@@ -44,6 +44,8 @@ const DeleteAppModel = ({ id, onSuccess }: DeleteAppModelProps) => {
     onError: handleError.bind(showErrorToast),
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["appmodels"] })
+      // Also refresh the candidate sub-lists on the Shapes page.
+      queryClient.invalidateQueries({ queryKey: ["shapes"] })
     },
   })
 

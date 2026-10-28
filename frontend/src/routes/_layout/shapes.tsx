@@ -1,13 +1,15 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
+import type { ExpandedState } from "@tanstack/react-table"
 import { Search } from "lucide-react"
-import { Suspense } from "react"
+import { Suspense, useMemo, useState } from "react"
 
 import { ShapesService } from "~/client"
 import { DataTable } from "~/components/Common/DataTable"
 import PendingAppModels from "~/components/Pending/PendingAppModels"
 import AddShapesDocument from "~/components/Shapes/AddShapesDocument"
-import { columns } from "~/components/Shapes/columns"
+import { buildColumns } from "~/components/Shapes/columns"
+import ShapesCandidates from "~/components/Shapes/ShapesCandidates"
 
 function getShapesQueryOptions() {
   return {
@@ -29,6 +31,19 @@ export const Route = createFileRoute("/_layout/shapes")({
 
 function ShapesTableContent() {
   const { data: shapes } = useSuspenseQuery(getShapesQueryOptions())
+  // Expanded rows, keyed by shapes document id (getRowId below). Kept here so
+  // a successful Generate can open its row and show the new candidate.
+  const [expanded, setExpanded] = useState<ExpandedState>({})
+  const columns = useMemo(
+    () =>
+      buildColumns({
+        onGenerated: (id) =>
+          setExpanded((prev) =>
+            prev === true ? prev : { ...prev, [id]: true },
+          ),
+      }),
+    [],
+  )
   if (shapes.data.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center text-center py-12">
@@ -44,7 +59,18 @@ function ShapesTableContent() {
       </div>
     )
   }
-  return <DataTable columns={columns} data={shapes.data} />
+  return (
+    <DataTable
+      columns={columns}
+      data={shapes.data}
+      getRowId={(shapesDocument) => shapesDocument.id}
+      expanded={expanded}
+      onExpandedChange={setExpanded}
+      renderSubRow={(shapesDocument) => (
+        <ShapesCandidates id={shapesDocument.id} />
+      )}
+    />
+  )
 }
 
 function ShapesTable() {
@@ -62,8 +88,8 @@ function ShapesPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Shapes</h1>
           <p className="text-muted-foreground">
-            Upload shapes documents (SHACL for now) and manage them; model
-            generation from shapes follows here.
+            Upload shapes documents (SHACL for now) and generate application
+            model candidates from them; expand a row to see its candidates.
           </p>
         </div>
         <AddShapesDocument />
