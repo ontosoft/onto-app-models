@@ -142,6 +142,10 @@ class ShapesDocumentCreate(ShapesDocumentBase):
 class ShapesDocument(ShapesDocumentBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     owner_id: uuid.UUID = Field(foreign_key="user.id", nullable=False)
+    # Public shapes are visible to every authenticated user, who may also
+    # generate their own FAM candidates from them; deleting and changing
+    # visibility stay owner/superuser-only.
+    is_public: bool = Field(default=False, nullable=False)
     # sha256 over content: identical uploads BY THE SAME USER reuse the same
     # row, so that user's FAM candidates group together. Different users may
     # each keep their own copy of the same shapes (unique per owner_id +
@@ -154,11 +158,19 @@ class ShapesDocument(ShapesDocumentBase, table=True):
     )
 
 
+# Properties to receive via API on update (visibility only for now;
+# content stays immutable because candidates were generated from it)
+class ShapesDocumentUpdate(SQLModel):
+    # Only superusers may change this (enforced in the route).
+    is_public: bool | None = None
+
+
 # Properties to return via API
 class ShapesDocumentPublic(ShapesDocumentBase):
     id: uuid.UUID
     owner_id: uuid.UUID
     created_at: datetime | None = None
+    is_public: bool = False
 
 
 class ShapesDocumentsPublic(SQLModel):

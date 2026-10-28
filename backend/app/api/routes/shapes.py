@@ -18,6 +18,7 @@ from app.models import (
     ShapesDocument,
     ShapesDocumentCreate,
     ShapesDocumentPublic,
+    ShapesDocumentUpdate,
     ShapesDocumentsPublic,
 )
 
@@ -77,16 +78,16 @@ def read_shapes_documents(
         ).one()
         statement = select(ShapesDocument).offset(skip).limit(limit)
     else:
+        # Regular users see their own documents plus public ones.
+        visible = or_(
+            ShapesDocument.owner_id == current_user.id,
+            ShapesDocument.is_public == True,  # noqa: E712 - SQL expression
+        )
         count = session.exec(
-            select(func.count())
-            .select_from(ShapesDocument)
-            .where(ShapesDocument.owner_id == current_user.id)
+            select(func.count()).select_from(ShapesDocument).where(visible)
         ).one()
         statement = (
-            select(ShapesDocument)
-            .where(ShapesDocument.owner_id == current_user.id)
-            .offset(skip)
-            .limit(limit)
+            select(ShapesDocument).where(visible).offset(skip).limit(limit)
         )
     shapes = session.exec(statement).all()
     return ShapesDocumentsPublic(data=shapes, count=count)
@@ -95,6 +96,23 @@ def read_shapes_documents(
 def _get_visible_shapes_document(
     session: SessionDep, current_user: CurrentUser, id: uuid.UUID
 ) -> ShapesDocument:
+    """Read access: the owner, superusers, and everyone for public shapes."""
+    shapes = session.get(ShapesDocument, id)
+    if not shapes:
+        raise HTTPException(status_code=404, detail="Shapes document not found")
+    if (
+        not current_user.is_superuser
+        and shapes.owner_id != current_user.id
+        and not shapes.is_public
+    ):
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    return shapes
+
+
+def _get_owned_shapes_document(
+    session: SessionDep, current_user: CurrentUser, id: uuid.UUID
+) -> ShapesDocument:
+    """Write access: the owner and superusers only - public grants reading."""
     shapes = session.get(ShapesDocument, id)
     if not shapes:
         raise HTTPException(status_code=404, detail="Shapes document not found")
@@ -196,7 +214,34 @@ def delete_shapes_document(
     Delete a shapes document. Generated models survive (their shapes_id
     becomes NULL via the FK's ON DELETE SET NULL).
     """
-    shapes = _get_visible_shapes_document(session, current_user, id)
+    shapes = _get_owned_shapes_document(session, current_user, id)
     session.delete(shapes)
     session.commit()
     return Message(message="Shapes document deleted successfully.")
+
+
+@router.put("/{id}", response_model=ShapesDocumentPublic)
+def update_shapes_document(
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    id: uuid.UUID,
+    shapes_in: ShapesDocumentUpdate,
+) -> Any:
+    """
+    Update a shapes document - only its visibility, and only by superusers.
+    The content stays immutable because candidates were generated from it.
+    """
+    shapes = _get_owned_shapes_document(session, current_user, id)
+    data = shapes_in.model_dump(exclude_unset=True)
+    if data.get("is_public") is None:
+        data.pop("is_public", None)
+    elif not current_user.is_superuser:
+        raise HTTPException(
+            status_code=403, detail="Only superusers can change shapes visibility"
+        )
+    shapes.sqlmodel_update(data)
+    session.add(shapes)
+    session.commit()
+    session.refresh(shapes)
+    return shapes

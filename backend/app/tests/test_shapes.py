@@ -101,8 +101,39 @@ def test_upload_dedupe_and_visibility() -> None:
         assert power_doc["id"] in listed_ids
         assert su_doc["id"] not in listed_ids
 
-        # ... and cannot read the superuser's copy directly.
+        # ... and cannot read the superuser's PRIVATE copy directly.
         response = client.get(f"{SHAPES_URL}/{su_doc['id']}", headers=power_user)
+        assert response.status_code == 403
+
+        # Once the superuser publishes it, the power user sees and reads it,
+        # but may neither delete it nor change its visibility.
+        response = client.put(
+            f"{SHAPES_URL}/{su_doc['id']}",
+            headers=superuser,
+            json={"is_public": True},
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["is_public"] is True
+        listed_ids = {
+            d["id"]
+            for d in client.get(f"{SHAPES_URL}/", headers=power_user).json()["data"]
+        }
+        assert su_doc["id"] in listed_ids
+        assert (
+            client.get(f"{SHAPES_URL}/{su_doc['id']}", headers=power_user).status_code
+            == 200
+        )
+        assert (
+            client.delete(
+                f"{SHAPES_URL}/{su_doc['id']}", headers=power_user
+            ).status_code
+            == 403
+        )
+        response = client.put(
+            f"{SHAPES_URL}/{su_doc['id']}",
+            headers=power_user,
+            json={"is_public": False},
+        )
         assert response.status_code == 403
 
         # No candidates exist yet for a fresh document.

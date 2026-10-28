@@ -418,11 +418,34 @@ export const ShapesDocumentPublicSchema = {
                 }
             ],
             title: 'Created At'
+        },
+        is_public: {
+            type: 'boolean',
+            title: 'Is Public',
+            default: false
         }
     },
     type: 'object',
     required: ['name', 'format', 'content', 'id', 'owner_id'],
     title: 'ShapesDocumentPublic'
+} as const;
+
+export const ShapesDocumentUpdateSchema = {
+    properties: {
+        is_public: {
+            anyOf: [
+                {
+                    type: 'boolean'
+                },
+                {
+                    type: 'null'
+                }
+            ],
+            title: 'Is Public'
+        }
+    },
+    type: 'object',
+    title: 'ShapesDocumentUpdate'
 } as const;
 
 export const ShapesDocumentsPublicSchema = {

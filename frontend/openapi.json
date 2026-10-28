@@ -910,6 +910,49 @@
             }
           }
         }
+      },
+      "put": {
+        "tags": ["shapes"],
+        "summary": "Update Shapes Document",
+        "description": "Update a shapes document - only its visibility, and only by superusers.\nThe content stays immutable because candidates were generated from it.",
+        "operationId": "shapes-update_shapes_document",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid", "title": "Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ShapesDocumentUpdate" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShapesDocumentPublic"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/shapes/{id}/appmodels": {
@@ -1603,11 +1646,26 @@
               { "type": "null" }
             ],
             "title": "Created At"
+          },
+          "is_public": {
+            "type": "boolean",
+            "title": "Is Public",
+            "default": false
           }
         },
         "type": "object",
         "required": ["name", "format", "content", "id", "owner_id"],
         "title": "ShapesDocumentPublic"
+      },
+      "ShapesDocumentUpdate": {
+        "properties": {
+          "is_public": {
+            "anyOf": [{ "type": "boolean" }, { "type": "null" }],
+            "title": "Is Public"
+          }
+        },
+        "type": "object",
+        "title": "ShapesDocumentUpdate"
       },
       "ShapesDocumentsPublic": {
         "properties": {

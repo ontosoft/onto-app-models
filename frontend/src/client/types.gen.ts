@@ -95,11 +95,16 @@ export type ShapesDocumentPublic = {
     id: string;
     owner_id: string;
     created_at?: (string | null);
+    is_public?: boolean;
 };
 
 export type ShapesDocumentsPublic = {
     data: Array<ShapesDocumentPublic>;
     count: number;
+};
+
+export type ShapesDocumentUpdate = {
+    is_public?: (boolean | null);
 };
 
 export type TextProcessRequest = {
@@ -313,6 +318,13 @@ export type ShapesDeleteShapesDocumentData = {
 };
 
 export type ShapesDeleteShapesDocumentResponse = (Message);
+
+export type ShapesUpdateShapesDocumentData = {
+    id: string;
+    requestBody: ShapesDocumentUpdate;
+};
+
+export type ShapesUpdateShapesDocumentResponse = (ShapesDocumentPublic);
 
 export type ShapesReadShapesDocumentAppmodelsData = {
     id: string;

@@ -16,6 +16,16 @@ export const columns: ColumnDef<ShapesDocumentPublic>[] = [
     cell: ({ row }) => <Badge variant="secondary">{row.original.format}</Badge>,
   },
   {
+    accessorKey: "is_public",
+    header: "Visibility",
+    cell: ({ row }) =>
+      row.original.is_public ? (
+        <Badge variant="secondary">public</Badge>
+      ) : (
+        <span className="text-muted-foreground text-xs">private</span>
+      ),
+  },
+  {
     accessorKey: "created_at",
     header: "Uploaded",
     cell: ({ row }) => {
