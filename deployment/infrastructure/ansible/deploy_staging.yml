@@ -153,14 +153,12 @@
       register: marks_unit
       tags: [network]
 
-    # Also re-run after a netplan apply: that flushes the fwmark ip rule the
-    # script installs, and the unit is RemainAfterExit, so only a restart
-    # puts the rule back.
+    # Restart on EVERY apply: the fwmark ip rule can vanish outside netplan
+    # changes too (seen 2026-10-28, cause unknown), and without it every
+    # off-subnet client times out. The script is idempotent and instant, so
+    # an unconditional restart makes each deploy self-healing.
     - name: Enable and run the marks unit
-      when: >-
-        (marks_script is changed or marks_unit is changed
-         or netplan_secondary is changed)
-        and secondary_mac | length > 0
+      when: secondary_mac | length > 0
       ansible.builtin.systemd:
         name: secondary-ipv4-marks.service
         enabled: true
