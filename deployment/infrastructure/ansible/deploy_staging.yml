@@ -154,9 +154,9 @@
       tags: [network]
 
     # Restart on EVERY apply: the fwmark ip rule can vanish outside netplan
-    # changes too (seen 2026-10-28, cause unknown), and without it every
-    # off-subnet client times out. The script is idempotent and instant, so
-    # an unconditional restart makes each deploy self-healing.
+    # changes too, and without it every off-subnet client times out. The
+    # script is idempotent and instant, so an unconditional restart makes
+    # each deploy self-healing.
     - name: Enable and run the marks unit
       when: secondary_mac | length > 0
       ansible.builtin.systemd:
