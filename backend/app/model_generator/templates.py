@@ -88,9 +88,9 @@ class ModelBuilder:
     def position(self, s: URIRef, n: int) -> None:
         self.lit(s, OBOP.hasPositionNumber, n, XSD.int)
 
-    # -- shared / main-process scaffolding ------------------------------------
+    # -- model root / main-process scaffolding ---------------------------------
 
-    def build_shared(self) -> None:
+    def build_model_root(self) -> None:
         self.ind("app_model", OBOP.Model)
         self.ind(self.main_process.split("/")[-1].split("#")[-1] or "app_process",
                  BBO.Process)
@@ -405,7 +405,7 @@ def build_model_graph(entities: list[EntitySpec], base: str = DEFAULT_BASE) -> G
     """Assemble the full model graph from the entity specs."""
     b = ModelBuilder(base)
     b.plan_connections(entities)  # placement must be known before entities build
-    b.build_shared()
+    b.build_model_root()
     for ent in entities:
         b.build_entity(ent)
     b.build_main_process(entities)

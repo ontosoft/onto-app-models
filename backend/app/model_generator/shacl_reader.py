@@ -32,9 +32,17 @@ def _local(uri: object) -> str:
 def _snake(name: str) -> str:
     """camelCase / PascalCase / kebab / spaces -> snake_case token.
 
-    Word boundaries are lower/digit->upper and the last capital of an acronym
-    run, so all-caps names stay whole: ``BusinessEntity`` -> ``business_entity``,
-    ``ENVO_01000934`` -> ``envo_01000934`` (not ``e_n_v_o_...``).
+    The first regex inserts ``_`` at two kinds of word boundary (lookarounds,
+    so no characters are consumed): between a lowercase letter or digit and an
+    uppercase letter (``hasMenuItem`` -> ``has_menu_item``), and before the
+    LAST capital of an acronym run, i.e. a capital followed by a lowercase
+    letter (``SHACLReader`` -> ``shacl_reader``). All-caps names therefore
+    stay whole: ``ENVO_01000934`` -> ``envo_01000934`` (not ``e_n_v_o_...``).
+    Then hyphens/whitespace become ``_``, anything else non-alphanumeric is
+    dropped, and the result is lowercased.
+
+    No uniqueness guarantee: ``schema:Menu`` and ``myont:Menu`` both yield
+    ``menu`` — deduplication is the caller's job (_entity_iri_token_by_shape).
     """
     s = re.sub(r"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])", "_", name)
     s = re.sub(r"[-\s]+", "_", s)
