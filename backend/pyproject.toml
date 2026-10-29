@@ -37,3 +37,8 @@ build-backend = "hatchling.build"
 [tool.mypy]
 strict = true
 exclude = ["venv", ".venv"]
+
+[tool.pyright]
+# The uv venv lives at the repo root, one level above this project root.
+venvPath = ".."
+venv = ".venv"
