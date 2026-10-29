@@ -1,13 +1,13 @@
 """Parse an input SHACL shapes graph into the generator's IR.
 
-Only the structural facts the generator needs are read: each ``sh:NodeShape``
-with a ``sh:targetClass``, and its ``sh:property`` shapes (path, datatype, name,
-order). A property shape whose ``sh:node`` points at another read NodeShape —
-or whose ``sh:class`` matches another shape's ``sh:targetClass`` — is a
-*relationship* between two entities (-> :class:`RelationSpec`, generated as an
-obop:Connection), not a form field. Anything else in the shapes (constraints
-like sh:minCount, sh:pattern, etc.) is preserved as the *runtime* validation
-SHACL elsewhere; here we only need enough to lay out the forms.
+Only the facts the generator needs are read: each ``sh:NodeShape`` with a
+``sh:targetClass``, and its ``sh:property`` shapes (path, datatype, name,
+order, plus the value constraints listed in ``_COPIED_CONSTRAINTS``, which R9
+copies verbatim into the generated model's embedded validation shapes). A
+property shape whose ``sh:node`` points at another read NodeShape — or whose
+``sh:class`` matches another shape's ``sh:targetClass`` — is a *relationship*
+between two entities (-> :class:`RelationSpec`, generated as an
+obop:Connection), not a form field.
 """
 
 from __future__ import annotations
@@ -15,13 +15,37 @@ from __future__ import annotations
 import logging
 import re
 
-from rdflib import RDF, Graph, Namespace
+from rdflib import RDF, Graph, Literal, Namespace
 
-from .ir import EntitySpec, PropSpec, RelationSpec
+from .ir import ConstraintSpec, EntitySpec, PropSpec, RelationSpec
 
 SH = Namespace("http://www.w3.org/ns/shacl#")
+DASH = Namespace("http://datashapes.org/dash#")
 
 logger = logging.getLogger("ontoui_app")
+
+# Constraints copied verbatim from an input property shape onto the generated
+# one (R9). Only single-valued predicates qualify; list-valued constructs are
+# in _LIST_VALUED_CONSTRAINTS below.
+_COPIED_CONSTRAINTS = (
+    SH.minCount,
+    SH.maxCount,
+    SH.minLength,
+    SH.maxLength,
+    SH.pattern,
+    SH.flags,
+    SH.minInclusive,
+    SH.maxInclusive,
+    SH.minExclusive,
+    SH.maxExclusive,
+    SH.hasValue,
+    SH.nodeKind,
+    DASH.singleLine,
+)
+
+# RDF-list valued constraints the generator cannot copy yet: warn, so dropping
+# them from the generated model is visible instead of silent.
+_LIST_VALUED_CONSTRAINTS = (SH["in"], SH["or"], SH.languageIn)
 
 
 def _local(uri: object) -> str:
@@ -166,6 +190,31 @@ def read_shapes(graph: Graph) -> list[EntitySpec]:
                 continue
             datatype = graph.value(prop, SH.datatype)
             name = graph.value(prop, SH.name)
+            constraints: list[ConstraintSpec] = []
+            for pred in _COPIED_CONSTRAINTS:
+                # sorted: deterministic output for repeated predicates
+                for value in sorted(graph.objects(prop, pred), key=str):
+                    if isinstance(value, Literal):
+                        constraints.append(
+                            ConstraintSpec(
+                                pred=str(pred),
+                                value=str(value),
+                                datatype=(
+                                    str(value.datatype) if value.datatype else None
+                                ),
+                            )
+                        )
+                    else:
+                        constraints.append(
+                            ConstraintSpec(pred=str(pred), value=str(value), is_iri=True)
+                        )
+            for pred in _LIST_VALUED_CONSTRAINTS:
+                if graph.value(prop, pred) is not None:
+                    logger.warning(
+                        f"Property shape for {path} on {shape} uses {pred}, "
+                        "which the generator cannot copy yet; the constraint "
+                        "is dropped from the generated model."
+                    )
             props.append(
                 PropSpec(
                     path=str(path),
@@ -173,6 +222,7 @@ def read_shapes(graph: Graph) -> list[EntitySpec]:
                     label=str(name) if name is not None else _local(path),
                     iri_token=_snake(_local(path)),
                     order=int(order) if order is not None else len(props),
+                    constraints=constraints,
                 )
             )
         props.sort(key=lambda p: (p.order, p.iri_token))

@@ -244,22 +244,33 @@ class ModelBuilder:
             self.link(field, OBOP.isRelatedToTargetOntologyInstance, shape)
             self.lit(field, OBOP.hasLabel, prop.label)
             self.position(field, i)
-            # property shape (bnode) linked to the field via obop:specifedBy
+            # property shape (bnode) linked to the field via obop:specifiedBy
             ps = BNode()
             self.g.add((shape, SH.property, ps))
             self.g.add((ps, SH.path, URIRef(prop.path)))
             if prop.datatype:
                 self.g.add((ps, SH.datatype, URIRef(prop.datatype)))
-            self.g.add((ps, SH.maxCount, Literal(1)))
             self.g.add((ps, SH.name, Literal(prop.label)))
             self.g.add((ps, SH.order, Literal(prop.order)))
-            self.g.add((ps, DASH.singleLine, Literal(True)))
-            self.link(ps, OBOP.specifedBy, field)
+            # R9: the input's own constraints, copied verbatim — nothing is
+            # invented here, so the embedded shapes demand exactly what the
+            # input shapes demand.
+            for c in prop.constraints:
+                obj = (
+                    URIRef(c.value)
+                    if c.is_iri
+                    else Literal(
+                        c.value,
+                        datatype=URIRef(c.datatype) if c.datatype else None,
+                    )
+                )
+                self.g.add((ps, URIRef(c.pred), obj))
+            self.link(ps, OBOP.specifiedBy, field)
 
         # Relationship property shapes: declare, in the shape itself, that this
         # entity is related to its target entity via the object property, each
         # value conforming to the target's shape. Validation-only — no
-        # obop:specifedBy, so the engine renders no form field for them.
+        # obop:specifiedBy, so the engine renders no form field for them.
         for rel in ent.relationships:
             ps = BNode()
             self.g.add((shape, SH.property, ps))

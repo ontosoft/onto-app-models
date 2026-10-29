@@ -7,7 +7,7 @@ completion screen.
 
 from pathlib import Path
 
-from rdflib import RDF, Graph, Namespace, URIRef
+from rdflib import RDF, Graph, Literal, Namespace, URIRef
 
 import model_generator
 from model_generator import generate_appmodel_from_shacl
@@ -42,6 +42,83 @@ def test_generated_model_parses_and_validates():
     g.parse(data=gm.rdf, format="turtle")  # must be valid Turtle
     assert isinstance(gm.jsonld, list) and gm.jsonld  # dual-write payload present
     assert validate_model(g) == []  # zero structural issues
+
+
+# Like SHAPES, but the property carries real value constraints (R9 input).
+CONSTRAINED_SHAPES = """
+@prefix sh:  <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix v1:  <http://purl.org/goodrelations/v1#> .
+
+<http://example.org/generated/string-form/BusinessEntityShape>
+    a sh:NodeShape ;
+    sh:targetClass v1:BusinessEntity ;
+    sh:property [
+        sh:path      v1:legalName ;
+        sh:datatype  xsd:string ;
+        sh:name      "Legal name" ;
+        sh:order     0 ;
+        sh:minCount  1 ;
+        sh:maxLength 50 ;
+        sh:pattern   "^[A-Z].*" ;
+    ] .
+"""
+
+OBOP = Namespace("http://purl.org/net/obop/")
+SH = Namespace("http://www.w3.org/ns/shacl#")
+DASH = Namespace("http://datashapes.org/dash#")
+
+
+def test_input_property_constraints_are_copied():
+    """R9: the embedded property shape carries exactly the input's constraints.
+
+    Copied verbatim: sh:minCount/maxLength/pattern. Not invented: the input has
+    no sh:maxCount and no dash:singleLine, so the generated shape must not
+    claim them either.
+    """
+    gm = generate_appmodel_from_shacl(CONSTRAINED_SHAPES)
+    g = Graph()
+    g.parse(data=gm.rdf, format="turtle")
+
+    field = URIRef(f"{BASE}field_business_entity_legal_name")
+    prop_shapes = list(g.subjects(OBOP.specifiedBy, field))
+    assert len(prop_shapes) == 1  # exactly one shape specifies this field
+    ps = prop_shapes[0]
+
+    assert (ps, SH.minCount, Literal(1)) in g
+    assert (ps, SH.maxLength, Literal(50)) in g
+    assert (ps, SH.pattern, Literal("^[A-Z].*")) in g
+    assert g.value(ps, SH.maxCount) is None
+    assert g.value(ps, DASH.singleLine) is None
+
+
+def test_copied_constraints_actually_validate():
+    """The embedded shapes are effective, not just triples: pySHACL run
+    against the generated model rejects a violating instance and accepts a
+    conforming one. (The engine wiring them into the final validation task
+    is the next step; this pins the generator half.)
+    """
+    from pyshacl import validate as shacl_validate
+
+    gm = generate_appmodel_from_shacl(CONSTRAINED_SHAPES)
+    shapes_graph = Graph()
+    shapes_graph.parse(data=gm.rdf, format="turtle")
+
+    v1 = Namespace("http://purl.org/goodrelations/v1#")
+
+    def output_graph(legal_name: str) -> Graph:
+        data = Graph()
+        inst = URIRef("http://example.org/data/be1")
+        data.add((inst, RDF.type, v1.BusinessEntity))
+        data.add((inst, v1.legalName, Literal(legal_name)))
+        return data
+
+    # violates sh:pattern "^[A-Z].*" (lowercase start)
+    conforms, _, _ = shacl_validate(output_graph("acme"), shacl_graph=shapes_graph)
+    assert not conforms
+    # conforming value passes
+    conforms, _, _ = shacl_validate(output_graph("Acme"), shacl_graph=shapes_graph)
+    assert conforms
 
 
 def _walk_to_completion(eng: AppEngine, max_steps: int = 12) -> bool:
