@@ -121,6 +121,30 @@ def test_copied_constraints_actually_validate():
     assert conforms
 
 
+def test_engine_final_validation_uses_embedded_shapes():
+    """R9 step 2: the engine's final SHACLValidation task really validates the
+    output graph against the embedded shapes (it used to run with
+    shacl_graph=None, which conforms vacuously)."""
+
+    gm = generate_appmodel_from_shacl(CONSTRAINED_SHAPES)
+    v1 = Namespace("http://purl.org/goodrelations/v1#")
+
+    def validation_text(legal_name: str) -> str:
+        eng = AppEngine()
+        eng.load_inner_app_model(rdf_string=gm.rdf)
+        eng.run_application()
+        pe = eng.process_engine_instance
+        inst = URIRef("http://example.org/data/be1")
+        pe.output_graph_store.add((inst, RDF.type, v1.BusinessEntity))
+        pe.output_graph_store.add((inst, v1.legalName, Literal(legal_name)))
+        pe.validate_output_knowledge_graph()
+        return pe.app_state.json_form["uischema"]["elements"][0]["text"]
+
+    # violates sh:pattern "^[A-Z].*" (lowercase start)
+    assert "Conforms: False" in validation_text("acme")
+    assert "Conforms: True" in validation_text("Acme")
+
+
 def _walk_to_completion(eng: AppEngine, max_steps: int = 12) -> bool:
     """Drive the running app: submit forms, Continue notifications, OK the rest."""
 

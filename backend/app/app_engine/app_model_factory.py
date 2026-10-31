@@ -28,25 +28,39 @@ OBOP = Namespace("http://purl.org/net/obop/")
 BBO = Namespace("https://www.irit.fr/recherches/MELODI/ontologies/BBO#")
 logger = logging.getLogger('ontoui_app')
 
+# SHACL predicates whose object is another shape. A CBD stops at IRIs, so
+# named shape references must be followed explicitly; blank nodes come along
+# with the CBD anyway.
+_SHAPE_OBJECT_PREDICATES = (SH.node, SH.property, SH["not"], SH.qualifiedValueShape)
+# SHACL predicates whose object is an RDF list of shapes.
+_SHAPE_LIST_PREDICATES = (SH["and"], SH["or"], SH.xone)
+
 class AppStaticModelFactory:
         
     @staticmethod
     def rdf_graf_to_uimodel(rdf_model_file: Path = None, rdf_text_ttl: str = None ) -> AppInternalStaticModel:
         internal_app_static_model = AppInternalStaticModel()
-        # Read the SHACL shapes graph if it exists
-        # TODO this conversion should be done automatically
-        internal_app_static_model.rdf_graph_rdflib = \
-            AppStaticModelFactory.read_shacl_shapes_rdflib(rdf_model_file, rdf_text_ttl)
-        #The project uses both rdflib and owlready2 to read the RDF file. 
+        #The project uses both rdflib and owlready2 to read the RDF file.
         internal_app_static_model.rdf_graph_rdflib = \
             AppStaticModelFactory.read_graph_rdflib(rdf_model_file, rdf_text_ttl)
+        # The SHACL shapes embedded in the model (R9) feed the final
+        # output-graph validation of the obop:SHACLValidation task.
+        internal_app_static_model.shacl_shapes_rdflib = \
+            AppStaticModelFactory.extract_embedded_shapes(
+                internal_app_static_model.rdf_graph_rdflib)
         # Static model validation: catch errors (control-flow container
         # mismatches, dead ends, dangling references, ...) Logs warnings; does not abort
         # loading. See validate_model.py.
         validate_model(internal_app_static_model.rdf_graph_rdflib)
         #The owlready2 library is used to enable reasoning over the RDF graph.
+        # The embedded SHACL shapes are subtracted first: they carry no OWL
+        # semantics, and keeping them out of the reasoner input keeps the
+        # model closer to OWL DL (e.g. no rdf:Lists from sh:in/sh:or in
+        # non-OWL positions).
         internal_app_static_model.rdf_world_owlready, internal_app_static_model.rdf_ontology_owlready = \
-            AppStaticModelFactory.read_graph_owlready(internal_app_static_model.rdf_graph_rdflib)
+            AppStaticModelFactory.read_graph_owlready(
+                internal_app_static_model.rdf_graph_rdflib
+                - internal_app_static_model.shacl_shapes_rdflib)
         # Stable cache key for the reasoned worlds: hash the ORIGINAL model RDF
         # (not the owlready serialization, which isn't byte-stable). Lets a repeat
         # load of the same model skip the reasoner. See static_model_cache.py.
@@ -123,8 +137,55 @@ class AppStaticModelFactory:
             logger.debug("Reading and parsing the RDF string in ttl format.")
             # Reading the RDF graph in the string form using rdflib library
             rdf_graph_rdflib = Graph()
-            rdf_graph_rdflib.parse(data = rdf_shapes_text_ttl, format="ttl")  
+            rdf_graph_rdflib.parse(data = rdf_shapes_text_ttl, format="ttl")
             return rdf_graph_rdflib
+
+    @staticmethod
+    def extract_embedded_shapes(rdf_graph_rdflib: Graph) -> Graph:
+        """
+        Extracts the SHACL shapes embedded in a model graph (R9).
+
+        A resource counts as a shape the way the SHACL spec identifies one:
+        typed sh:NodeShape or sh:PropertyShape, carrying a sh:target*
+        declaration, or referenced from another shape (sh:node, sh:property,
+        sh:not, sh:qualifiedValueShape, or an sh:and/sh:or/sh:xone list
+        member). Every shape contributes its CBD, so nested blank-node
+        shapes and RDF lists come along; named references are followed
+        recursively, cycles are safe.
+
+        Not collected: a shape with no type, no target and no incoming
+        reference - such a shape can never fire in validation either.
+        """
+        seeds: set = set()
+        for shape_class in (SH.NodeShape, SH.PropertyShape):
+            seeds.update(rdf_graph_rdflib.subjects(RDF.type, shape_class))
+        for target_pred in (SH.targetClass, SH.targetNode,
+                            SH.targetObjectsOf, SH.targetSubjectsOf):
+            seeds.update(rdf_graph_rdflib.subjects(target_pred, None))
+
+        shapes_graph = Graph()
+        visited: set = set()
+
+        def collect(node) -> None:
+            nonlocal shapes_graph
+            if node in visited:
+                return
+            visited.add(node)
+            cbd = rdf_graph_rdflib.cbd(node)
+            shapes_graph += cbd
+            # Scan the whole CBD, not just `node` itself: a reference to a
+            # named shape may sit on a nested blank node deep inside it.
+            for _s, pred, obj in cbd:
+                if pred in _SHAPE_OBJECT_PREDICATES and isinstance(obj, URIRef):
+                    collect(obj)
+                elif pred in _SHAPE_LIST_PREDICATES:
+                    for member in rdf_graph_rdflib.items(obj):
+                        if isinstance(member, URIRef):
+                            collect(member)
+
+        for seed in sorted(seeds, key=str):
+            collect(seed)
+        return shapes_graph
 
     @staticmethod
     def read_graph_owlready(rdf_graph_rdflib: Graph) -> tuple[World, Ontology]:

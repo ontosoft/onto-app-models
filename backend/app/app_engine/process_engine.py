@@ -643,18 +643,28 @@ class ProcessEngine:
         Validates the output knowledge graph against the shacl
         shapes defined in the application static model.
         """
-        logger.debug("Validating the output knowledge graph using SHACL shapes")
-        data_graph = self.output_graph_store
-        conforms, results_graph, results_text = validate(
-            data_graph,
-            shacl_graph=self.internal_app_static_model.shacl_shapes_rdflib,
-            ont_graph=None,  # optional, for OWL imports
-            inference="rdfs",  # 'rdfs', 'owlrl', 'none'
-            abort_on_first=False,  # stop after first error
-            meta_shacl=False,  # validate the SHACL itself
-            advanced=True,  # allow SHACL advanced features
-            js=False,  # disable SHACL-JS (default)
-        )        
+        shacl_shapes = self.internal_app_static_model.shacl_shapes_rdflib
+        if shacl_shapes is None or len(shacl_shapes) == 0:
+            logger.warning(
+                "The model embeds no SHACL shapes; skipping the final validation."
+            )
+            results_text = (
+                "No SHACL shapes are embedded in the model; "
+                "the output graph was not validated."
+            )
+        else:
+            logger.debug("Validating the output knowledge graph using SHACL shapes")
+            data_graph = self.output_graph_store
+            conforms, results_graph, results_text = validate(
+                data_graph,
+                shacl_graph=shacl_shapes,
+                ont_graph=None,  # optional, for OWL imports
+                inference="rdfs",  # 'rdfs', 'owlrl', 'none'
+                abort_on_first=False,  # stop after first error
+                meta_shacl=False,  # validate the SHACL itself
+                advanced=True,  # allow SHACL advanced features
+                js=False,  # disable SHACL-JS (default)
+            )
         json_form : FunctionalJSONForm = {
             "graph_node": "",
             "schema": {
