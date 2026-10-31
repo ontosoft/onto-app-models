@@ -121,6 +121,31 @@ def test_copied_constraints_actually_validate():
     assert conforms
 
 
+def test_input_shapes_document_is_embedded_whole():
+    """R9: the original input shapes are merged into the model verbatim, so
+    the final validation checks the round trip against the true input - but
+    the input's ontology header (owl:imports!) must not come along."""
+    shapes_with_header = CONSTRAINED_SHAPES + """
+<http://example.org/generated/string-form>
+    a <http://www.w3.org/2002/07/owl#Ontology> ;
+    <http://www.w3.org/2002/07/owl#imports> <http://example.org/some/vocab> .
+"""
+    gm = generate_appmodel_from_shacl(shapes_with_header)
+    g = Graph()
+    g.parse(data=gm.rdf, format="turtle")
+
+    v1 = Namespace("http://purl.org/goodrelations/v1#")
+    owl = Namespace("http://www.w3.org/2002/07/owl#")
+    input_shape = URIRef(
+        "http://example.org/generated/string-form/BusinessEntityShape"
+    )
+    assert (input_shape, SH.targetClass, v1.BusinessEntity) in g
+    ps = g.value(input_shape, SH.property)
+    assert g.value(ps, SH.pattern) == Literal("^[A-Z].*")
+    assert g.value(predicate=RDF.type, object=owl.Ontology) is None
+    assert list(g.subjects(owl.imports, None)) == []
+
+
 def test_engine_final_validation_uses_embedded_shapes():
     """R9 step 2: the engine's final SHACLValidation task really validates the
     output graph against the embedded shapes (it used to run with
