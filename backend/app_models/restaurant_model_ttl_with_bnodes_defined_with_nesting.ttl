@@ -32,7 +32,7 @@
                                    v1:BusinessEntity ;
                  shacl:property [
              		 shacl:path v1:legalName ; 
-                     obop:specifedBy :field_1_1; 
+                     obop:specifiedBy :field_1_1; 
                      shacl:maxCount 1 ;
                      shacl:datatype xsd:string ;
                      dash:singleLine true ;       # Cannot contain line breaks -> Text field for input 
@@ -40,14 +40,14 @@
                  shacl:property [
                		 shacl:path schema:streetAddress ;
                		 shacl:name "Address" ;
-                     obop:specifedBy :field_1_2; 
+                     obop:specifiedBy :field_1_2; 
                		 shacl:description "The street address including number" ;
                		 shacl:order 3 ;
                	 ] ;
                  shacl:property [
                		 shacl:path schema:postalCode ;
                		 shacl:name "Postal code:" ;
-                     obop:specifedBy :field_1_3; 
+                     obop:specifiedBy :field_1_3; 
                		 shacl:description "The postal code" ;
                		 shacl:order 2 ;
                	 ] .                

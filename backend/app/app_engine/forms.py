@@ -1,5 +1,5 @@
 from __future__ import annotations
-from rdflib import URIRef 
+from rdflib import URIRef
 from typing import TYPE_CHECKING
 import logging
 from .form_elements import FormElement
@@ -122,11 +122,22 @@ class Form:
             "data": {},
             }
         
-        logger.debug(f"Elements are: {self._elements}") 
+        logger.debug(f"Elements are: {self._elements}")
         if self._elements.__len__() != 0:
+            required: list[str] = []
             for element in self.elements:
-                jform["schema"]["properties"].update(
-                    element.create_jsonform_schema_property(app_state))
+                schema_property = element.create_jsonform_schema_property(app_state)
+                if not schema_property:
+                    continue
+                jform["schema"]["properties"].update(schema_property)
+                # R9: a field whose property shape demands sh:minCount >= 1 is
+                # a required property of the JSON Schema.
+                if element.shape_requires_value():
+                    for name in schema_property:
+                        if name and name not in required:
+                            required.append(name)
+            if required:
+                jform["schema"]["required"] = required
         return jform
 
 class Layout:

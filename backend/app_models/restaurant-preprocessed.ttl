@@ -585,7 +585,7 @@ _:genid1 shacl:datatype xsd:string ;
           shacl:path gr:legalName ;
           shacl:maxCount 1 ;
           dash:singleLine "true"^^xsd:boolean ;
-          obop:specifedBy :field_1_1 .
+          obop:specifiedBy :field_1_1 .
 
 ###  http://example.org/logicinterface/restaurant/field_1_1
 :field_1_1 rdf:type owl:NamedIndividual ,
@@ -600,13 +600,13 @@ _:genid1 shacl:datatype xsd:string ;
 
 
 _:genid2 shacl:path schema:streetAddress ;
-          obop:specifedBy :field_rest_address_street ;
+          obop:specifiedBy :field_rest_address_street ;
           shacl:description "The street address including number" ;
           shacl:name "Address" ;
           shacl:order 3 .
 
 _:genid3 shacl:path schema:postalCode ;
-          obop:specifedBy :field_rest_postal_code ;
+          obop:specifiedBy :field_rest_postal_code ;
           shacl:description "The postal code" ;
           shacl:name "Postal code:" ;
           shacl:order 2 .
@@ -615,7 +615,7 @@ _:genid3 shacl:path schema:postalCode ;
 ### itself, that a restaurant is related to its menu(s) via gr:offers and
 ### schema:hasMenu, each value conforming to :menuShape. This makes the
 ### relationship part of the validated model, alongside the obop:Connection that
-### creates the triples at runtime. No obop:specifedBy -> not a form field.
+### creates the triples at runtime. No obop:specifiedBy -> not a form field.
 _:genid_offers shacl:path gr:offers ;
           shacl:node :menuShape .
 
@@ -717,7 +717,7 @@ _:genid_has_menu shacl:path schema:hasMenu ;
         shacl:name "Menu name" ;
         shacl:order 0 ;
         dash:singleLine "true"^^xsd:boolean ;
-        obop:specifedBy :field_menu_name
+        obop:specifiedBy :field_menu_name
     ] , [
         shacl:path :menuType ;
         shacl:datatype xsd:string ;
@@ -725,10 +725,10 @@ _:genid_has_menu shacl:path schema:hasMenu ;
         shacl:name "Menu type" ;
         shacl:order 1 ;
         dash:singleLine "true"^^xsd:boolean ;
-        obop:specifedBy :field_menu_type
+        obop:specifiedBy :field_menu_type
     ] , [
         # Relationship declared in the shape itself: a menu's dishes, each
-        # conforming to :dishShape. No obop:specifedBy -> not a form field
+        # conforming to :dishShape. No obop:specifiedBy -> not a form field
         # (validation-only); the triples are created by :menu_dish_connection.
         shacl:path schema:hasMenuItem ;
         shacl:node :dishShape
@@ -1025,7 +1025,7 @@ _:genid_has_menu shacl:path schema:hasMenu ;
         shacl:name "Dish name" ;
         shacl:order 0 ;
         dash:singleLine "true"^^xsd:boolean ;
-        obop:specifedBy :field_dish_name
+        obop:specifiedBy :field_dish_name
     ] , [
         shacl:path :price ;
         shacl:datatype xsd:decimal ;
@@ -1033,17 +1033,17 @@ _:genid_has_menu shacl:path schema:hasMenu ;
         shacl:name "Price" ;
         shacl:order 1 ;
         dash:singleLine "true"^^xsd:boolean ;
-        obop:specifedBy :field_dish_price
+        obop:specifiedBy :field_dish_price
     ] , [
         shacl:path :description ;
         shacl:datatype xsd:string ;
         shacl:maxCount 1 ;
         shacl:name "Description" ;
         shacl:order 2 ;
-        obop:specifedBy :field_dish_description
+        obop:specifiedBy :field_dish_description
     ] , [
         # Relationship declared in the shape itself: a dish's ingredients, each
-        # conforming to :ingredientShape. No obop:specifedBy -> not a form
+        # conforming to :ingredientShape. No obop:specifiedBy -> not a form
         # field; the triples are created by :dish_ingredient_connection.
         shacl:path schema:hasIngredient ;
         shacl:node :ingredientShape
@@ -1317,7 +1317,7 @@ _:genid_has_menu shacl:path schema:hasMenu ;
         shacl:name "Ingredient name" ;
         shacl:order 0 ;
         dash:singleLine "true"^^xsd:boolean ;
-        obop:specifedBy :field_ingredient_name
+        obop:specifiedBy :field_ingredient_name
     ] .
 
 :ingredient_notification_block rdf:type owl:NamedIndividual , obop:Block ;

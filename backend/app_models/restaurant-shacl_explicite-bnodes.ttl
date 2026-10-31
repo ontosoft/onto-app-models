@@ -35,7 +35,7 @@ _:genid1 shacl:datatype xsd:string ;
           shacl:path v1:legalName ;
           shacl:maxCount 1 ;
           dash:singleLine "true"^^xsd:boolean ;
-          obop:specifedBy :field_1_1 .
+          obop:specifiedBy :field_1_1 .
 
 ###  http://example.org/logicinterface/restaurant/field_1_1
 :field_1_1 rdf:type owl:NamedIndividual ,
@@ -50,13 +50,13 @@ _:genid1 shacl:datatype xsd:string ;
 
 
 _:genid2 shacl:path schema:streetAddress ;
-          obop:specifedBy :field_1_2 ;
+          obop:specifiedBy :field_1_2 ;
           shacl:description "The street address including number" ;
           shacl:name "Address" ;
           shacl:order 3 .
 
 _:genid3 shacl:path schema:postalCode ;
-          obop:specifedBy :field_1_3 ;
+          obop:specifiedBy :field_1_3 ;
           shacl:description "The postal code" ;
           shacl:name "Postal code:" ;
           shacl:order 2 .

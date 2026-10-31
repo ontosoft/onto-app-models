@@ -121,6 +121,24 @@ def test_copied_constraints_actually_validate():
     assert conforms
 
 
+def test_form_schema_carries_shape_constraints():
+    """R9: the field's copied constraints surface in the JSONForms schema
+    (pattern/maxLength + required), so the frontend validates while the
+    user types."""
+    gm = generate_appmodel_from_shacl(CONSTRAINED_SHAPES)
+    eng = AppEngine()
+    eng.load_inner_app_model(rdf_string=gm.rdf)
+    eng.run_application()
+    eng.process_received_client_data(
+        {"message_type": "initiate_exchange", "message_content": {}}
+    )
+    out = eng.read_new_model_layout()
+    schema = out.message_content["schema"]
+    assert schema["properties"]["Legal name"]["pattern"] == "^[A-Z].*"
+    assert schema["properties"]["Legal name"]["maxLength"] == 50
+    assert schema["required"] == ["Legal name"]
+
+
 def test_input_shapes_document_is_embedded_whole():
     """R9: the original input shapes are merged into the model verbatim, so
     the final validation checks the round trip against the true input - but

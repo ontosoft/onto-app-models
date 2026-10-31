@@ -98,6 +98,17 @@ class FormElement:
         self._picker_shape = str(other_shape)
         return options
 
+    def shape_requires_value(self) -> bool:
+        """True when a property shape attached to this element via
+        obop:specifiedBy demands sh:minCount >= 1 (R9) - the element's
+        schema property is then listed as required."""
+        rdf = self.form.inner_app_static_model.rdf_graph_rdflib
+        for property_shape in rdf.subjects(OBOP.specifiedBy, self.graph_node):
+            min_count = rdf.value(property_shape, SH.minCount)
+            if min_count is not None and int(min_count) >= 1:
+                return True
+        return False
+
     def create_jsonform_schema_property(self, app_state:ApplicationState):
         new_property_name : str = None
         field_type : str = "string"
@@ -147,13 +158,25 @@ class FormElement:
             app_state.current_json_form_name_mapping[str(self.graph_node)] = str(self.property_name)
 
 
-        return {
-            new_property_name: {
-                "type": field_type,
-                "position": self.position,
-        #        "action_pointers": self.action_pointers
-            }
+        schema_property = {
+            "type": field_type,
+            "position": self.position,
+            #  "action_pointers": self.action_pointers
         }
+        # R9: the value constraints of the property shape attached to this
+        # element (obop:specifiedBy) become JSON Schema keywords, so the
+        # frontend validates the input while the user types.
+        rdf = self.form.inner_app_static_model.rdf_graph_rdflib
+        for property_shape in rdf.subjects(OBOP.specifiedBy, self.graph_node):
+            for pred, keyword, cast in (
+                (SH.pattern, "pattern", str),
+                (SH.minLength, "minLength", int),
+                (SH.maxLength, "maxLength", int),
+            ):
+                value = rdf.value(property_shape, pred)
+                if value is not None:
+                    schema_property[keyword] = cast(value)
+        return {new_property_name: schema_property}
 
     def create_jsonform_ui_schema_element(self, app_state:ApplicationState):
         """
