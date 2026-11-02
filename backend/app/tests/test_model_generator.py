@@ -188,6 +188,76 @@ def test_engine_final_validation_uses_embedded_shapes():
     assert "Conforms: True" in validation_text("Acme")
 
 
+def test_round_trip_catches_constraints_the_form_layer_cannot_enforce():
+    """R9 step 3: the round trip fails on a real violation, end to end.
+
+    sh:in is list-valued, so the generator drops it from the copied field
+    shape - the form schema and the per-form validation cannot enforce it.
+    But the ORIGINAL input shapes are embedded whole, and the engine's own
+    final-validation task (reached through the normal flow, not called by
+    hand) must report the stored value against them."""
+    shapes = """
+    @prefix sh:  <http://www.w3.org/ns/shacl#> .
+    @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+    @prefix v1:  <http://purl.org/goodrelations/v1#> .
+
+    <http://example.org/generated/string-form/BusinessEntityShape>
+        a sh:NodeShape ;
+        sh:targetClass v1:BusinessEntity ;
+        sh:property [
+            sh:path     v1:legalName ;
+            sh:datatype xsd:string ;
+            sh:name     "Legal name" ;
+            sh:order    0 ;
+            sh:in       ("Acme" "Globex") ;
+        ] .
+    """
+
+    def final_validation_text(legal_name: str) -> str:
+        gm = generate_appmodel_from_shacl(shapes)
+        eng = AppEngine()
+        eng.load_inner_app_model(rdf_string=gm.rdf)
+        eng.run_application()
+        eng.process_received_client_data(
+            {"message_type": "initiate_exchange", "message_content": {}}
+        )
+        mc = eng.read_new_model_layout().message_content
+        # the dropped sh:in never reaches the form schema ...
+        assert "enum" not in mc["schema"]["properties"]["Legal name"]
+        eng.process_received_client_data({
+            "message_type": "action",
+            "message_content": {
+                "action_type": "submit",
+                "action_graph_node": f"{BASE}submit_action_business_entity",
+                "form_graph_node": str(mc["graph_node"]),
+                "form_data": {"Legal name": legal_name},
+            },
+        })
+        # ... and the per-form validation (field shapes only) lets any string
+        # through: the next screen is the saved notification, not the form
+        out = eng.read_new_model_layout()
+        assert "_notification_" in str(out.message_content.get("graph_node", "")), (
+            "per-form validation unexpectedly rejected the value"
+        )
+        eng.process_received_client_data({
+            "message_type": "action",
+            "message_content": {
+                "action_type": "other",
+                "action_graph_node": f"{BASE}continue_action",
+            },
+        })
+        # Continue ends the subprocess; the final-validation ScriptTask runs
+        # and its message box reports the result against the embedded input
+        out = eng.read_new_model_layout()
+        assert out.layout_type == "message-box"
+        return out.message_content["uischema"]["elements"][0]["text"]
+
+    report = final_validation_text("Trattoria")  # not in sh:in ("Acme" "Globex")
+    assert "Conforms: False" in report
+    assert "InConstraintComponent" in report
+    assert "Conforms: True" in final_validation_text("Acme")
+
+
 def test_per_form_validation_rejects_then_accepts():
     """R9 2b: the submit routes through a per-form SHACL validation BEFORE the
     data is stored. A violating submit sends the same form back with the
