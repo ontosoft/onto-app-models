@@ -35,6 +35,28 @@ _SHAPE_OBJECT_PREDICATES = (SH.node, SH.property, SH["not"], SH.qualifiedValueSh
 # SHACL predicates whose object is an RDF list of shapes.
 _SHAPE_LIST_PREDICATES = (SH["and"], SH["or"], SH.xone)
 
+# Subproperties of obop:routesOn: predicates linking a condition expression
+# to the trigger it routes on (a user-selected action or an engine decision).
+_ROUTES_ON_PREDICATES = (OBOP.selectedAction, OBOP.engineDecision)
+
+# OBOP action classes the engine knows how to execute, mapped to the engine's
+# internal type strings. readActions picks ONE class per action from the
+# reasoner's most-specific types; when several remain (incomparable sibling
+# classes - see the comment there), the first class listed here wins, so the
+# order encodes the engine's preference.
+_ACTION_TYPE_BY_CLASS = {
+    str(OBOP.MakeConnectionAction): "make_connection",
+    str(OBOP.SubmitBlockAction): "submit",
+    str(OBOP.GenerateJSONForm): "generate_json_form",
+    # The scope subclasses and their plain superclass (kept for existing
+    # models) all run the same engine code: the dispatcher decides per-form
+    # vs. whole-graph by the action's obop:actionInBlock.
+    str(OBOP.SHACLFormValidation): "shacl_validation",
+    str(OBOP.SHACLGraphValidation): "shacl_validation",
+    str(OBOP.SHACLValidation): "shacl_validation",
+    str(OBOP.CancelBlockAction): "cancel",
+}
+
 class AppStaticModelFactory:
         
     @staticmethod
@@ -590,8 +612,17 @@ class AppStaticModelFactory:
             for row in results: 
                 (bbo_sequence_flow, source, target, condition_expression, container) = row
                 logger.info(f"Reading BBO Conditional Sequence Flow Element: {bbo_sequence_flow.iri}, Source: {source.iri}, Target: {target.iri}, Container: {container.iri}, Conditional Expression: {condition_expression.iri} ")
-                # Find the condition expression
-                internal_condition_expression : BBOConditionExpression = BBOConditionExpression ( URIRef(condition_expression.iri),  internal_app_static_model.rdf_graph_rdflib.value(URIRef(condition_expression.iri),OBOP.selectedAction).toPython())
+                # Find the trigger this condition routes on: the first value of
+                # any obop:routesOn subproperty (obop:selectedAction set by the
+                # user, obop:engineDecision set by the engine, R9).
+                trigger = next(
+                    (value for pred in _ROUTES_ON_PREDICATES
+                     if (value := internal_app_static_model.rdf_graph_rdflib.value(
+                         URIRef(condition_expression.iri), pred)) is not None),
+                    None)
+                internal_condition_expression : BBOConditionExpression = BBOConditionExpression(
+                    URIRef(condition_expression.iri),
+                    str(trigger) if trigger is not None else None)
 
                 # Find the source and target flow elements in the internal application model
                 if container.iri == str(internal_app_static_model.main_bbo_process.graph_node):
@@ -821,7 +852,15 @@ class AppStaticModelFactory:
             # Checking the type of the action
             if action in rdf_graph_rdflib.subjects(RDF.type, OBOP.SubmitBlockAction):
                 action_type = "submit"
-            elif action in rdf_graph_rdflib.subjects(RDF.type, OBOP.SHACLValidation):
+            elif (
+                action in rdf_graph_rdflib.subjects(RDF.type, OBOP.SHACLValidation)
+                # no reasoning on this plain graph, so the scope subclasses
+                # have to be checked by name as well
+                or action
+                in rdf_graph_rdflib.subjects(RDF.type, OBOP.SHACLFormValidation)
+                or action
+                in rdf_graph_rdflib.subjects(RDF.type, OBOP.SHACLGraphValidation)
+            ):
                 action_type = "shacl_validation"
             elif action in rdf_graph_rdflib.subjects(RDF.type, OBOP.CancelBlockAction):
                 action_type = "cancel"
@@ -872,37 +911,48 @@ class AppStaticModelFactory:
             }"""
             all_actions_generator = internal_app_static_model.rdf_pellet_reasoning_world. \
                 sparql(all_actions_query)
+            # The query keeps, per action, its LEAF CLASSES: the action's most
+            # specific types, i.e. those of its rdf:types with no more specific
+            # subclass among the action's other types (the filter above drops
+            # every class that has one). That is usually ONE class - but OWL
+            # reasoning may leave several that are incomparable siblings: an
+            # rdfs:domain axiom, for instance, makes a per-form validation
+            # (obop:SHACLValidation with obop:actionInBlock) also an
+            # obop:BlockAction, and neither class is a subclass of the other.
+            # One OBOPAction per row would then register the same action twice,
+            # once with the right type and once as "other", and the script task
+            # would bind whichever comes first. So: group the rows per action
+            # first, then pick one class - preferring a class the engine
+            # recognizes.
+            leaf_classes: dict[str, set[str]] = {}
             for row in all_actions_generator:
                 (graph_action, action_class) = row
-                node = URIRef(graph_action.iri)
-                cls = action_class.iri
-                logger.debug(f"Action {graph_action.iri} (leaf class {cls})")
+                leaf_classes.setdefault(graph_action.iri, set()).add(
+                    action_class.iri
+                )
+            for action_iri, classes in leaf_classes.items():
+                node = URIRef(action_iri)
+                logger.debug(f"Action {action_iri} (leaf classes {classes})")
+                cls = next((c for c in _ACTION_TYPE_BY_CLASS if c in classes), None)
                 if cls == str(OBOP.MakeConnectionAction):
                     # Connection actions carry their own data -> dedicated subclass.
                     action: OBOPAction = MakeConnectionAction(node)
-                elif cls == str(OBOP.SubmitBlockAction):
+                elif cls is not None:
                     action = OBOPAction(node)
-                    action.type = "submit"
-                    action.isSubmit = True
-                elif cls == str(OBOP.GenerateJSONForm):
-                    action = OBOPAction(node)
-                    action.type = "generate_json_form"
-                elif cls == str(OBOP.SHACLValidation):
-                    action = OBOPAction(node)
-                    action.type = "shacl_validation"
-                elif cls == str(OBOP.CancelBlockAction):
-                    action = OBOPAction(node)
-                    action.type = "cancel"
+                    action.type = _ACTION_TYPE_BY_CLASS[cls]
+                    action.isSubmit = cls == str(OBOP.SubmitBlockAction)
                 else:
                     # A generic obop:Action (e.g. a "continue"/proceed button) has
                     # no specialised OBOP subclass -> a plain "other" action the
                     # engine advances via its gateway. Only a truly unrecognised
-                    # subclass is worth flagging.
+                    # class is worth flagging.
                     action = OBOPAction(node)
                     action.type = "other"
-                    if cls != str(OBOP.Action):
+                    unrecognized = classes - {str(OBOP.Action)}
+                    if unrecognized:
                         logger.warning(
-                            f"Unrecognized action class {cls}; treating as 'other'"
+                            f"Unrecognized action class(es) {unrecognized}; "
+                            "treating as 'other'"
                         )
                 internal_app_static_model.actions.append(action)
                 logger.debug(f"Loaded action: {action.__repr__()}")

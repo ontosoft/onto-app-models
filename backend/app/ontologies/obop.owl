@@ -420,6 +420,37 @@
 
 
 
+    <!-- http://purl.org/net/obop/routesOn -->
+
+    <owl:ObjectProperty rdf:about="http://purl.org/net/obop/routesOn">
+        <rdfs:comment xml:lang="en">Connects a condition expression to the trigger that satisfies it. The subproperties distinguish who decides: selectedAction routes on an action selected by the user, engineDecision routes on a decision taken by the executing engine (e.g. a SHACL validation result).</rdfs:comment>
+        <rdfs:label xml:lang="en">routesOn</rdfs:label>
+    </owl:ObjectProperty>
+
+
+
+    <!-- http://purl.org/net/obop/selectedAction -->
+
+    <owl:ObjectProperty rdf:about="http://purl.org/net/obop/selectedAction">
+        <rdfs:subPropertyOf rdf:resource="http://purl.org/net/obop/routesOn"/>
+        <rdfs:range rdf:resource="http://purl.org/net/obop/Action"/>
+        <rdfs:comment xml:lang="en">The action selected by the user that satisfies this condition expression. A conditional sequence flow with this condition routes the token when the user has chosen exactly this action (e.g. submit vs. cancel).</rdfs:comment>
+        <rdfs:label xml:lang="en">selectedAction</rdfs:label>
+    </owl:ObjectProperty>
+
+
+
+    <!-- http://purl.org/net/obop/engineDecision -->
+
+    <owl:ObjectProperty rdf:about="http://purl.org/net/obop/engineDecision">
+        <rdfs:subPropertyOf rdf:resource="http://purl.org/net/obop/routesOn"/>
+        <rdfs:range rdf:resource="http://purl.org/net/obop/EngineDecision"/>
+        <rdfs:comment xml:lang="en">The engine decision that satisfies this condition expression. A conditional sequence flow with this condition routes the token based on a result the executing engine produced, such as the outcome of a SHACL validation, instead of a user-selected action.</rdfs:comment>
+        <rdfs:label xml:lang="en">engineDecision</rdfs:label>
+    </owl:ObjectProperty>
+
+
+
     <!-- http://purl.org/net/obop/specifiedBy -->
 
     <owl:ObjectProperty rdf:about="http://purl.org/net/obop/specifiedBy">
@@ -625,7 +656,26 @@ This can be used to track the version of the interface used to populate the know
         <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
         <rdfs:label xml:lang="en">Action</rdfs:label>
     </owl:Class>
-    
+
+
+
+    <!-- http://purl.org/net/obop/EngineDecision -->
+
+    <owl:Class rdf:about="http://purl.org/net/obop/EngineDecision">
+        <rdfs:comment xml:lang="en">A decision taken by the executing engine (not by the user) that conditional sequence flows can route on, such as the outcome of a SHACL validation. Keeping user selections (obop:selectedAction) and engine decisions apart lets a reasoner tell the user's decision points from the automatic ones.</rdfs:comment>
+        <rdfs:label xml:lang="en">EngineDecision</rdfs:label>
+    </owl:Class>
+
+
+
+    <!-- http://purl.org/net/obop/ValidationDecision -->
+
+    <owl:Class rdf:about="http://purl.org/net/obop/ValidationDecision">
+        <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/EngineDecision"/>
+        <rdfs:comment xml:lang="en">An engine decision produced by a SHACL validation. Its individuals name the scope of what was validated: the data of one form (Form...) or the whole output knowledge graph (Graph...).</rdfs:comment>
+        <rdfs:label xml:lang="en">ValidationDecision</rdfs:label>
+    </owl:Class>
+
 
 
     <!-- http://purl.org/net/obop/Block -->
@@ -899,7 +949,28 @@ This can be used to track the version of the interface used to populate the know
         <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/Action"/>
         <rdfs:comment>The action performs a validation of the entered knowledge graph to ensure it conforms to the SHACL shapes.</rdfs:comment>
     </owl:Class>
-    
+
+
+
+    <!-- http://purl.org/net/obop/SHACLFormValidation -->
+
+    <owl:Class rdf:about="http://purl.org/net/obop/SHACLFormValidation">
+        <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/SHACLValidation"/>
+        <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/BlockAction"/>
+        <rdfs:comment xml:lang="en">A SHACL validation of the data entered in one block (form), performed before the data is stored. As an action on a block it is also a BlockAction and is associated with its block via obop:actionInBlock. Its outcome is one of the obop:ValidationDecision individuals obop:FormValidationConforms or obop:FormValidationViolation.</rdfs:comment>
+        <rdfs:label xml:lang="en">SHACLFormValidation</rdfs:label>
+    </owl:Class>
+
+
+
+    <!-- http://purl.org/net/obop/SHACLGraphValidation -->
+
+    <owl:Class rdf:about="http://purl.org/net/obop/SHACLGraphValidation">
+        <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/SHACLValidation"/>
+        <rdfs:comment xml:lang="en">A SHACL validation of the whole output knowledge graph collected by the application, typically performed at the end of the process. Its outcome is one of the obop:ValidationDecision individuals obop:GraphValidationConforms or obop:GraphValidationViolation.</rdfs:comment>
+        <rdfs:label xml:lang="en">SHACLGraphValidation</rdfs:label>
+    </owl:Class>
+
 
 
     <!-- http://purl.org/net/obop/SPARQLQuery -->
@@ -1001,6 +1072,54 @@ This can be used to track the version of the interface used to populate the know
     <rdf:Description rdf:about="http://dms.org/obop/address">
         <dc:title></dc:title>
     </rdf:Description>
+
+
+
+    <!--
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Individuals
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    <!-- http://purl.org/net/obop/FormValidationConforms -->
+
+    <owl:NamedIndividual rdf:about="http://purl.org/net/obop/FormValidationConforms">
+        <rdf:type rdf:resource="http://purl.org/net/obop/ValidationDecision"/>
+        <rdfs:comment xml:lang="en">The engine decision that the submitted data of one form conforms to the form's SHACL property shapes.</rdfs:comment>
+        <rdfs:label xml:lang="en">FormValidationConforms</rdfs:label>
+    </owl:NamedIndividual>
+
+
+
+    <!-- http://purl.org/net/obop/FormValidationViolation -->
+
+    <owl:NamedIndividual rdf:about="http://purl.org/net/obop/FormValidationViolation">
+        <rdf:type rdf:resource="http://purl.org/net/obop/ValidationDecision"/>
+        <rdfs:comment xml:lang="en">The engine decision that the submitted data of one form violates the form's SHACL property shapes.</rdfs:comment>
+        <rdfs:label xml:lang="en">FormValidationViolation</rdfs:label>
+    </owl:NamedIndividual>
+
+
+
+    <!-- http://purl.org/net/obop/GraphValidationConforms -->
+
+    <owl:NamedIndividual rdf:about="http://purl.org/net/obop/GraphValidationConforms">
+        <rdf:type rdf:resource="http://purl.org/net/obop/ValidationDecision"/>
+        <rdfs:comment xml:lang="en">The engine decision that the whole output knowledge graph conforms to the SHACL shapes embedded in the model.</rdfs:comment>
+        <rdfs:label xml:lang="en">GraphValidationConforms</rdfs:label>
+    </owl:NamedIndividual>
+
+
+
+    <!-- http://purl.org/net/obop/GraphValidationViolation -->
+
+    <owl:NamedIndividual rdf:about="http://purl.org/net/obop/GraphValidationViolation">
+        <rdf:type rdf:resource="http://purl.org/net/obop/ValidationDecision"/>
+        <rdfs:comment xml:lang="en">The engine decision that the whole output knowledge graph violates the SHACL shapes embedded in the model.</rdfs:comment>
+        <rdfs:label xml:lang="en">GraphValidationViolation</rdfs:label>
+    </owl:NamedIndividual>
 </rdf:RDF>
 
 

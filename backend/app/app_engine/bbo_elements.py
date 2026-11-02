@@ -249,14 +249,17 @@ class BBOExpression():
         self._graph_node = value
  
 class BBOConditionExpression(BBOExpression):
-    def __init__(self,graph_node: URIRef, expression : str):
+    def __init__(self, graph_node: URIRef, trigger : str = None):
         super().__init__(graph_node)
-        self.expression : str = expression
+        # IRI of whatever this condition routes on (obop:routesOn): an action
+        # selected by the user (obop:selectedAction) or an engine decision
+        # such as obop:FormValidationConforms (obop:engineDecision).
+        self.trigger : str = trigger
 
     def __repr__(self):
-        parent_rep = super().__repr__() 
-        exp = self.expression if self.expression is not None else ""
-        return f"BBOConditionalExpression: {parent_rep}, Expression: {exp}"
+        parent_rep = super().__repr__()
+        trig = self.trigger if self.trigger is not None else ""
+        return f"BBOConditionalExpression: {parent_rep}, Trigger: {trig}"
 
 
 class BBOConditionalSequenceFlow(BBOSequenceFlow):

@@ -5,8 +5,14 @@ rdflib graph, mirroring the hand-built restaurant pattern:
 
   * one self-contained subprocess per entity:
       start -> generate_form -> user_enters -> processing -> gateway
-        --submit--> save -> confirmation -> notification -> subprocess EndEvent
+        --submit--> validate_form -> validation gateway
+            --FormValidationConforms--> save -> confirmation -> notification
+                                        -> subprocess EndEvent
+            --FormValidationViolation--> user_enters (form re-sent with the
+                                         entered values and the report)
         --cancel--> abort -> cancel EndEvent
+    (with per_form_validation=False the submit flow goes straight to save and
+    only the final whole-graph validation runs)
   * subprocesses chained in the main process, then ONE final SHACL validation:
       start -> insert_E1 -> ... -> insert_En -> final_validation
             -> user_receives_validation -> end_event
@@ -41,8 +47,12 @@ DEFAULT_BASE = "http://example.org/generated/"
 class ModelBuilder:
     """Accumulates the generated model triples in a single rdflib graph."""
 
-    def __init__(self, base: str = DEFAULT_BASE):
+    def __init__(self, base: str = DEFAULT_BASE, per_form_validation: bool = True):
         self.base = base if base.endswith(("/", "#")) else base + "/"
+        # Whether each entity's submit routes through a per-form SHACL
+        # validation (an in-block obop:SHACLValidation task + XOR gateway);
+        # without it only the final whole-graph validation runs.
+        self.per_form_validation = per_form_validation
         self.ex = Namespace(self.base)
         self.g = Graph()
         for prefix, ns in (
@@ -170,7 +180,7 @@ class ModelBuilder:
         self.link(fv, OBOP.executesAction, self.ex["final_validation_action"])
         self.g.add((fv, RDFS.comment, Literal(
             "Validate the whole stored knowledge graph using SHACL shapes.")))
-        fva = self.ind("final_validation_action", OBOP.SHACLValidation)
+        fva = self.ind("final_validation_action", OBOP.SHACLGraphValidation)
         self.lit(fva, OBOP.hasInitiator, "onClick")
         self.lit(fva, OBOP.hasInitiator, "onEnter")
         urv = self.ind("user_receives_validation", BBO.UserTask)
@@ -209,6 +219,11 @@ class ModelBuilder:
             "end": self.ind(f"end_{n}", BBO.EndEvent),
             "cancel_end": self.ind(f"cancel_end_{n}", BBO.EndEvent),
         }
+        if self.per_form_validation:
+            nodes["validate"] = self.ind(f"validate_form_{n}", BBO.ScriptTask)
+            nodes["val_gw"] = self.ind(
+                f"validation_gateway_{n}", BBO.ExclusiveGateway
+            )
         for node in nodes.values():
             self.link(node, BBO.has_container, sub)
         self.g.add((nodes["end"], RDFS.comment, Literal(f"{ent.label} data stored.")))
@@ -284,6 +299,18 @@ class ModelBuilder:
         self.lit(submit_action, OBOP.hasLabel, "Submit")
         self.link(nodes["save"], OBOP.executesAction, submit_action)
 
+        if self.per_form_validation:
+            # SHACLFormValidation (in-block): the engine validates THIS form's
+            # pending data against the block's field shapes, before anything
+            # is stored (a SHACLGraphValidation validates the whole graph).
+            validate_action = self.ind(
+                f"validate_action_{n}", OBOP.SHACLFormValidation
+            )
+            self.link(validate_action, OBOP.actionInBlock, block)
+            self.link(nodes["validate"], OBOP.executesAction, validate_action)
+            self.g.add((nodes["validate"], RDFS.comment, Literal(
+                f"Validate the entered {ent.label} data against its field shapes.")))
+
         cancel_action = self.ind(f"cancel_action_{n}", OBOP.CancelBlockAction)
         self.link(cancel_action, OBOP.actionInBlock, block)
         self.lit(cancel_action, OBOP.hasInitiator, "onClick")
@@ -344,6 +371,9 @@ class ModelBuilder:
         self.link(nodes["confirm"], OBOP.executesAction, confirm_action)
 
         # --- condition expressions (gateway routing) ---
+        # A condition routes on a trigger (obop:routesOn): either the action
+        # the user selected (obop:selectedAction) or a decision the engine
+        # took (obop:engineDecision), e.g. a per-form validation outcome.
         submit_cond = self.ind(f"submit_cond_{n}", BBO.ConditionExpression)
         self.link(submit_cond, OBOP.selectedAction, submit_action)
         cancel_cond = self.ind(f"cancel_cond_{n}", BBO.ConditionExpression)
@@ -354,7 +384,28 @@ class ModelBuilder:
         self.flow(f"flow_{n}_2", sub, nodes["gen"], nodes["user"])
         self.flow(f"flow_{n}_3", sub, nodes["user"], nodes["proc"])
         self.flow(f"flow_{n}_4", sub, nodes["proc"], nodes["gw"])
-        self.flow(f"flow_{n}_submit", sub, nodes["gw"], nodes["save"], submit_cond)
+        if self.per_form_validation:
+            # Submit routes through the validation task first: only a
+            # conforming form reaches the save task; a violating one sends
+            # the token back to the user task, where the engine re-presents
+            # the form with the entered values and the validation report.
+            val_ok_cond = self.ind(f"val_ok_cond_{n}", BBO.ConditionExpression)
+            self.link(val_ok_cond, OBOP.engineDecision,
+                      OBOP.FormValidationConforms)
+            val_fail_cond = self.ind(f"val_fail_cond_{n}", BBO.ConditionExpression)
+            self.link(val_fail_cond, OBOP.engineDecision,
+                      OBOP.FormValidationViolation)
+            self.flow(f"flow_{n}_submit", sub, nodes["gw"], nodes["validate"],
+                      submit_cond)
+            self.flow(f"flow_{n}_validate", sub, nodes["validate"],
+                      nodes["val_gw"])
+            self.flow(f"flow_{n}_val_ok", sub, nodes["val_gw"], nodes["save"],
+                      val_ok_cond)
+            self.flow(f"flow_{n}_val_fail", sub, nodes["val_gw"], nodes["user"],
+                      val_fail_cond)
+        else:
+            self.flow(f"flow_{n}_submit", sub, nodes["gw"], nodes["save"],
+                      submit_cond)
         self.flow(f"flow_{n}_cancel", sub, nodes["gw"], nodes["abort"], cancel_cond)
         # save -> [make_connection tasks planned for this subprocess] -> confirm.
         # Consecutive ScriptTasks run back-to-back, so the connection triples are
@@ -412,9 +463,13 @@ class ModelBuilder:
         self.flow(f"flow_{n}_abort_end", sub, nodes["abort"], nodes["cancel_end"])
 
 
-def build_model_graph(entities: list[EntitySpec], base: str = DEFAULT_BASE) -> Graph:
+def build_model_graph(
+    entities: list[EntitySpec],
+    base: str = DEFAULT_BASE,
+    per_form_validation: bool = True,
+) -> Graph:
     """Assemble the full model graph from the entity specs."""
-    b = ModelBuilder(base)
+    b = ModelBuilder(base, per_form_validation)
     b.plan_connections(entities)  # placement must be known before entities build
     b.build_model_root()
     for ent in entities:

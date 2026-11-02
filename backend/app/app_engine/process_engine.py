@@ -1,5 +1,6 @@
 from .forms import Form, FunctionalJSONForm
-from rdflib import Graph, Namespace, RDF, RDFS, URIRef, Literal
+from rdflib import BNode, Graph, Namespace, RDF, RDFS, URIRef, Literal
+from rdflib.namespace import SH
 from .app_model import AppInternalStaticModel
 from .obop_action import OBOPAction
 from .bbo_elements import (
@@ -296,13 +297,11 @@ class ProcessEngine:
                 )
                 or
                 # If the next flow is a conditional flow, the condition has to be evaluated
-                # The condition is evaluated based on the action received from the frontend
                 (
                     isinstance(f, BBOConditionalSequenceFlow)
-                    and str(self.app_state.received_action.graph_node)
-                    == f.conditional_expression.expression
                     and f.source_ref.graph_node
                     == self.app_state.current_flow_element.graph_node
+                    and self._condition_holds(f.conditional_expression)
                 )
             ),
             None,
@@ -332,6 +331,22 @@ class ProcessEngine:
         self.app_state.current_flow_element = next_flow.target_ref
         return True
 
+    def _condition_holds(self, condition) -> bool:
+        """A conditional flow is taken when its trigger is currently active."""
+        return (condition.trigger is not None
+                and condition.trigger in self._active_triggers())
+
+    def _active_triggers(self) -> set[str]:
+        """IRIs a condition expression may route on right now: the action the
+        user selected (obop:selectedAction) and the last decision the engine
+        took, e.g. obop:FormValidationConforms (obop:engineDecision)."""
+        triggers = set()
+        if self.app_state.received_action is not None:
+            triggers.add(str(self.app_state.received_action.graph_node))
+        if self.app_state.last_engine_decision is not None:
+            triggers.add(self.app_state.last_engine_decision)
+        return triggers
+
     def execute_script_task(self, script_task: BBOScriptTask):
         """
         Executes the script task in the control flow of the application.
@@ -355,7 +370,16 @@ class ProcessEngine:
         ):
             self.execute_submit_action()
         elif script_task.obop_action.type == "shacl_validation":
-            self.validate_output_knowledge_graph()
+            # A validation action inside a block validates that form's pending
+            # data (per-form validation); without a block it validates the
+            # whole output knowledge graph (final validation).
+            block = self.internal_app_static_model.rdf_graph_rdflib.value(
+                script_task.obop_action.graph_node, OBOP.actionInBlock
+            )
+            if block is not None:
+                self.validate_pending_form_data(block)
+            else:
+                self.validate_output_knowledge_graph()
         elif script_task.obop_action.type == "make_connection":
             self.execute_make_connection_action(script_task)
 
@@ -638,6 +662,107 @@ class ProcessEngine:
             return None
         return active_form.stored_instance_graph_node
 
+    def validate_pending_form_data(self, block) -> None:
+        """Validate the just-submitted form data of one block (per-form, R9).
+
+        Runs before the submit action stores anything: the entered values are
+        checked in isolation against the property shapes of the block's
+        fields. The outcome is published as app_state.last_engine_decision
+        (obop:FormValidationConforms / obop:FormValidationViolation), on which
+        the conditional flows after the validation gateway route. On a
+        violation the same form is sent back to the user with the entered
+        values and the validation report, and nothing is stored.
+        """
+        rdf = self.internal_app_static_model.rdf_graph_rdflib
+        form: Form = next(
+            (
+                f
+                for f in self.internal_app_static_model.forms
+                if str(f.graph_node) == str(block)
+            ),
+            None,
+        )
+        if form is None:
+            logger.error(
+                f"No form found for the validation block {block}; "
+                "skipping the per-form validation."
+            )
+            self.app_state.last_engine_decision = str(OBOP.FormValidationConforms)
+            return
+
+        form_data: dict = self.app_state.frontend_message.message_content.get(
+            "form_data", {}
+        )
+        picker_mapping = self.app_state.current_json_form_picker_mapping
+
+        # Candidate data graph: a fresh instance typed with the form's target
+        # classes, carrying the entered values as datatype properties. The
+        # output knowledge graph stays untouched.
+        candidate = BASE[f"candidate-{uuid4()}"]
+        data_graph = Graph()
+        for target_class in form.target_classes:
+            data_graph.add((candidate, RDF.type, target_class))
+        for key, value in form_data.items():
+            if key in picker_mapping:
+                continue  # a picker records a choice, not a datatype property
+            element_graph_node = next(
+                (
+                    k
+                    for k, v in self.app_state.current_json_form_name_mapping.items()
+                    if v == key
+                ),
+                None,
+            )
+            if element_graph_node is None:
+                continue
+            for data_property in rdf.objects(
+                URIRef(element_graph_node), OBOP.containsDatatype
+            ):
+                data_graph.add((candidate, data_property, Literal(value)))
+
+        # Focused shapes graph: one synthetic node shape targeting exactly the
+        # candidate, carrying the property shapes of this block's fields
+        # (attached to the elements via obop:specifiedBy).
+        shapes_graph = Graph()
+        node_shape = BNode()
+        shapes_graph.add((node_shape, RDF.type, SH.NodeShape))
+        shapes_graph.add((node_shape, SH.targetNode, candidate))
+        for element in form.elements:
+            for property_shape in rdf.subjects(OBOP.specifiedBy, element.graph_node):
+                shapes_graph.add((node_shape, SH.property, property_shape))
+                shapes_graph += rdf.cbd(property_shape)
+
+        conforms, _results_graph, results_text = validate(
+            data_graph,
+            shacl_graph=shapes_graph,
+            inference="none",
+            abort_on_first=False,
+            meta_shacl=False,
+            advanced=True,
+            js=False,
+        )
+        if conforms:
+            logger.debug(f"Form data for block {block} conforms to its shapes.")
+            self.app_state.last_engine_decision = str(OBOP.FormValidationConforms)
+            return
+
+        logger.debug(
+            f"Form data for block {block} violates its shapes:\n{results_text}"
+        )
+        self.app_state.last_engine_decision = str(OBOP.FormValidationViolation)
+        # Send the same form back: the entered values are kept and the
+        # validation report is shown below the fields.
+        json_form: FunctionalJSONForm = form.create_functional_json_form_schemas(
+            self.app_state
+        )
+        json_form["data"] = form_data
+        json_form["uischema"]["elements"].append(
+            {"type": "Label", "text": results_text}
+        )
+        self.app_state.json_form = json_form
+        self.app_state.layout_type = "form"
+        self.app_state.is_waiting_to_send_data = True
+
     def validate_output_knowledge_graph(self):
         """_summary_
         Validates the output knowledge graph against the shacl
@@ -664,6 +789,17 @@ class ProcessEngine:
                 meta_shacl=False,  # validate the SHACL itself
                 advanced=True,  # allow SHACL advanced features
                 js=False,  # disable SHACL-JS (default)
+            )
+            # Publish the outcome of the whole-graph validation as an engine
+            # decision (obop:GraphValidationConforms / Violation), the
+            # full-document counterpart of the per-form decision: a model may
+            # place an exclusive gateway after the final validation whose
+            # conditional flows route on it (e.g. back to a correction form
+            # instead of the end event).
+            self.app_state.last_engine_decision = (
+                str(OBOP.GraphValidationConforms)
+                if conforms
+                else str(OBOP.GraphValidationViolation)
             )
         json_form : FunctionalJSONForm = {
             "graph_node": "",

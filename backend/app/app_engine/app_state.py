@@ -33,6 +33,10 @@ class ApplicationState:
         # This flag indicates if the backend is waiting to send data to the frontend
         self.is_waiting_to_process_front_end_data = False
         # This flag indicates that the frontend data has to be processed
+        # IRI of the last decision the engine took (e.g.
+        # obop:FormValidationConforms after a per-form SHACL validation);
+        # conditional flows with obop:engineDecision route the token on it (R9).
+        self.last_engine_decision: str = None
         self._running_initiated = False
         self._layout_type : LayoutTypes = None
         # The message type is used to specify what kind of message
