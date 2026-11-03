@@ -612,14 +612,23 @@ class AppStaticModelFactory:
             for row in results: 
                 (bbo_sequence_flow, source, target, condition_expression, container) = row
                 logger.info(f"Reading BBO Conditional Sequence Flow Element: {bbo_sequence_flow.iri}, Source: {source.iri}, Target: {target.iri}, Container: {container.iri}, Conditional Expression: {condition_expression.iri} ")
-                # Find the trigger this condition routes on: the first value of
-                # any obop:routesOn subproperty (obop:selectedAction set by the
+                # Find the trigger this condition routes on: the value of any
+                # obop:routesOn subproperty (obop:selectedAction set by the
                 # user, obop:engineDecision set by the engine, R9).
-                trigger = next(
-                    (value for pred in _ROUTES_ON_PREDICATES
-                     if (value := internal_app_static_model.rdf_graph_rdflib.value(
-                         URIRef(condition_expression.iri), pred)) is not None),
-                    None)
+                triggers = [
+                    value for pred in _ROUTES_ON_PREDICATES
+                    for value in internal_app_static_model.rdf_graph_rdflib.objects(
+                        URIRef(condition_expression.iri), pred)]
+                if len(triggers) > 1:
+                    # The engine evaluates exactly one trigger per condition
+                    # expression (one BBOConditionExpression.trigger); extra
+                    # triggers in the model would be silently ignored.
+                    logger.warning(
+                        f"Condition expression {condition_expression.iri} carries "
+                        f"{len(triggers)} routesOn triggers "
+                        f"({', '.join(str(t) for t in triggers)}); the engine "
+                        "supports exactly one per condition - using the first.")
+                trigger = triggers[0] if triggers else None
                 internal_condition_expression : BBOConditionExpression = BBOConditionExpression(
                     URIRef(condition_expression.iri),
                     str(trigger) if trigger is not None else None)

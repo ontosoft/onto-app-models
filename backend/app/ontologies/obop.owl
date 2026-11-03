@@ -662,7 +662,8 @@ This can be used to track the version of the interface used to populate the know
     <!-- http://purl.org/net/obop/EngineDecision -->
 
     <owl:Class rdf:about="http://purl.org/net/obop/EngineDecision">
-        <rdfs:comment xml:lang="en">A decision taken by the executing engine (not by the user) that conditional sequence flows can route on, such as the outcome of a SHACL validation. Keeping user selections (obop:selectedAction) and engine decisions apart lets a reasoner tell the user's decision points from the automatic ones.</rdfs:comment>
+        <owl:disjointWith rdf:resource="http://purl.org/net/obop/Action"/>
+        <rdfs:comment xml:lang="en">A decision taken by the executing engine (not by the user) that conditional sequence flows can route on, such as the outcome of a SHACL validation. Keeping user selections (obop:selectedAction) and engine decisions apart lets a reasoner tell the user's decision points from the automatic ones. Disjoint with obop:Action: an action is an activity in the process, a decision is the outcome such an activity produces - nothing can be both, so a model that confuses the two (for example obop:selectedAction pointing at a ValidationDecision individual) becomes provably inconsistent instead of silently misbehaving.</rdfs:comment>
         <rdfs:label xml:lang="en">EngineDecision</rdfs:label>
     </owl:Class>
 
@@ -1028,7 +1029,8 @@ This can be used to track the version of the interface used to populate the know
 
     <owl:Class rdf:about="http://purl.org/net/obop/SubmitBlockAction">
         <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/BlockAction"/>
-        <rdfs:comment>This action corresponds to the submit button.</rdfs:comment>
+        <owl:disjointWith rdf:resource="http://purl.org/net/obop/CancelBlockAction"/>
+        <rdfs:comment>This action corresponds to the submit button. Disjoint with obop:CancelBlockAction: no single action can both submit and cancel a block, so typing one action as both becomes a detectable inconsistency.</rdfs:comment>
     </owl:Class>
     
 
@@ -1120,6 +1122,30 @@ This can be used to track the version of the interface used to populate the know
         <rdfs:comment xml:lang="en">The engine decision that the whole output knowledge graph violates the SHACL shapes embedded in the model.</rdfs:comment>
         <rdfs:label xml:lang="en">GraphValidationViolation</rdfs:label>
     </owl:NamedIndividual>
+
+
+
+    <!--
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // General axioms
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    <!-- OWL makes no unique name assumption: without this axiom a reasoner is
+         free to merge two of these individuals (owl:sameAs) to satisfy other
+         axioms, instead of reporting a conflict. Declaring the four validation
+         decisions pairwise distinct turns such a merge into an inconsistency. -->
+
+    <owl:AllDifferent>
+        <owl:distinctMembers rdf:parseType="Collection">
+            <rdf:Description rdf:about="http://purl.org/net/obop/FormValidationConforms"/>
+            <rdf:Description rdf:about="http://purl.org/net/obop/FormValidationViolation"/>
+            <rdf:Description rdf:about="http://purl.org/net/obop/GraphValidationConforms"/>
+            <rdf:Description rdf:about="http://purl.org/net/obop/GraphValidationViolation"/>
+        </owl:distinctMembers>
+    </owl:AllDifferent>
 </rdf:RDF>
 
 
