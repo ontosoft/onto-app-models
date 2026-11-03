@@ -188,6 +188,96 @@ def test_engine_final_validation_uses_embedded_shapes():
     assert "Conforms: True" in validation_text("Acme")
 
 
+def test_owl_axioms_translate_shape_constraints():
+    """R10: the input constraints are also translated into OWL TBox axioms
+    over the target class, so the engine's reasoners see the constraint
+    knowledge (the embedded SHACL itself is subtracted from reasoner input).
+
+    The axiom shape under test: an owl:Restriction is an ANONYMOUS CLASS -
+    "all things whose values of property p satisfy X" (X being a cardinality,
+    a value range, ...). Attaching it with
+
+        C rdfs:subClassOf [ a owl:Restriction ; owl:onProperty p ; ... ]
+
+    is OWL's idiom for "every instance of C satisfies X on p" - the direct
+    counterpart of a SHACL property shape on C's node shape. R10 emits one
+    such restriction per translated constraint.
+    """
+    from rdflib.namespace import OWL, RDFS
+
+    XSDN = Namespace("http://www.w3.org/2001/XMLSchema#")
+    v1 = Namespace("http://purl.org/goodrelations/v1#")
+
+    gm = generate_appmodel_from_shacl(CONSTRAINED_SHAPES)
+    g = Graph()
+    g.parse(data=gm.rdf, format="turtle")
+
+    # All anonymous restriction classes attached to BusinessEntity that
+    # constrain the legalName property - one per translated constraint.
+    restrictions = [
+        r
+        for r in g.objects(v1.BusinessEntity, RDFS.subClassOf)
+        if (r, RDF.type, OWL.Restriction) in g
+        and g.value(r, OWL.onProperty) == v1.legalName
+    ]
+    assert restrictions
+    # sh:minCount 1 -> "legalName min 1 xsd:string": at least one value,
+    # qualified with the datatype ("min 1 AND from this range")
+    assert any(
+        g.value(r, OWL.minQualifiedCardinality)
+        == Literal(1, datatype=XSDN.nonNegativeInteger)
+        and g.value(r, OWL.onDataRange) == XSDN.string
+        for r in restrictions
+    )
+    # sh:maxLength -> "legalName only xsd:string[facets]": an allValuesFrom
+    # over an OWL 2 datatype restriction. Collect the facet pairs
+    # (xsd:maxLength -> 50, ...) from its RDF list.
+    facets = {}
+    for r in restrictions:
+        value_range = g.value(r, OWL.allValuesFrom)
+        if (
+            value_range is not None
+            and g.value(value_range, OWL.onDatatype) == XSDN.string
+        ):
+            for facet in g.items(g.value(value_range, OWL.withRestrictions)):
+                for pred, obj in g.predicate_objects(facet):
+                    facets[pred] = obj
+    assert facets.get(XSDN.maxLength) == Literal(50)
+    # sh:pattern is NOT translated (Pellet 2.3.1 crashes on a pattern facet
+    # meeting a cardinality; HermiT could - see owl_axioms.py); the pattern
+    # stays effective in the embedded SHACL layer for validation
+    assert XSDN.pattern not in facets
+    # the property kind is declared, otherwise owlready2 would load legalName
+    # as a semantics-free AnnotationProperty and mute every restriction on it
+    assert (v1.legalName, RDF.type, OWL.DatatypeProperty) in g
+
+    # relationships too: sh:node on the restaurant input becomes
+    # "BusinessEntity subClassOf (hasMenu only Menu)" + an ObjectProperty
+    SCHEMA = Namespace("http://schema.org/")
+    R = Namespace("http://example.org/generated/restaurant/")
+    GR = Namespace("http://purl.org/goodrelations/v1#")
+    shapes = (EXAMPLES / "restaurant.shapes.ttl").read_text(encoding="utf-8")
+    g = Graph()
+    g.parse(data=generate_appmodel_from_shacl(shapes).rdf, format="turtle")
+    assert (SCHEMA.hasMenu, RDF.type, OWL.ObjectProperty) in g
+    assert any(
+        (r, RDF.type, OWL.Restriction) in g
+        and g.value(r, OWL.onProperty) == SCHEMA.hasMenu
+        and g.value(r, OWL.allValuesFrom) == R.Menu
+        for r in g.objects(GR.BusinessEntity, RDFS.subClassOf)
+    )
+
+
+def test_owl_axioms_can_be_disabled():
+    """owl_axioms=False keeps the model free of translated OWL restrictions."""
+    from rdflib.namespace import OWL
+
+    gm = generate_appmodel_from_shacl(CONSTRAINED_SHAPES, owl_axioms=False)
+    g = Graph()
+    g.parse(data=gm.rdf, format="turtle")
+    assert (None, RDF.type, OWL.Restriction) not in g
+
+
 def test_round_trip_catches_constraints_the_form_layer_cannot_enforce():
     """R9 step 3: the round trip fails on a real violation, end to end.
 

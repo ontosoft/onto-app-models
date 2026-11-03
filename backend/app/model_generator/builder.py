@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from rdflib import RDF, Graph
 from rdflib.namespace import OWL
 
+from .owl_axioms import shacl_to_owl_axioms
 from .shacl_reader import read_shapes
 from .templates import DEFAULT_BASE, build_model_graph
 
@@ -31,12 +32,18 @@ def generate_model_graph(
     shapes_ttl: str,
     base: str = DEFAULT_BASE,
     per_form_validation: bool = True,
+    owl_axioms: bool = True,
 ) -> Graph:
     """Parse the input SHACL and build the model graph.
 
     With per_form_validation (the default) every submit routes through a
     per-form SHACL validation task before the data is stored; set it to False
     to validate only once, at the end, over the whole output graph.
+
+    With owl_axioms (the default) the input constraints are additionally
+    translated into OWL TBox axioms (R10, see owl_axioms.py), so the engine's
+    reasoners see the constraint knowledge that the embedded SHACL - which is
+    subtracted from the reasoner input - cannot carry.
     """
     shapes = Graph()
     shapes.parse(data=shapes_ttl, format="turtle")
@@ -46,6 +53,10 @@ def generate_model_graph(
             "No SHACL NodeShape with sh:targetClass found in the input shapes."
         )
     model = build_model_graph(entities, base, per_form_validation)
+    if owl_axioms:
+        # R10: constraint knowledge for the OWL layer (reasoning), parallel
+        # to the embedded shapes for the SHACL layer (validation).
+        model += shacl_to_owl_axioms(shapes)
     # R9: embed the whole input shapes document, so the final runtime
     # validation checks the output graph against the ORIGINAL input shapes
     # (true round trip), including constraints the form layer cannot enforce
@@ -66,9 +77,10 @@ def generate_appmodel_from_shacl(
     shapes_ttl: str,
     base: str = DEFAULT_BASE,
     per_form_validation: bool = True,
+    owl_axioms: bool = True,
 ) -> GeneratedModel:
     """Turn an input SHACL shapes file into a complete, dual-write-ready model."""
-    g = generate_model_graph(shapes_ttl, base, per_form_validation)
+    g = generate_model_graph(shapes_ttl, base, per_form_validation, owl_axioms)
     return GeneratedModel(
         rdf=g.serialize(format="turtle"),
         jsonld=json.loads(g.serialize(format="json-ld")),
