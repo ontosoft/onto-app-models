@@ -212,6 +212,12 @@ export type AppmodelsDeleteAppModelData = {
 
 export type AppmodelsDeleteAppModelResponse = (Message);
 
+export type AppmodelsExportAppModelBpmnData = {
+    id: string;
+};
+
+export type AppmodelsExportAppModelBpmnResponse = (unknown);
+
 export type AppmodelsRunAppModelData = {
     id: string;
     xOntoSession?: string;

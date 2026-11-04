@@ -11,6 +11,7 @@ import DeleteAppModel from "./DeleteAppModel"
 import EditAppModel from "./EditAppModel"
 import LaunchAppModel from "./LaunchAppModel"
 import RunAppModel from "./RunAppModel"
+import ViewAppModel from "./ViewAppModel"
 
 interface AppModelActionsMenuProps {
   appmodel: AppModelPublic
@@ -27,6 +28,7 @@ export const AppModelActionsMenu = ({ appmodel }: AppModelActionsMenuProps) => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
+        <ViewAppModel appmodel={appmodel} />
         <RunAppModel id={appmodel.id} onSuccess={() => setOpen(false)} />
         <LaunchAppModel
           id={appmodel.id}

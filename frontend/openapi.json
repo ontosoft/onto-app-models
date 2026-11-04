@@ -719,6 +719,34 @@
         }
       }
     },
+    "/api/v1/appmodels/{id}/bpmn": {
+      "get": {
+        "tags": ["appmodels"],
+        "summary": "Export App Model Bpmn",
+        "description": "Export the model's workflow as a BPMN 2.0 file.\n\nThe response is XML with a BPMNDiagram section (auto-layouted), so the\nfile opens directly in bpmn.io, the Camunda Modeler or any bpmn-js\nviewer. Visibility follows read_app_model: owner, superuser, or public.",
+        "operationId": "appmodels-export_app_model_bpmn",
+        "security": [{ "OAuth2PasswordBearer": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid", "title": "Id" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Successful Response" },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/appmodels/run/{id}": {
       "post": {
         "tags": ["appmodels"],
