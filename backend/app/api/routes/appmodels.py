@@ -1,11 +1,13 @@
+import re
 import uuid
 import json
 from typing import Any
 from rdflib import Graph
 
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Header, Response
 from sqlmodel import func, or_, select
 
+from app.bpmn_export import fam_to_bpmn
 from app.core.session_service import engine_sessions, DEFAULT_SESSION
 from app.api.deps import SessionDep, CurrentUser
 from app.models import AppModel, AppModelCreate, AppModelPublic, AppModelsPublic, AppModelUpdate, Message
@@ -66,6 +68,43 @@ def read_app_model(
     ):
         raise HTTPException(status_code=403, detail="Not enough permissions")
     return app_model
+
+@router.get("/{id}/bpmn", response_class=Response)
+def export_app_model_bpmn(
+    *, session: SessionDep, current_user: CurrentUser, id: uuid.UUID
+) -> Any:
+    """
+    Export the model's workflow as a BPMN 2.0 file.
+
+    The response is XML with a BPMNDiagram section (auto-layouted), so the
+    file opens directly in bpmn.io, the Camunda Modeler or any bpmn-js
+    viewer. Visibility follows read_app_model: owner, superuser, or public.
+    """
+    app_model = session.get(AppModel, id)
+    if not app_model:
+        raise HTTPException(status_code=404, detail="App model not found")
+    if (
+        not current_user.is_superuser
+        and app_model.owner_id != current_user.id
+        and not app_model.is_public
+    ):
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    graph = Graph()
+    try:
+        graph.parse(data=app_model.knowledge_graph_rdf, format="turtle")
+        xml = fam_to_bpmn(graph, name=app_model.title)
+    except ValueError as e:
+        # a FAM without a bbo:Process has no workflow to draw
+        raise HTTPException(status_code=422, detail=str(e))
+    filename = re.sub(r"[^A-Za-z0-9._-]+", "-", app_model.title).strip("-") or "model"
+    return Response(
+        content=xml,
+        media_type="application/xml",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}.bpmn"'
+        },
+    )
+
 
 @router.post("/", response_model=AppModelPublic)
 def create_app_model(
