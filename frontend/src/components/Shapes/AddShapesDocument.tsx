@@ -55,7 +55,7 @@ const AddShapesDocument = () => {
 
   const mutation = useMutation({
     mutationFn: (data: ShapesDocumentCreate) =>
-      ShapesService.createShapesDocument({ requestBody: data }),
+      ShapesService.createShapesDocument({ body: data }),
     onSuccess: () => {
       showSuccessToast("Shapes document uploaded successfully")
       form.reset()

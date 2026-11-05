@@ -21,7 +21,9 @@ const GenerateAppModel = ({ id, onSuccess }: GenerateAppModelProps) => {
   const { showSuccessToast, showErrorToast } = useCustomToast()
 
   const mutation = useMutation({
-    mutationFn: () => ShapesService.generateAppmodelFromShapesDocument({ id }),
+    mutationFn: async () =>
+      (await ShapesService.generateAppmodelFromShapesDocument({ path: { id } }))
+        .data,
     onSuccess: (model) => {
       showSuccessToast(`Model "${model.title}" generated`)
       onSuccess?.()

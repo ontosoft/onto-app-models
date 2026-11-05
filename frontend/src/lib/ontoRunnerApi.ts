@@ -1,4 +1,5 @@
-import { type AppExchangeGetOutput, OpenAPI } from "~/client"
+import type { AppExchangeGetOutput } from "~/client"
+import { client } from "~/client/client.gen"
 
 /**
  * Thin API layer for the OntoUI runtime ("generator") engine.
@@ -14,12 +15,11 @@ import { type AppExchangeGetOutput, OpenAPI } from "~/client"
 
 /** Resolve the bearer token the same way the generated client does. */
 async function authHeader(): Promise<Record<string, string>> {
-  const token = OpenAPI.TOKEN
+  const auth = client.getConfig().auth
   const value =
-    typeof token === "function"
-      ? // biome-ignore lint/suspicious/noExplicitAny: resolver signature
-        await (token as any)({})
-      : token
+    typeof auth === "function"
+      ? await auth({ type: "http", scheme: "bearer" })
+      : auth
   return value ? { Authorization: `Bearer ${value}` } : {}
 }
 
@@ -35,7 +35,7 @@ async function postJson<T>(
   body: unknown,
   sessionId: string,
 ): Promise<T> {
-  const res = await fetch(`${OpenAPI.BASE}${path}`, {
+  const res = await fetch(`${client.getConfig().baseURL ?? ""}${path}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -50,7 +50,7 @@ async function postJson<T>(
 }
 
 async function getJson<T>(path: string, sessionId: string): Promise<T> {
-  const res = await fetch(`${OpenAPI.BASE}${path}`, {
+  const res = await fetch(`${client.getConfig().baseURL ?? ""}${path}`, {
     method: "GET",
     headers: await sessionHeaders(sessionId),
   })

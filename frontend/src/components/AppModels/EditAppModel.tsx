@@ -63,11 +63,11 @@ const EditAppModel = ({ appmodel, onSuccess }: EditAppModelProps) => {
   const mutation = useMutation({
     mutationFn: (data: FormData) =>
       AppmodelsService.updateAppModel({
-        id: appmodel.id,
+        path: { id: appmodel.id },
         // knowledge_graph_rdf is required by AppModelUpdate; the form always
         // produces a string (defaults to "") — coerce to satisfy the type
         // without changing what is sent.
-        requestBody: {
+        body: {
           ...data,
           knowledge_graph_rdf: data.knowledge_graph_rdf ?? "",
         },

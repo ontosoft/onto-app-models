@@ -1,22 +1,22 @@
 import { AxiosError } from "axios"
-import type { ApiError } from "./client"
 
-function extractErrorMessage(err: ApiError): string {
+// With throwOnError (openapi-ts.config.ts) every failed API call throws an
+// AxiosError; the FastAPI error body sits in err.response.data.detail.
+function extractErrorMessage(err: Error): string {
   if (err instanceof AxiosError) {
+    const errDetail = (err.response?.data as { detail?: unknown })?.detail
+    if (Array.isArray(errDetail) && errDetail.length > 0) {
+      return errDetail[0].msg
+    }
+    if (typeof errDetail === "string") {
+      return errDetail
+    }
     return err.message
   }
-
-  const errDetail = (err.body as any)?.detail
-  if (Array.isArray(errDetail) && errDetail.length > 0) {
-    return errDetail[0].msg
-  }
-  return errDetail || "Something went wrong."
+  return "Something went wrong."
 }
 
-export const handleError = function (
-  this: (msg: string) => void,
-  err: ApiError,
-) {
+export const handleError = function (this: (msg: string) => void, err: Error) {
   const errorMessage = extractErrorMessage(err)
   this(errorMessage)
 }

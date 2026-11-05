@@ -12,7 +12,9 @@ import PendingAppModels from "~/components/Pending/PendingAppModels"
 function getAppModelsQueryOptions() {
   return {
     queryKey: ["appmodels"],
-    queryFn: () => AppmodelsService.readAppModels({ skip: 0, limit: 100 }),
+    queryFn: async () =>
+      (await AppmodelsService.readAppModels({ query: { skip: 0, limit: 100 } }))
+        .data,
   }
 }
 

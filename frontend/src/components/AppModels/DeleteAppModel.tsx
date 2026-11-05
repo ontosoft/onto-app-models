@@ -31,7 +31,7 @@ const DeleteAppModel = ({ id, onSuccess }: DeleteAppModelProps) => {
   const { handleSubmit } = useForm()
 
   const deleteAppModel = async (id: string) => {
-    await AppmodelsService.deleteAppModel({ id })
+    await AppmodelsService.deleteAppModel({ path: { id } })
   }
 
   const mutation = useMutation({

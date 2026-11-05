@@ -5,24 +5,30 @@ import {
   QueryClientProvider,
 } from "@tanstack/react-query"
 import { createRouter, RouterProvider } from "@tanstack/react-router"
+import { AxiosError } from "axios"
 import { StrictMode } from "react"
 import ReactDOM from "react-dom/client"
 import { ThemeProvider } from "~/components/theme-provider"
 import { Toaster } from "~/components/ui/sonner"
-import { ApiError, OpenAPI } from "./client"
+import { client } from "./client/client.gen"
 import "./index.css"
 import { routeTree } from "./routeTree.gen"
 
-// Unset in production builds: "" means same-origin, and the reverse proxy
-// routes /api/* to the backend. Set it (frontend/.env) only when the API
-// runs on another origin, e.g. the local vite dev server against :8000.
-OpenAPI.BASE = import.meta.env.VITE_API_URL ?? ""
-OpenAPI.TOKEN = async () => {
-  return localStorage.getItem("access_token") || ""
-}
+// baseURL is unset in production builds: "" means same-origin, and the
+// reverse proxy routes /api/* to the backend. Set it (frontend/.env) only
+// when the API runs on another origin, e.g. the local vite dev server
+// against :8000. The client throws AxiosError on non-2xx (throwOnError in
+// openapi-ts.config.ts), so errors surface in the react-query caches below.
+client.setConfig({
+  baseURL: import.meta.env.VITE_API_URL ?? "",
+  auth: () => localStorage.getItem("access_token") || "",
+})
 
 const handleApiError = (error: Error) => {
-  if (error instanceof ApiError && [401, 403].includes(error.status)) {
+  if (
+    error instanceof AxiosError &&
+    [401, 403].includes(error.response?.status ?? 0)
+  ) {
     localStorage.removeItem("access_token")
     window.location.href = "/login"
   }

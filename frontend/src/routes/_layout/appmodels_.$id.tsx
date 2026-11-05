@@ -31,7 +31,8 @@ function AppModelDetail() {
     error,
   } = useQuery({
     queryKey: ["appmodels", id],
-    queryFn: () => AppmodelsService.readAppModel({ id }),
+    queryFn: async () =>
+      (await AppmodelsService.readAppModel({ path: { id } })).data,
   })
 
   if (isPending) {

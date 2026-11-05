@@ -16,7 +16,8 @@ interface ShapesCandidatesProps {
 const ShapesCandidates = ({ id }: ShapesCandidatesProps) => {
   const { data, isPending, isError } = useQuery({
     queryKey: ["shapes", id, "appmodels"],
-    queryFn: () => ShapesService.readShapesDocumentAppmodels({ id }),
+    queryFn: async () =>
+      (await ShapesService.readShapesDocumentAppmodels({ path: { id } })).data,
   })
 
   if (isPending) {

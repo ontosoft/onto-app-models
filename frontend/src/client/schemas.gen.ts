@@ -4,12 +4,21 @@ export const AppExchangeGetOutputSchema = {
     properties: {
         message_type: {
             type: 'string',
-            enum: ['layout', 'notification', 'information', 'error'],
+            enum: [
+                'layout',
+                'notification',
+                'information',
+                'error'
+            ],
             title: 'Message Type'
         },
         layout_type: {
             type: 'string',
-            enum: ['form', 'message-box', ''],
+            enum: [
+                'form',
+                'message-box',
+                ''
+            ],
             title: 'Layout Type'
         },
         message_content: {
@@ -23,12 +32,14 @@ export const AppExchangeGetOutputSchema = {
         }
     },
     type: 'object',
-    required: ['message_type', 'layout_type', 'message_content', 'output_knowledge_graph'],
+    required: [
+        'message_type',
+        'layout_type',
+        'message_content',
+        'output_knowledge_graph'
+    ],
     title: 'AppExchangeGetOutput',
-    description: `Data sent from the backend to the frontend.
-
-When the frontend has to render a form, \`\`message_content\`\` carries the
-JSONForm schema/uischema; otherwise it carries a notification/message.`
+    description: 'Data sent from the backend to the frontend.\n\nWhen the frontend has to render a form, ``message_content`` carries the\nJSONForm schema/uischema; otherwise it carries a notification/message.'
 } as const;
 
 export const AppModelCreateSchema = {
@@ -57,7 +68,10 @@ export const AppModelCreateSchema = {
         }
     },
     type: 'object',
-    required: ['title', 'knowledge_graph_rdf'],
+    required: [
+        'title',
+        'knowledge_graph_rdf'
+    ],
     title: 'AppModelCreate'
 } as const;
 
@@ -144,7 +158,11 @@ export const AppModelPublicSchema = {
         }
     },
     type: 'object',
-    required: ['title', 'id', 'owner_id'],
+    required: [
+        'title',
+        'id',
+        'owner_id'
+    ],
     title: 'AppModelPublic'
 } as const;
 
@@ -193,7 +211,9 @@ export const AppModelUpdateSchema = {
         }
     },
     type: 'object',
-    required: ['knowledge_graph_rdf'],
+    required: [
+        'knowledge_graph_rdf'
+    ],
     title: 'AppModelUpdate'
 } as const;
 
@@ -201,7 +221,7 @@ export const AppModelsPublicSchema = {
     properties: {
         data: {
             items: {
-                '$ref': '#/components/schemas/AppModelPublic'
+                $ref: '#/components/schemas/AppModelPublic'
             },
             type: 'array',
             title: 'Data'
@@ -212,7 +232,10 @@ export const AppModelsPublicSchema = {
         }
     },
     type: 'object',
-    required: ['data', 'count'],
+    required: [
+        'data',
+        'count'
+    ],
     title: 'AppModelsPublic'
 } as const;
 
@@ -269,7 +292,10 @@ export const Body_login_login_access_tokenSchema = {
         }
     },
     type: 'object',
-    required: ['username', 'password'],
+    required: [
+        'username',
+        'password'
+    ],
     title: 'Body_login-login_access_token'
 } as const;
 
@@ -282,7 +308,9 @@ export const Body_onto_model_generator_upload_model_fileSchema = {
         }
     },
     type: 'object',
-    required: ['file'],
+    required: [
+        'file'
+    ],
     title: 'Body_onto_model_generator-upload_model_file'
 } as const;
 
@@ -290,7 +318,7 @@ export const HTTPValidationErrorSchema = {
     properties: {
         detail: {
             items: {
-                '$ref': '#/components/schemas/ValidationError'
+                $ref: '#/components/schemas/ValidationError'
             },
             type: 'array',
             title: 'Detail'
@@ -308,7 +336,9 @@ export const MessageSchema = {
         }
     },
     type: 'object',
-    required: ['message'],
+    required: [
+        'message'
+    ],
     title: 'Message'
 } as const;
 
@@ -326,7 +356,10 @@ export const NewPasswordSchema = {
         }
     },
     type: 'object',
-    required: ['token', 'new_password'],
+    required: [
+        'token',
+        'new_password'
+    ],
     title: 'NewPassword'
 } as const;
 
@@ -351,7 +384,11 @@ export const PrivateUserCreateSchema = {
         }
     },
     type: 'object',
-    required: ['email', 'password', 'full_name'],
+    required: [
+        'email',
+        'password',
+        'full_name'
+    ],
     title: 'PrivateUserCreate'
 } as const;
 
@@ -376,7 +413,10 @@ export const ShapesDocumentCreateSchema = {
         }
     },
     type: 'object',
-    required: ['name', 'content'],
+    required: [
+        'name',
+        'content'
+    ],
     title: 'ShapesDocumentCreate'
 } as const;
 
@@ -426,7 +466,13 @@ export const ShapesDocumentPublicSchema = {
         }
     },
     type: 'object',
-    required: ['name', 'format', 'content', 'id', 'owner_id'],
+    required: [
+        'name',
+        'format',
+        'content',
+        'id',
+        'owner_id'
+    ],
     title: 'ShapesDocumentPublic'
 } as const;
 
@@ -452,7 +498,7 @@ export const ShapesDocumentsPublicSchema = {
     properties: {
         data: {
             items: {
-                '$ref': '#/components/schemas/ShapesDocumentPublic'
+                $ref: '#/components/schemas/ShapesDocumentPublic'
             },
             type: 'array',
             title: 'Data'
@@ -463,7 +509,10 @@ export const ShapesDocumentsPublicSchema = {
         }
     },
     type: 'object',
-    required: ['data', 'count'],
+    required: [
+        'data',
+        'count'
+    ],
     title: 'ShapesDocumentsPublic'
 } as const;
 
@@ -477,7 +526,9 @@ export const TextProcessRequestSchema = {
         }
     },
     type: 'object',
-    required: ['text'],
+    required: [
+        'text'
+    ],
     title: 'TextProcessRequest'
 } as const;
 
@@ -494,7 +545,9 @@ export const TokenSchema = {
         }
     },
     type: 'object',
-    required: ['access_token'],
+    required: [
+        'access_token'
+    ],
     title: 'Token'
 } as const;
 
@@ -514,7 +567,10 @@ export const UpdatePasswordSchema = {
         }
     },
     type: 'object',
-    required: ['current_password', 'new_password'],
+    required: [
+        'current_password',
+        'new_password'
+    ],
     title: 'UpdatePassword'
 } as const;
 
@@ -556,7 +612,10 @@ export const UserCreateSchema = {
         }
     },
     type: 'object',
-    required: ['email', 'password'],
+    required: [
+        'email',
+        'password'
+    ],
     title: 'UserCreate'
 } as const;
 
@@ -597,7 +656,10 @@ export const UserPublicSchema = {
         }
     },
     type: 'object',
-    required: ['email', 'id'],
+    required: [
+        'email',
+        'id'
+    ],
     title: 'UserPublic'
 } as const;
 
@@ -629,7 +691,10 @@ export const UserRegisterSchema = {
         }
     },
     type: 'object',
-    required: ['email', 'password'],
+    required: [
+        'email',
+        'password'
+    ],
     title: 'UserRegister'
 } as const;
 
@@ -724,7 +789,7 @@ export const UsersPublicSchema = {
     properties: {
         data: {
             items: {
-                '$ref': '#/components/schemas/UserPublic'
+                $ref: '#/components/schemas/UserPublic'
             },
             type: 'array',
             title: 'Data'
@@ -735,7 +800,10 @@ export const UsersPublicSchema = {
         }
     },
     type: 'object',
-    required: ['data', 'count'],
+    required: [
+        'data',
+        'count'
+    ],
     title: 'UsersPublic'
 } as const;
 
@@ -772,7 +840,11 @@ export const ValidationErrorSchema = {
         }
     },
     type: 'object',
-    required: ['loc', 'msg', 'type'],
+    required: [
+        'loc',
+        'msg',
+        'type'
+    ],
     title: 'ValidationError'
 } as const;
 
@@ -792,6 +864,10 @@ export const WordCountResponseSchema = {
         }
     },
     type: 'object',
-    required: ['word_count', 'text_length', 'message'],
+    required: [
+        'word_count',
+        'text_length',
+        'message'
+    ],
     title: 'WordCountResponse'
 } as const;

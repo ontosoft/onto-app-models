@@ -32,7 +32,8 @@ export const BpmnDiagram = ({ id, title }: { id: string; title: string }) => {
     // The endpoint responds with application/xml; axios hands non-JSON
     // bodies through as a plain string.
     queryFn: async () =>
-      (await AppmodelsService.exportAppModelBpmn({ id })) as string,
+      (await AppmodelsService.exportAppModelBpmn({ path: { id } }))
+        .data as string,
   })
 
   useEffect(() => {

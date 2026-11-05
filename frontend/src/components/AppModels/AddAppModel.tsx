@@ -59,7 +59,7 @@ const AddAppModel = () => {
 
   const mutation = useMutation({
     mutationFn: (data: AppModelCreate) =>
-      AppmodelsService.createAppModel({ requestBody: data }),
+      AppmodelsService.createAppModel({ body: data }),
     onSuccess: () => {
       showSuccessToast("Application model created successfully")
       form.reset()

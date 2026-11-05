@@ -14,7 +14,12 @@ import ShapesCandidates from "~/components/Shapes/ShapesCandidates"
 function getShapesQueryOptions() {
   return {
     queryKey: ["shapes"],
-    queryFn: () => ShapesService.readShapesDocuments({ skip: 0, limit: 100 }),
+    queryFn: async () =>
+      (
+        await ShapesService.readShapesDocuments({
+          query: { skip: 0, limit: 100 },
+        })
+      ).data,
   }
 }
 

@@ -30,7 +30,7 @@ const DeleteShapesDocument = ({ id }: DeleteShapesDocumentProps) => {
   const { handleSubmit } = useForm()
 
   const mutation = useMutation({
-    mutationFn: () => ShapesService.deleteShapesDocument({ id }),
+    mutationFn: () => ShapesService.deleteShapesDocument({ path: { id } }),
     onSuccess: () => {
       showSuccessToast("Shapes document deleted successfully.")
       setIsOpen(false)
