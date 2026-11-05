@@ -1,0 +1,44 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software, please cite the article below
+  (see preferred-citation).
+title: OntoUI
+type: software
+authors:
+  - family-names: Rutesic
+    given-names: Petko
+repository-code: "https://github.com/ontosoft/onto-app-models"
+abstract: >-
+  OntoUI is an application generator that transforms SHACL shape graphs
+  into multi-form web applications for populating knowledge graphs. The
+  generated application models are themselves knowledge graphs (OBOP/BBO
+  based), interpreted at runtime by a process engine that uses OWL
+  reasoning and SHACL validation.
+keywords:
+  - SHACL
+  - knowledge graphs
+  - OWL reasoning
+  - application generator
+  - BPMN
+  - ontology-based user interfaces
+preferred-citation:
+  type: article
+  title: >-
+    Transforming SHACL Shape Graphs into HTML Applications for Populating
+    Knowledge Graphs
+  authors:
+    - family-names: Rutesic
+      given-names: Petko
+    - family-names: Pfisterer
+      given-names: Dennis
+    - family-names: Paulheim
+      given-names: Heiko
+    - family-names: Fischer
+      given-names: Stefan
+  journal: Digital
+  volume: 5
+  issue: 4
+  year: 2025
+  doi: 10.3390/digital5040056
+  url: "https://www.mdpi.com/2673-6470/5/4/56"
+  issn: 2673-6470

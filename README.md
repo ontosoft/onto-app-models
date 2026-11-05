@@ -10,6 +10,37 @@
 
 This project is an implementation of the approach that combines data and the functionality to collect that data in knowledge graphs. The approach includes an implementation of the application generator that creates web-applications which collect data, i.e., generate knowledge graphs according to specified SHACL models.
 
+## Publications
+
+The approach implemented here is described in the following article. If you
+use this software in your research, please cite it (GitHub's
+"Cite this repository" button serves the same citation via
+[`CITATION.cff`](CITATION.cff)):
+
+> Rutesic, P.; Pfisterer, D.; Paulheim, H.; Fischer, S.
+> **Transforming SHACL Shape Graphs into HTML Applications for Populating
+> Knowledge Graphs.** *Digital* **2025**, *5*(4), 56.
+> [doi:10.3390/digital5040056](https://doi.org/10.3390/digital5040056)
+
+<details>
+<summary>BibTeX</summary>
+
+```bibtex
+@Article{digital5040056,
+  AUTHOR         = {Rutesic, Petko and Pfisterer, Dennis and Paulheim, Heiko and Fischer, Stefan},
+  TITLE          = {Transforming SHACL Shape Graphs into HTML Applications for Populating Knowledge Graphs},
+  JOURNAL        = {Digital},
+  VOLUME         = {5},
+  YEAR           = {2025},
+  NUMBER         = {4},
+  ARTICLE-NUMBER = {56},
+  URL            = {https://www.mdpi.com/2673-6470/5/4/56},
+  ISSN           = {2673-6470},
+  DOI            = {10.3390/digital5040056}
+}
+```
+
+</details>
 
 ## Installation
 
