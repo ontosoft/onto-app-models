@@ -20,6 +20,7 @@ import { Route as LayoutSettingsRouteImport } from './routes/_layout/settings'
 import { Route as LayoutRunRouteImport } from './routes/_layout/run'
 import { Route as LayoutAppmodelsRouteImport } from './routes/_layout/appmodels'
 import { Route as LayoutAdminRouteImport } from './routes/_layout/admin'
+import { Route as LayoutAppmodelsIdRouteImport } from './routes/_layout/appmodels_.$id'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -75,6 +76,11 @@ const LayoutAdminRoute = LayoutAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => LayoutRoute,
 } as any)
+const LayoutAppmodelsIdRoute = LayoutAppmodelsIdRouteImport.update({
+  id: '/appmodels_/$id',
+  path: '/appmodels/$id',
+  getParentRoute: () => LayoutRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof LayoutIndexRoute
@@ -87,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/run': typeof LayoutRunRoute
   '/settings': typeof LayoutSettingsRoute
   '/shapes': typeof LayoutShapesRoute
+  '/appmodels/$id': typeof LayoutAppmodelsIdRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -99,6 +106,7 @@ export interface FileRoutesByTo {
   '/settings': typeof LayoutSettingsRoute
   '/shapes': typeof LayoutShapesRoute
   '/': typeof LayoutIndexRoute
+  '/appmodels/$id': typeof LayoutAppmodelsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -113,6 +121,7 @@ export interface FileRoutesById {
   '/_layout/settings': typeof LayoutSettingsRoute
   '/_layout/shapes': typeof LayoutShapesRoute
   '/_layout/': typeof LayoutIndexRoute
+  '/_layout/appmodels_/$id': typeof LayoutAppmodelsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -127,6 +136,7 @@ export interface FileRouteTypes {
     | '/run'
     | '/settings'
     | '/shapes'
+    | '/appmodels/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -139,6 +149,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/shapes'
     | '/'
+    | '/appmodels/$id'
   id:
     | '__root__'
     | '/_layout'
@@ -152,6 +163,7 @@ export interface FileRouteTypes {
     | '/_layout/settings'
     | '/_layout/shapes'
     | '/_layout/'
+    | '/_layout/appmodels_/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -241,6 +253,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutAdminRouteImport
       parentRoute: typeof LayoutRoute
     }
+    '/_layout/appmodels_/$id': {
+      id: '/_layout/appmodels_/$id'
+      path: '/appmodels/$id'
+      fullPath: '/appmodels/$id'
+      preLoaderRoute: typeof LayoutAppmodelsIdRouteImport
+      parentRoute: typeof LayoutRoute
+    }
   }
 }
 
@@ -251,6 +270,7 @@ interface LayoutRouteChildren {
   LayoutSettingsRoute: typeof LayoutSettingsRoute
   LayoutShapesRoute: typeof LayoutShapesRoute
   LayoutIndexRoute: typeof LayoutIndexRoute
+  LayoutAppmodelsIdRoute: typeof LayoutAppmodelsIdRoute
 }
 
 const LayoutRouteChildren: LayoutRouteChildren = {
@@ -260,6 +280,7 @@ const LayoutRouteChildren: LayoutRouteChildren = {
   LayoutSettingsRoute: LayoutSettingsRoute,
   LayoutShapesRoute: LayoutShapesRoute,
   LayoutIndexRoute: LayoutIndexRoute,
+  LayoutAppmodelsIdRoute: LayoutAppmodelsIdRoute,
 }
 
 const LayoutRouteWithChildren =

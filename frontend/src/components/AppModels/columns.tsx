@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router"
 import type { ColumnDef } from "@tanstack/react-table"
 import type { AppModelPublic } from "~/client"
 import { Badge } from "~/components/ui/badge"
@@ -9,14 +10,16 @@ export const columns: ColumnDef<AppModelPublic>[] = [
     accessorKey: "title",
     header: "Title",
     cell: ({ row }) => (
-      <span
+      <Link
+        to="/appmodels/$id"
+        params={{ id: row.original.id }}
         className={cn(
-          "font-medium",
+          "font-medium hover:underline",
           !row.original.title && "text-muted-foreground",
         )}
       >
-        {row.original.title}{" "}
-      </span>
+        {row.original.title}
+      </Link>
     ),
   },
   {
