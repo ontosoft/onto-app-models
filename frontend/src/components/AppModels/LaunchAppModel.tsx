@@ -25,7 +25,7 @@ const LaunchAppModel = ({ id, title, onSuccess }: LaunchAppModelProps) => {
       }}
     >
       <Rocket />
-      Launch (interactive)
+      Run
     </DropdownMenuItem>
   )
 }
