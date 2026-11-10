@@ -470,15 +470,27 @@ def _walk_to_completion(eng: AppEngine, max_steps: int = 12) -> bool:
         block = str(mc.get("graph_node", "")) if isinstance(mc, dict) else ""
         btns = buttons(mc)
         if block.endswith("_block") and "_notification_" not in block:
-            # a data form -> submit it (the block name maps to its submit action)
+            # a data form -> submit it (the block name maps to its submit action).
+            # Required fields (sh:minCount) must carry a value or the per-form
+            # validation rejects the submit; optional fields stay empty.
             name = block.rsplit("/", 1)[-1][: -len("_block")]
+            schema = mc.get("schema") or {}
+            properties = schema.get("properties") or {}
+            form_data = {}
+            for required_field in schema.get("required") or []:
+                json_type = (properties.get(required_field) or {}).get(
+                    "type", "string"
+                )
+                form_data[required_field] = (
+                    1 if json_type in ("number", "integer") else "x"
+                )
             eng.process_received_client_data({
                 "message_type": "action",
                 "message_content": {
                     "action_type": "submit",
                     "action_graph_node": f"{BASE}submit_action_{name}",
                     "form_graph_node": block,
-                    "form_data": {},
+                    "form_data": form_data,
                 },
             })
         elif "Continue" in btns:

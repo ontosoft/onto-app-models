@@ -26,7 +26,7 @@ r:RestaurantShape a sh:NodeShape ;
 r:MenuShape a sh:NodeShape ;
     sh:targetClass r:Menu ;
     sh:order 1 ;
-    sh:property [ sh:path r:menuName ; sh:datatype xsd:string ; sh:name "Menu name" ; sh:order 0 ] ;
+    sh:property [ sh:path r:menuName ; sh:datatype xsd:string ; sh:name "Menu name" ; sh:minCount 1 ; sh:order 0 ] ;
     sh:property [ sh:path r:menuType ; sh:datatype xsd:string ; sh:name "Menu type" ; sh:order 1 ] .
 
 r:DishShape a sh:NodeShape ;
