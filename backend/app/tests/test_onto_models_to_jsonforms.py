@@ -1,368 +1,111 @@
-from fastapi.testclient import TestClient
-from pythonjsonlogger import jsonlogger
-from rdflib import Literal, Graph, URIRef
-from rdflib.namespace import XSD
-from main import app
+"""Translation-layer tests: hand-written FAM models -> JSONForms schemas.
+
+These tests cover what the generator round-trip tests cannot: FAM features
+written by hand that the SHACL generator does not emit — here a nested
+HorizontalLayout holding a Submit/Cancel button pair inside the main
+VerticalLayout. They call ``Form.create_functional_json_form_schemas``
+directly on the loaded static model, which keeps them independent of the
+process engine.
+
+Why this works without a business process: loading only parses the RDF into
+the static model (forms, layouts, buttons — *how the forms look*), and the
+BBO process is needed first by ``run_application()``, where the ProcessEngine
+walks it to decide *when* each form is shown. The running engine calls this
+same translation method when a token reaches a UserTask, so the tests
+exercise the identical code path, minus the scheduling.
+
+Modernized 2026-11-10: the original module drove the pre-BBO engine
+(``app.model_graph = ...``, ``message_type="form"``) and asserted a response
+contract that no longer exists; its trivial single-/two-field cases are
+covered by the generator tests today.
+"""
+
+from pathlib import Path
+
 from app_engine.app_engine import AppEngine
-from app_engine.communication import AppExchangeGetOutput
-import jsonpickle
-import logging
-from deepdiff import DeepDiff
 
-client = TestClient(app)
-logger = logging.getLogger("ontoui_app")
-
-# Configure the logging for the pretty print of the json logs
-log_format = "%(asctime)s - %(module)s#%(lineno)d - %(levelname)s - %(message)s"
-formatter = jsonlogger.JsonFormatter(
-    fmt=log_format, rename_fields={"levelname": "level", "asctime": "date"}
-)
+FIXTURES = Path(__file__).parent / "test_models"
+BASE = "http://example.org/logicinterface/testing/"
 
 
-def test_read_textual_field_model(caplog):
-    """
-    Test only one single imput field in a form
-    """
+class _StubState:
+    """Stands in for ApplicationState: the translation layer only writes the
+    two mapping dicts (field IRI -> schema property name, picker options);
+    everything else on the real state belongs to the running process."""
 
-    rdf_model = """
-        @prefix : <http://example.org/logicinterface/testing/> .
-        @prefix dc: <http://purl.org/dc/elements/1.1/> .
-        @prefix v1: <http://purl.org/goodrelations/v1#> .
-        @prefix obo: <http://purl.obolibrary.org/obo/> .
-        @prefix owl: <http://www.w3.org/2002/07/owl#> .
-        @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-        @prefix xml: <http://www.w3.org/XML/1998/namespace> .
-        @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-        @prefix dash: <http://datashapes.org/dash#> .
-        @prefix obop: <http://purl.org/net/obop/> .
-        @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-        @prefix chebi: <http://purl.obolibrary.org/obo/chebi/> .
-        @prefix shacl: <http://www.w3.org/ns/shacl#> .
-        @prefix schema: <http://schema.org/> .
-        @base <http://example.org/logicinterface/testing/> .
-
-        <http://example.org/logicinterface/testing> rdf:type owl:Ontology .
+    def __init__(self) -> None:
+        self.current_json_form_name_mapping: dict = {}
+        self.current_json_form_picker_mapping: dict = {}
 
 
-        ###  http://example.org/logicinterface/testing/block_1
-        :block_1 rdf:type owl:NamedIndividual ,
-                          obop:Block ;
-                 obop:hasPositionNumber "1"^^xsd:int ;
-                 dc:title "block_1 for Form"^^rdf:PlainLiteral .
+def _translate(fixture_name: str) -> tuple[dict, _StubState]:
+    """Load a hand-written FAM fixture and translate its single form."""
+    rdf = (FIXTURES / fixture_name).read_text(encoding="utf-8")
+    engine = AppEngine()
+    engine.load_inner_app_model(rdf_string=rdf, model_name=fixture_name)
+    forms = engine.internal_app_static_model.forms
+    assert len(forms) == 1
+    state = _StubState()
+    return forms[0].create_functional_json_form_schemas(state), state
 
 
-        ###  http://example.org/logicinterface/testing/field_1
+def test_field_translation_and_name_mapping():
+    """A Field becomes a schema property named after its label, and the
+    element IRI -> property name mapping is recorded (the engine needs it
+    to store submitted values under the right data property)."""
+    json_form, state = _translate("test_submit_cancel_buttons.ttl")
 
-        :field_1 rdf:type owl:NamedIndividual ,
-                            obop:Field ;
-                   obop:belongsTo :block_1 ;
-                   obop:containsDatatype v1:legalName ;
-                   obop:hasLabel "Label name" ;
-                   obop:hasPositionNumber "1"^^xsd:int ;
-                   dc:title "field name" .
-    """
+    assert json_form["graph_node"] == f"{BASE}block_1"
+    assert json_form["schema"] == {
+        "type": "object",
+        "properties": {"Field 1": {"type": "string", "position": 0}},
+    }
+    assert json_form["data"] == {}
+    assert state.current_json_form_name_mapping == {f"{BASE}field_1": "Field 1"}
 
-    caplog.set_level(logging.DEBUG, logger="ontoui_app")
-    logger.debug("1. Load the model ")
 
-    app: AppEngine = AppEngine()
-    app.model_graph = Graph()
-    app.model_graph.parse(data=rdf_model)
-    app.load_inner_app_model()
-    assert app.internal_app_static_model is not None
-    assert app.internal_app_static_model.forms is not None
-    assert len(app.internal_app_static_model.forms) > 0
-    logger.debug(
-        f"Form: {jsonpickle.encode(app.internal_app_static_model.forms[0], indent=2)}"
-    )
-    app.run_application()
-    response = app.process_engine_instance.generate_layout()
-    logger.debug("Output dictionary")
-    logger.debug(jsonpickle.encode(response, indent=2))
-    wanted_result = AppExchangeGetOutput(
-        message_type="form",
-        layout_type="form",
-        message_content={
-            "node": "http://example.org/logicinterface/testing/block_1",
-            "schema": {
-                "type": "object",
-                "properties": {"Label name": {"type": "string", "position": 1}},
+def test_nested_layout_with_submit_and_cancel_buttons():
+    """The sublayout nests in document order below the Control, and the
+    buttons carry their action pointers with the classified action type
+    (obop:SubmitBlockAction -> submit, obop:CancelBlockAction -> cancel)."""
+    json_form, _ = _translate("test_submit_cancel_buttons.ttl")
+
+    assert json_form["uischema"] == {
+        "type": "VerticalLayout",
+        "elements": [
+            {
+                "type": "Control",
+                "scope": "#/properties/Field 1",
+                "label": "Field 1",
             },
-            "uischema": {
-                "type": "VerticalLayout",
-                "elements": [{"type": "Control", "scope": "#/properties/Label name"}],
-            },
-        },
-    )
-    logger.debug("The difference is:")
-    logger.debug(DeepDiff(response, wanted_result))
-    assert response == wanted_result
-
-
-def test_form_with_two_fields_and_a_button(caplog):
-    """
-    Test only two field and button in a form
-    """
-
-    rdf_model = """
-        @prefix : <http://example.org/logicinterface/testing/> .
-        @prefix dc: <http://purl.org/dc/elements/1.1/> .
-        @prefix v1: <http://purl.org/goodrelations/v1#> .
-        @prefix obo: <http://purl.obolibrary.org/obo/> .
-        @prefix owl: <http://www.w3.org/2002/07/owl#> .
-        @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-        @prefix xml: <http://www.w3.org/XML/1998/namespace> .
-        @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-        @prefix dash: <http://datashapes.org/dash#> .
-        @prefix obop: <http://purl.org/net/obop/> .
-        @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-        @prefix chebi: <http://purl.obolibrary.org/obo/chebi/> .
-        @prefix shacl: <http://www.w3.org/ns/shacl#> .
-        @prefix schema: <http://schema.org/> .
-        @base <http://example.org/logicinterface/testing/> .
-
-        <http://example.org/logicinterface/testing> rdf:type owl:Ontology .
-
-
-        ###  http://example.org/logicinterface/testing/block_1
-        :block_1 rdf:type owl:NamedIndividual ,
-                          obop:Block ;
-                 obop:hasPositionNumber "1"^^xsd:int ;
-                 dc:title "block_1 for Form"^^rdf:PlainLiteral .
-
-
-        ###  http://example.org/logicinterface/testing/field_1
-
-        :field_1 rdf:type owl:NamedIndividual ,
-                            obop:Field ;
-                   obop:belongsTo :block_1 ;
-                   obop:containsDatatype v1:legalName ;
-                   obop:hasLabel "Field 1" ;
-                   obop:hasPositionNumber "1"^^xsd:int ;
-                   dc:title "field name" .
-
-    ###  http://example.org/logicinterface/testing/field_2
-
-        :field_2 rdf:type owl:NamedIndividual ,
-                            obop:Field ;
-                   obop:belongsTo :block_1 ;
-                   obop:containsDatatype v1:legalName ;
-                   obop:hasLabel "Field 2" ;
-                   obop:hasPositionNumber "2"^^xsd:int .
-
-    """
-    caplog.set_level(logging.DEBUG, logger="ontoui_app")
-    logger.debug("1. Load the model ")
-
-    app: AppEngine = None
-    app = AppEngine(config="test")
-    app.model_graph = Graph()
-    app.model_graph.parse(data=rdf_model)
-    app.load_inner_app_model()
-    assert app.internal_app_static_model is not None
-    assert app.internal_app_static_model.forms is not None
-    assert len(app.internal_app_static_model.forms) > 0
-    logger.debug(
-        f"Form: {jsonpickle.encode(app.internal_app_static_model.forms[0], indent=2)}"
-    )
-    app.run_application()
-    response = app.process_engine_instance.generate_layout()
-    logger.debug("Output dictionary")
-    logger.debug(jsonpickle.encode(response, indent=2))
-    wanted_result = AppExchangeGetOutput(
-        message_type="form",
-        layout_type="form",
-        message_content={
-            "node": "http://example.org/logicinterface/testing/block_1",
-            "schema": {
-                "type": "object",
-                "properties": {
-                    "Field 1": {"type": "string", "position": 1},
-                    "Field 2": {"type": "string", "position": 2},
-                },
-            },
-            "uischema": {
-                "type": "VerticalLayout",
+            {
+                "type": "HorizontalLayout",
                 "elements": [
-                    {"type": "Control", "scope": "#/properties/Field 1"},
-                    {"type": "Control", "scope": "#/properties/Field 2"},
-                ],
-            },
-        },
-    )
-    logger.debug("The difference is:")
-    logger.debug(DeepDiff(response, wanted_result))
-    assert response == wanted_result
-
-
-def test_form_with_two_fields_and_vertical_layout(caplog):
-    """
-    There is only one block (form) with the corresponding  vertical layout
-    and two fields in the form. The layout is generated with the vertical layout.
-    """
-
-    rdf_model = """
-        @prefix : <http://example.org/logicinterface/testing/> .
-        @prefix dc: <http://purl.org/dc/elements/1.1/> .
-        @prefix v1: <http://purl.org/goodrelations/v1#> .
-        @prefix obo: <http://purl.obolibrary.org/obo/> .
-        @prefix owl: <http://www.w3.org/2002/07/owl#> .
-        @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-        @prefix xml: <http://www.w3.org/XML/1998/namespace> .
-        @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-        @prefix dash: <http://datashapes.org/dash#> .
-        @prefix obop: <http://purl.org/net/obop/> .
-        @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-        @prefix chebi: <http://purl.obolibrary.org/obo/chebi/> .
-        @prefix shacl: <http://www.w3.org/ns/shacl#> .
-        @prefix schema: <http://schema.org/> .
-        @base <http://example.org/logicinterface/testing/> .
-
-        <http://example.org/logicinterface/testing> rdf:type owl:Ontology .
-
-
-        ###  http://example.org/logicinterface/testing/block_1
-        :block_1 rdf:type owl:NamedIndividual ,
-                          obop:Block ;
-                 obop:hasPositionNumber "0"^^xsd:int ;
-                 dc:title "block_1 for Form"^^rdf:PlainLiteral .
-
-        ###  http://example.org/logicinterface/testing/vertical_layout_1
-        :vertical_layout_1 rdf:type owl:NamedIndividual ,
-                          obop:VerticalLayout ;
-                 obop:belongsTo :block_1 ;
-                 obop:hasPositionNumber "0"^^xsd:int ;
-                 dc:title "Main vertical layout for the Form"^^rdf:PlainLiteral .
-
-               
-
-
-        ###  http://example.org/logicinterface/testing/field_1
-
-        :field_1 rdf:type owl:NamedIndividual ,
-                            obop:Field ;
-                   obop:belongsTo :block_1 ;
-                   obop:belongsToVisual :vertical_layout_1 ;
-                   obop:containsDatatype v1:legalName ;
-                   obop:hasLabel "Field 1" ;
-                   obop:hasPositionNumber "0"^^xsd:int ;
-                   dc:title "field name" .
-
-    ###  http://example.org/logicinterface/testing/field_2
-
-        :field_2 rdf:type owl:NamedIndividual ,
-                            obop:Field ;
-                   obop:belongsTo :block_1 ;
-                   obop:belongsToVisual :vertical_layout_1 ;
-                   obop:containsDatatype v1:legalName ;
-                   obop:hasLabel "Field 2" ;
-                   obop:hasPositionNumber "1"^^xsd:int .
-
-    """
-    caplog.set_level(logging.DEBUG, logger="ontoui_app")
-    logger.debug("1. Load the model ")
-
-    # AppEngine is configured on testing settings through pytest.ini
-    app: AppEngine = AppEngine()
-    app.load_inner_app_model(rdf_string=rdf_model)
-    assert app.internal_app_static_model is not None
-    assert app.internal_app_static_model.forms is not None
-    assert len(app.internal_app_static_model.forms) > 0
-    # logger.debug(f"Form: {jsonpickle.encode(app.inner_app_static_model.forms[0], indent=2)}")
-    # logger.debug(f"Layout: {jsonpickle.encode(app.inner_app_static_model.layouts[0], indent=2)}")
-    app.run_application()
-    response = app.process_engine_instance.generate_layout()
-    assert app.internal_app_static_model.layouts[0].type == "VerticalLayout"
-    assert app.internal_app_static_model.layouts[0].position == Literal(
-        "0", datatype=XSD.int
-    )
-    assert app.internal_app_static_model.layouts[0].graph_node == URIRef(
-        "http://example.org/logicinterface/testing/vertical_layout_1"
-    )
-    assert (
-        app.internal_app_static_model.layouts[0].owner_form
-        == app.internal_app_static_model.forms[0]
-    )
-    logger.debug("Output dictionary")
-    logger.debug(jsonpickle.encode(response, indent=2))
-    wanted_result = AppExchangeGetOutput(
-        message_type="layout",
-        layout_type="form",
-        message_content={
-            "graph_node": "http://example.org/logicinterface/testing/block_1",
-            "schema": {
-                "type": "object",
-                "properties": {
-                    "Field 1": {"type": "string", "position": 0},
-                    "Field 2": {"type": "string", "position": 1},
-                },
-            },
-            "uischema": {
-                "type": "VerticalLayout",
-                "elements": [
-                    {"type": "Control", "scope": "#/properties/Field 1"},
-                    {"type": "Control", "scope": "#/properties/Field 2"},
-                ],
-            },
-            "data": {},
-        },
-    )
-    logger.debug("The difference is:")
-    logger.debug(DeepDiff(response, wanted_result))
-    assert response == wanted_result
-
-
-def test_form_with_one_field_and_two_buttons_in_nested_horizontal_layout(caplog):
-    """
-    There is only one block (form) with the corresponding  vertical layout
-    and one imput field in the form. The layout is generated with the vertical layout
-    and nested horizontal layout for submit and cancel buttons.
-    """
-
-    caplog.set_level(logging.DEBUG, logger="ontoui_app")
-    logger.debug("1. Load the model ")
-
-    # AppEngine is configured on testing settings through pytest.ini
-    app: AppEngine = AppEngine()
-    # Reading the model from the file
-    app.load_inner_app_model(file_name="test_submit_cancel_buttons.ttl")
-    assert app.internal_app_static_model is not None
-    assert app.internal_app_static_model.forms is not None
-    assert len(app.internal_app_static_model.forms) > 0
-    # logger.debug(f"Form: {jsonpickle.encode(app.inner_app_static_model.forms[0], indent=2)}")
-    # logger.debug(f"Layout: {jsonpickle.encode(app.inner_app_static_model.layouts[0], indent=2)}")
-    app.run_application()
-    response = app.process_engine_instance.generate_layout()
-    logger.debug("Output dictionary")
-    logger.debug(jsonpickle.encode(response, indent=2))
-    wanted_result = AppExchangeGetOutput(
-        message_type="layout",
-        layout_type="form",
-        message_content={
-            "graph_node": "http://example.org/logicinterface/testing/block_1",
-            "schema": {
-                "type": "object",
-                "properties": {
-                    "Field 1": {"type": "string", "position": 0},
-                },
-            },
-            "uischema": {
-                "type": "VerticalLayout",
-                "elements": [
-                    {"type": "Control", 
-                     "scope": "#/properties/Field 1"},
                     {
-                        "type": "HorizontalLayout",
-                        "elements": [
-                            {"type": "Control", "scope": "#/properties/Submit"},
-                            {"type": "Control", "scope": "#/properties/Cancel"},
+                        "type": "button",
+                        "scope": "#/properties/Submit",
+                        "label": "Submit",
+                        "actions": [
+                            {
+                                "graph_node": f"{BASE}action_1",
+                                "type": "submit",
+                                "initiators": [],
+                            }
+                        ],
+                    },
+                    {
+                        "type": "button",
+                        "scope": "#/properties/Cancel",
+                        "label": "Cancel",
+                        "actions": [
+                            {
+                                "graph_node": f"{BASE}action_2",
+                                "type": "cancel",
+                                "initiators": [],
+                            }
                         ],
                     },
                 ],
             },
-            "data": {},
-        },
-    )
-    logger.debug("The difference is:")
-    logger.debug(DeepDiff(response, wanted_result))
-    assert response == wanted_result
+        ],
+    }

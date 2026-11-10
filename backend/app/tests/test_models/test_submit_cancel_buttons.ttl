@@ -75,3 +75,13 @@
           obop:hasPositionNumber "1"^^xsd:int ;
           rdfs:comment "This is a cancel button that is used for canceling function and going back in the application workflow." .
 
+
+###  http://example.org/logicinterface/testing/action_1
+:action_1 rdf:type owl:NamedIndividual ,
+                   obop:SubmitBlockAction .
+
+
+###  http://example.org/logicinterface/testing/action_2
+:action_2 rdf:type owl:NamedIndividual ,
+                   obop:CancelBlockAction .
+
