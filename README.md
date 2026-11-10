@@ -83,9 +83,11 @@ The backend is implemented using the Python programming language with the FastAP
 
  The frontend part is the place where the user interface is presented to users according to the specification in the model.
 
- ## Model 
+ ## Model
 
- An application model which is stored as a knowledge graph in the rdf file is read in the internal representation. In the backend 
+ An application model (FAM — functional application model) is a single RDF knowledge graph with two layers: an OBOP layer describing the UI (blocks, fields, layouts, buttons, actions) and a BBO process layer describing the workflow (when each form is shown and what happens after a submit). The backend reads it into an internal static model and executes it with a process engine.
+
+ See [Model structure](docs/model-structure.md) for a commented minimal example and pointers to complete runnable models.
 
  ## One simple use case
 
