@@ -1,6 +1,6 @@
 from .forms import Form, FunctionalJSONForm
 from rdflib import BNode, Graph, Namespace, RDF, RDFS, URIRef, Literal
-from rdflib.namespace import SH
+from rdflib.namespace import SH, XSD
 from .app_model import AppInternalStaticModel
 from .obop_action import OBOPAction
 from .bbo_elements import (
@@ -566,12 +566,17 @@ class ProcessEngine:
                         logger.debug(
                             f"Data property found for the element {element_graph_node_uri}: {data_property}"
                         )
-                        # Add the data to the output graph store
+                        # Add the data to the output graph store, typed with
+                        # the datatype the element's property shape declares
+                        # (must match what validate_pending_form_data checked,
+                        # and what the round-trip validation expects).
                         self.output_graph_store.add(
                             (
                                 named_individual_iri,
                                 data_property,
-                                Literal(form_data[key]),
+                                self._typed_form_literal(
+                                    URIRef(element_graph_node_uri), form_data[key]
+                                ),
                             )
                         )
                         logger.debug(
@@ -662,6 +667,25 @@ class ProcessEngine:
             return None
         return active_form.stored_instance_graph_node
 
+    def _typed_form_literal(self, element_node: URIRef, value) -> Literal:
+        """Build the RDF literal for one submitted form value.
+
+        The frontend sends every value as a string, but the property shape of
+        the element (attached via obop:specifiedBy) may declare sh:datatype,
+        e.g. xsd:decimal for a price. SHACL's DatatypeConstraintComponent
+        compares the literal's datatype, not its text, so an untyped
+        Literal("12.99") can never satisfy sh:datatype xsd:decimal — the
+        declared datatype therefore has to be attached here. A lexically
+        invalid value ("abc" as xsd:decimal) yields an ill-typed literal that
+        SHACL still rejects, so invalid input keeps being rejected.
+        """
+        rdf = self.internal_app_static_model.rdf_graph_rdflib
+        for property_shape in rdf.subjects(OBOP.specifiedBy, element_node):
+            datatype = rdf.value(property_shape, SH.datatype)
+            if datatype is not None and datatype != XSD.string:
+                return Literal(value, datatype=datatype)
+        return Literal(value)
+
     def validate_pending_form_data(self, block) -> None:
         """Validate the just-submitted form data of one block (per-form, R9).
 
@@ -718,7 +742,13 @@ class ProcessEngine:
             for data_property in rdf.objects(
                 URIRef(element_graph_node), OBOP.containsDatatype
             ):
-                data_graph.add((candidate, data_property, Literal(value)))
+                data_graph.add(
+                    (
+                        candidate,
+                        data_property,
+                        self._typed_form_literal(URIRef(element_graph_node), value),
+                    )
+                )
 
         # Focused shapes graph: one synthetic node shape targeting exactly the
         # candidate, carrying the property shapes of this block's fields
