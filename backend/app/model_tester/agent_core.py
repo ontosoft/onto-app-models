@@ -356,8 +356,20 @@ _COOPERATIVE_RULES = """Behave like a diligent end user (cooperative mode):
   shapes below (respect datatypes and constraints such as pattern, minLength,
   maxLength, enum), then click the submit button.
 - On notification/message pages, click the button to continue.
-- NEVER finish while the page says APPLICATION FINISHED: no — there is always
-  another button to click first. A confirmation message is not the end.
+- Create exactly TWO instances of each entity type whenever the application
+  offers an "Add another ..." button. Do NOT count yourself — READ the count
+  the page shows you: "ALREADY SUBMITTED WITH THIS FORM: n" or "INSTANCES
+  SUBMITTED WITH THE PREVIOUS FORM: n". If that number is 1, click the "Add
+  another ..." button and fill the next instance with DIFFERENT values. If it
+  is 2, click the button that continues instead. Never create a third
+  instance of the same entity type.
+- If a submit is REJECTED (the same form comes back with a validation
+  report) although every value satisfies the constraints shown on the page,
+  do NOT retry: finish immediately with verdict "fail" and quote the
+  validation message in "reason" — the application rejected valid data.
+- NEVER finish while the page says APPLICATION FINISHED: no (the ONLY
+  exception is the rejected-valid-data rule above) — there is always another
+  button to click first. A confirmation message is not the end.
 - Only when the page says APPLICATION FINISHED: yes, finish with verdict
   "pass" if everything behaved correctly (the forms matched the shapes, valid
   data was accepted, the process completed); otherwise verdict "fail" and
@@ -376,6 +388,11 @@ _ADVERSARIAL_RULES = """Try to break the application with invalid input (adversa
   verdict "fail" and say so in "reason".
 - After a rejection, correct the field with a valid value, submit again, and
   continue cooperatively (click through messages) to the end.
+- Create exactly TWO instances of each entity type whenever the application
+  offers an "Add another ..." button. READ the shown count ("ALREADY
+  SUBMITTED WITH THIS FORM: n" / "INSTANCES SUBMITTED WITH THE PREVIOUS
+  FORM: n"): at 1 click "Add another ...", at 2 click the button that
+  continues.
 - NEVER finish while the page says APPLICATION FINISHED: no — there is always
   another button to click first.
 - Only when the page says APPLICATION FINISHED: yes, finish with verdict

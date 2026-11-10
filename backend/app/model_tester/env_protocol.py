@@ -152,6 +152,20 @@ class ProtocolEnv:
         #: oracle requires this to be >= 1 (invalid data MUST be rejected).
         self.validation_rejections = 0
 
+        #: Successful (conforming) submits per form graph node. Surfaced in
+        #: the observation so the agent can READ how many instances it already
+        #: created instead of having to count across steps — small models
+        #: cannot count reliably over a long history. This is information a
+        #: real user has too: the frontend's GraphPanel shows the created
+        #: instances below the running form, and instance pickers list them
+        #: as options.
+        self.submit_counts: dict[str, int] = {}
+
+        #: Graph node of the form whose submit most recently conformed. Lets
+        #: the pages AFTER a submit (confirmation message, "add another?"
+        #: decision) still show the relevant instance count.
+        self.last_submitted_form: str = ""
+
         self._record_presented_form()
 
     # ------------------------------------------------------------------ pages
@@ -277,6 +291,25 @@ class ProtocolEnv:
             for text in self._label_texts():
                 lines.append(f"MESSAGE: {text}")
 
+            # Tell the agent how many instances it already created, so it can
+            # read the count instead of counting across steps (small models
+            # cannot). On the form itself the count of THIS form is shown; on
+            # the pages after a submit (confirmation, "add another?" box) the
+            # count of the form that was just submitted. A real user has the
+            # same information from the GraphPanel and the picker options.
+            if self.page.layout_type == "form":
+                count = self.submit_counts.get(
+                    str(self._content().get("graph_node", "")), 0
+                )
+                if count:
+                    lines.append(
+                        f"ALREADY SUBMITTED WITH THIS FORM: {count} instance(s)"
+                    )
+            else:
+                count = self.submit_counts.get(self.last_submitted_form, 0)
+                if count:
+                    lines.append(f"INSTANCES SUBMITTED WITH THE PREVIOUS FORM: {count}")
+
             schema = self._content().get("schema") or {}
             properties: dict[str, Any] = schema.get("properties") or {}
             required: list[str] = schema.get("required") or []
@@ -325,6 +358,10 @@ class ProtocolEnv:
             # notification / information / error — a plain message page.
             lines.append(f"PAGE TYPE: {self.page.message_type}")
             lines.append(f"MESSAGE: {self._message_text()}")
+            # Same instance-count hint as on layout message boxes above.
+            count = self.submit_counts.get(self.last_submitted_form, 0)
+            if count:
+                lines.append(f"INSTANCES SUBMITTED WITH THE PREVIOUS FORM: {count}")
 
         lines.append(f"APPLICATION FINISHED: {'yes' if self.finished else 'no'}")
         return "\n".join(lines)
@@ -474,6 +511,14 @@ class ProtocolEnv:
                 self.trace.append(
                     TraceStep("decision_observed", str(OBOP.FormValidationConforms))
                 )
+                # The submit went through: one more instance of this form's
+                # entity exists now. This feeds the "ALREADY SUBMITTED"
+                # lines of the observation (see observe()).
+                if form_node:
+                    self.submit_counts[form_node] = (
+                        self.submit_counts.get(form_node, 0) + 1
+                    )
+                    self.last_submitted_form = form_node
         self._record_presented_form()
         return outcome
 

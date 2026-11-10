@@ -44,6 +44,7 @@ from typing import Any
 
 from app.model_generator import generate_appmodel_from_shacl
 from app.model_tester.agent_core import (
+    AgentAction,
     Decider,
     OllamaDecider,
     Transcript,
@@ -74,6 +75,10 @@ class TestReport:
     transcript: Transcript | None = None
     validation_rejections: int = 0
     completed: bool = False
+    #: Final cumulative output knowledge graph (Turtle) — what the frontend's
+    #: GraphPanel would show at the end of the run. Kept in the report so the
+    #: produced data can be inspected without re-running the test.
+    output_graph: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -83,6 +88,7 @@ class TestReport:
             "validation_rejections": self.validation_rejections,
             "oracles": [oracle.to_dict() for oracle in self.oracles],
             "transcript": self.transcript.to_dict() if self.transcript else None,
+            "output_graph": self.output_graph,
         }
 
 
@@ -157,7 +163,24 @@ def run_model_test(
         transcript=transcript,
         validation_rejections=env.validation_rejections,
         completed=env.finished,
+        output_graph=env.output_graph,
     )
+
+
+def _live(decide: Decider) -> Decider:
+    """Wrap a decider so every decision prints immediately.
+
+    Redirected stdout is block-buffered, so a long CPU-bound run would stay
+    silent until the process exits; the flushed line per decision makes the
+    run observable with ``tail -f`` while it works.
+    """
+
+    def wrapped(system_prompt: str, user_prompt: str) -> tuple[AgentAction, int]:
+        action, ms = decide(system_prompt, user_prompt)
+        print(f"  [live] {action.describe()} ({ms / 1000:.1f}s)", flush=True)
+        return action, ms
+
+    return wrapped
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -204,12 +227,12 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Generating the model under test from {args.shapes} ...")
     generated = generate_appmodel_from_shacl(shapes_ttl)
 
-    decide = OllamaDecider(model=args.model, host=args.ollama_host)
+    decide = _live(OllamaDecider(model=args.model, host=args.ollama_host))
     modes = ["cooperative", "adversarial"] if args.mode == "both" else [args.mode]
 
     reports: list[TestReport] = []
     for mode in modes:
-        print(f"\n=== {mode} run (agent: {args.model}) ===")
+        print(f"\n=== {mode} run (agent: {args.model}) ===", flush=True)
         report = run_model_test(
             generated.rdf,
             shapes_ttl,
