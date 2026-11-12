@@ -22,6 +22,7 @@ from rdflib import RDF, Graph, Namespace
 from app.model_generator import generate_appmodel_from_shacl
 from app.model_tester import AgentAction, TraceStep, run_model_test
 from app.model_tester.reasoning import check_trace_consistency
+from app.model_tester.violations import DeterministicDecider
 
 OBOP = Namespace("http://purl.org/net/obop/")
 
@@ -59,6 +60,17 @@ def _first_empty_field(prompt: str) -> str | None:
 def _first_button(prompt: str) -> str | None:
     """Label of the first button on the current page, if any."""
     match = re.search(r'^  - "([^"]+)" \[[a-z_]+\]$', prompt, re.MULTILINE)
+    return match.group(1) if match else None
+
+
+def _empty_fields(prompt: str) -> list[str]:
+    """Names of ALL empty fields on the current page (for fill_form)."""
+    return re.findall(r'^  - "([^"]+)" \([^)]*\) = <empty>$', prompt, re.MULTILINE)
+
+
+def _submit_button(prompt: str) -> str | None:
+    """Label of the submit button on the current page, if any."""
+    match = re.search(r'^  - "([^"]+)" \[submit\]$', prompt, re.MULTILINE)
     return match.group(1) if match else None
 
 
@@ -189,6 +201,84 @@ def test_adversarial_run_requires_a_rejection() -> None:
         "process_completed"
     ].detail
     assert report.passed, "the adversarial run should pass (rejected, then completed)"
+
+
+def test_cooperative_fill_form_confirms_in_fewer_steps() -> None:
+    """The batched fill_form action (all values + submit in ONE decision)
+    must reach the same green light as the field-by-field run — it exists to
+    cut LLM calls roughly by the number of fields per form."""
+    shapes_ttl = (EXAMPLES / "string_form.shapes.ttl").read_text(encoding="utf-8")
+    generated = generate_appmodel_from_shacl(shapes_ttl)
+
+    def decide(system: str, prompt: str) -> tuple[AgentAction, int]:
+        if "APPLICATION FINISHED: yes" in prompt:
+            return AgentAction(action="finish", verdict="pass", reason="completed"), 0
+        empty = _empty_fields(prompt)
+        submit = _submit_button(prompt)
+        if empty and submit:
+            return (
+                AgentAction(
+                    action="fill_form",
+                    fields={name: "Acme GmbH" for name in empty},
+                    button=submit,
+                ),
+                0,
+            )
+        button = _first_button(prompt)
+        if button is not None:
+            return AgentAction(action="click", button=button), 0
+        return AgentAction(action="finish", verdict="fail", reason="nothing to do"), 0
+
+    report = run_model_test(generated.rdf, shapes_ttl, "cooperative", decide)
+
+    assert report.passed, "the model should be confirmed via fill_form"
+    assert report.transcript is not None
+    actions = [step.action.action for step in report.transcript.steps]
+    assert "fill_form" in actions
+    # One decision per page: form, confirmation(s), final OK, finish — the
+    # per-field fill actions must not appear at all.
+    assert "fill" not in actions
+    assert len(actions) <= 5, f"expected few steps, got: {actions}"
+
+
+def test_deterministic_adversary_minlength() -> None:
+    """The shapes-derived decider must find the minLength violation on its
+    own (no scripted field name), get rejected, correct, and pass."""
+    generated = generate_appmodel_from_shacl(MIN_LENGTH_SHAPES)
+
+    report = run_model_test(
+        generated.rdf,
+        MIN_LENGTH_SHAPES,
+        "adversarial",
+        DeterministicDecider(MIN_LENGTH_SHAPES, adversarial=True),
+    )
+
+    assert report.validation_rejections >= 1
+    assert report.completed
+    assert report.passed, [o.detail for o in report.oracles if not o.passed]
+
+
+def test_deterministic_adversary_restaurant() -> None:
+    """Multi-form app: the first violable constraint is menuName's
+    sh:minCount on the SECOND form — the decider must pass the
+    unconstrained restaurant form validly, omit the menu name, see the
+    rejection, correct it and run the remaining subprocesses (dish with a
+    valid xsd:decimal price, ingredient) to the end. DL oracle skipped to
+    keep the suite fast; the other oracles run."""
+    shapes_ttl = (EXAMPLES / "restaurant.shapes.ttl").read_text(encoding="utf-8")
+    generated = generate_appmodel_from_shacl(shapes_ttl)
+
+    report = run_model_test(
+        generated.rdf,
+        shapes_ttl,
+        "adversarial",
+        DeterministicDecider(shapes_ttl, adversarial=True),
+        dl_oracle=False,
+    )
+
+    assert report.validation_rejections >= 1
+    assert report.completed
+    assert report.passed, [o.detail for o in report.oracles if not o.passed]
 
 
 def test_dl_trace_oracle_detects_category_confusion() -> None:

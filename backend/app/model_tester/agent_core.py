@@ -60,7 +60,10 @@ ACTION_SCHEMA: dict[str, Any] = {
             "type": "string",
             "description": "One short sentence: why this action.",
         },
-        "action": {"type": "string", "enum": ["fill", "click", "finish"]},
+        "action": {
+            "type": "string",
+            "enum": ["fill", "fill_form", "click", "finish"],
+        },
         "field": {
             "type": "string",
             "description": "fill only: the field name exactly as shown.",
@@ -69,9 +72,15 @@ ACTION_SCHEMA: dict[str, Any] = {
             "type": "string",
             "description": "fill only: the text to enter.",
         },
+        "fields": {
+            "type": "object",
+            "additionalProperties": {"type": "string"},
+            "description": "fill_form only: every field name exactly as "
+            "shown mapped to the text to enter.",
+        },
         "button": {
             "type": "string",
-            "description": "click only: the button label exactly as shown.",
+            "description": "click/fill_form: the button label exactly as shown.",
         },
         "verdict": {
             "type": "string",
@@ -101,10 +110,11 @@ class AgentAction:
     raising, so a confused agent gets a chance to recover on the next step.
     """
 
-    action: str  # "fill" | "click" | "finish"
+    action: str  # "fill" | "fill_form" | "click" | "finish"
     reasoning: str = ""
     field: str | None = None
     value: str | None = None
+    fields: dict[str, str] | None = None  # fill_form only
     button: str | None = None
     verdict: str | None = None  # "pass" | "fail" (finish only)
     reason: str | None = None
@@ -118,11 +128,13 @@ class AgentAction:
         action string. Everything lands in the dataclass as-is; the loop and
         the environment deal with nonsense explicitly.
         """
+        fields = data.get("fields")
         return cls(
             action=str(data.get("action", "")),
             reasoning=str(data.get("reasoning", "")),
             field=data.get("field"),
             value=data.get("value"),
+            fields=dict(fields) if isinstance(fields, dict) else None,
             button=data.get("button"),
             verdict=data.get("verdict"),
             reason=data.get("reason"),
@@ -132,6 +144,14 @@ class AgentAction:
         """One human-readable line for transcripts, logs and history prompts."""
         if self.action == "fill":
             return f'fill "{self.field}" with "{self.value}"'
+        if self.action == "fill_form":
+            # The values are part of the description on purpose: the loop's
+            # repeat guard compares these strings, and two fill_form attempts
+            # with different values must not count as a repetition.
+            filled = ", ".join(
+                f'"{name}"="{value}"' for name, value in (self.fields or {}).items()
+            )
+            return f'fill form ({filled or "no fields"}) and click "{self.button}"'
         if self.action == "click":
             return f'click "{self.button}"'
         if self.action == "finish":
@@ -347,14 +367,17 @@ class OllamaDecider:
 
 _ACTION_FORMAT = """Each step you receive the current page (fields, buttons, messages) and you
 answer with exactly ONE action as JSON:
-- fill a field:   {"action": "fill", "field": "<field name exactly as shown>", "value": "<text>", "reasoning": "..."}
+- fill a whole form and submit it in ONE step (PREFERRED on form pages):
+  {"action": "fill_form", "fields": {"<field name>": "<text>", ...}, "button": "<button label exactly as shown>", "reasoning": "..."}
+- fill a single field: {"action": "fill", "field": "<field name exactly as shown>", "value": "<text>", "reasoning": "..."}
 - click a button: {"action": "click", "button": "<button label exactly as shown>", "reasoning": "..."}
 - end the test:   {"action": "finish", "verdict": "pass" or "fail", "reason": "<what you observed>", "reasoning": "..."}"""
 
 _COOPERATIVE_RULES = """Behave like a diligent end user (cooperative mode):
-- Fill EVERY field of a form with sensible data that is VALID for the SHACL
-  shapes below (respect datatypes and constraints such as pattern, minLength,
-  maxLength, enum), then click the submit button.
+- On a form page, use ONE fill_form action: fill EVERY field with sensible
+  data that is VALID for the SHACL shapes below (respect datatypes and
+  constraints such as pattern, minLength, maxLength, enum) and click the
+  submit button in the same action.
 - On notification/message pages, click the button to continue.
 - Create exactly TWO instances of each entity type whenever the application
   offers an "Add another ..." button. Do NOT count yourself — READ the count
@@ -376,13 +399,20 @@ _COOPERATIVE_RULES = """Behave like a diligent end user (cooperative mode):
   name the discrepancy in "reason"."""
 
 _ADVERSARIAL_RULES = """Try to break the application with invalid input (adversarial mode):
-- On the FIRST form, pick exactly ONE field that has a constraint and fill it
-  with a value that VIOLATES that constraint. Violate only what is declared:
-  minLength=5 is violated by a SHORTER value (e.g. "ab"), pattern=^[0-9]{5}$
-  by a non-matching value (e.g. "ABC"). A long value violates nothing unless
-  maxLength is declared.
-- Fill the other fields validly. Then click submit IMMEDIATELY — do not
-  change the invalid field again before submitting.
+- Find the FIRST form that declares a violable constraint, on the page or in
+  the SHACL shapes below: minLength, maxLength, pattern, required
+  (sh:minCount), or a non-string datatype such as xsd:decimal. A form that
+  declares NONE of these cannot be violated — fill it with VALID data,
+  submit, and continue to the next form.
+- On that form, pick exactly ONE constrained field and VIOLATE only what is
+  declared: minLength=5 -> a SHORTER value (e.g. "ab"); pattern=^[0-9]{5}$ ->
+  a non-matching value (e.g. "ABC"); required -> leave the field out of
+  "fields" entirely (submit without it); xsd:decimal -> a non-number
+  (e.g. "abc").
+- Use ONE fill_form action for this: the other fields get VALID values, the
+  chosen field the violating value (or is left out), and the submit button
+  is clicked in the same action — do not change the invalid field again
+  before submitting.
 - The application MUST reject the data: the same form must be presented
   again. If instead the invalid data is accepted, finish immediately with
   verdict "fail" and say so in "reason".

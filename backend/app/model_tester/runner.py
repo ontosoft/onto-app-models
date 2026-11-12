@@ -54,6 +54,7 @@ from app.model_tester.agent_core import (
 from app.model_tester.env_protocol import ProtocolEnv
 from app.model_tester.oracles import OracleResult, shacl_round_trip
 from app.model_tester.reasoning import check_trace_consistency
+from app.model_tester.violations import DeterministicDecider
 
 logger = logging.getLogger("ontoui_app")
 
@@ -206,6 +207,15 @@ def main(argv: list[str] | None = None) -> int:
         help="Ollama model name for the agent",
     )
     parser.add_argument(
+        "--decider",
+        choices=["mixed", "llm", "scripted"],
+        default="mixed",
+        help="mixed (default): LLM for the cooperative run, deterministic "
+        "shapes-derived decider for the adversarial run — the confirmation "
+        "setup. llm: the LLM in both modes (exploration). scripted: "
+        "deterministic in both modes (fast, no Ollama needed).",
+    )
+    parser.add_argument(
         "--ollama-host",
         default=None,
         help="Ollama base URL (default: $OLLAMA_HOST or http://localhost:11434)",
@@ -227,12 +237,37 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Generating the model under test from {args.shapes} ...")
     generated = generate_appmodel_from_shacl(shapes_ttl)
 
-    decide = _live(OllamaDecider(model=args.model, host=args.ollama_host))
     modes = ["cooperative", "adversarial"] if args.mode == "both" else [args.mode]
+
+    # The Ollama client is only built when some mode actually uses the LLM,
+    # so fully scripted runs work without a reachable Ollama.
+    llm_decide: Decider | None = None
+
+    def decider_for(mode: str) -> Decider:
+        nonlocal llm_decide
+        use_llm = args.decider == "llm" or (
+            args.decider == "mixed" and mode == "cooperative"
+        )
+        if use_llm:
+            if llm_decide is None:
+                llm_decide = _live(
+                    OllamaDecider(model=args.model, host=args.ollama_host)
+                )
+            return llm_decide
+        return _live(
+            DeterministicDecider(shapes_ttl, adversarial=(mode == "adversarial"))
+        )
 
     reports: list[TestReport] = []
     for mode in modes:
-        print(f"\n=== {mode} run (agent: {args.model}) ===", flush=True)
+        agent_name = (
+            args.model
+            if args.decider == "llm"
+            or (args.decider == "mixed" and mode == "cooperative")
+            else "deterministic"
+        )
+        decide = decider_for(mode)
+        print(f"\n=== {mode} run (agent: {agent_name}) ===", flush=True)
         report = run_model_test(
             generated.rdf,
             shapes_ttl,

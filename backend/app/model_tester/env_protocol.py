@@ -379,9 +379,16 @@ class ProtocolEnv:
         """
         if action.action == "fill":
             return self._apply_fill(str(action.field or ""), str(action.value or ""))
+        if action.action == "fill_form":
+            return self._apply_fill_form(
+                dict(action.fields or {}), str(action.button or "")
+            )
         if action.action == "click":
             return self._apply_click(str(action.button or ""))
-        return f"unknown action type '{action.action}' (use fill, click or finish)"
+        return (
+            f"unknown action type '{action.action}' "
+            "(use fill, fill_form, click or finish)"
+        )
 
     def _apply_fill(self, field: str, value: str) -> str:
         """Type into a field: update the local form state only (no engine
@@ -400,6 +407,38 @@ class ProtocolEnv:
             )
         self.form_data[field] = value
         return "ok"
+
+    def _apply_fill_form(self, fields: dict[str, Any], button: str) -> str:
+        """Fill several fields and click a button as ONE agent decision.
+
+        Protocol-faithful batching: fills never reach the engine anyway (the
+        data travels as one piece with the submit), so entering all values
+        and clicking produces exactly the message a field-by-field user
+        produces — with one LLM call instead of one per field. All field
+        names are validated BEFORE anything is changed: on an unknown name
+        nothing is filled and nothing is clicked, so the agent can repair
+        the whole action in its next step.
+        """
+        properties: dict[str, Any] = (self._content().get("schema") or {}).get(
+            "properties"
+        ) or {}
+        visible = self._control_field_names()
+        unknown = [
+            name for name in fields if name not in properties or name not in visible
+        ]
+        if unknown:
+            known = ", ".join(f'"{name}"' for name in properties if name in visible)
+            bad = ", ".join(f'"{name}"' for name in unknown)
+            return (
+                f"no field named {bad} on this page; "
+                f"the fields are: {known or '(none)'} — nothing was filled"
+            )
+        for name, value in fields.items():
+            self.form_data[name] = str(value)
+        if not button:
+            return f"filled {len(fields)} field(s)"
+        outcome = self._apply_click(button)
+        return f"filled {len(fields)} field(s); {outcome}"
 
     def _apply_click(self, label: str) -> str:
         """Click a button: translate its first action pointer into the exact
