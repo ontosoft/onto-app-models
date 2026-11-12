@@ -7,10 +7,11 @@ completion screen.
 
 from pathlib import Path
 
-from rdflib import RDF, Graph, Literal, Namespace, URIRef
+from rdflib import RDF, XSD, Graph, Literal, Namespace, URIRef
 
 import model_generator
 from model_generator import generate_appmodel_from_shacl
+from model_generator.meta_shapes import validate_fam_model
 from app_engine.app_engine import AppEngine
 from app_engine.validate_model import validate_model
 
@@ -739,3 +740,58 @@ def test_instance_picker_links_chosen_instance():
     dish = next(out.subjects(RDF.type, R.Dish))
     (linked_menu,) = list(out.objects(dish, R.belongsToMenu))
     assert str(next(out.objects(linked_menu, R.menuName))) == "Lunch"
+
+
+def test_generated_models_satisfy_fam_meta_shapes():
+    """Both examples must pass the FAM meta-shapes. The generator enforces
+    this as a post-condition on every generation, so this test pins the
+    meta-shapes themselves: a false positive here would break ALL of them."""
+    for example in ("string_form.shapes.ttl", "restaurant.shapes.ttl"):
+        shapes = (EXAMPLES / example).read_text(encoding="utf-8")
+        gm = generate_appmodel_from_shacl(shapes)
+        conforms, report = validate_fam_model(gm.rdf)
+        assert conforms, f"{example}:\n{report}"
+
+
+def test_fam_meta_shapes_catch_broken_models():
+    """Targeted mutations of a valid model must turn the meta-shapes red.
+    Each mutation mimics a mistake an (agent-based) generator could make;
+    validate_fam_model is called directly because generate_appmodel_from_shacl
+    would already have raised on such a model."""
+    OBOP = Namespace("http://purl.org/net/obop/")
+    shapes = (EXAMPLES / "restaurant.shapes.ttl").read_text(encoding="utf-8")
+    model = generate_appmodel_from_shacl(shapes).rdf
+
+    def fresh() -> Graph:
+        g = Graph()
+        g.parse(data=model, format="turtle")
+        return g
+
+    # Un-assign a field: dropping one property-shape -> field link leaves a
+    # field without validation (M1) and a named shape without a field (M3).
+    g = fresh()
+    ps, _, field = next(iter(g.triples((None, OBOP.specifiedBy, None))))
+    g.remove((ps, OBOP.specifiedBy, field))
+    conforms, report = validate_fam_model(g)
+    assert not conforms
+    assert "M1" in report and "M3" in report, report
+
+    # Position collision: the cancel button takes the submit button's
+    # position 0 in the shared button row (M4).
+    g = fresh()
+    cancel = URIRef(f"{BASE}cancel_btn_menu")
+    g.remove((cancel, OBOP.hasPositionNumber, None))
+    g.add((cancel, OBOP.hasPositionNumber, Literal(0, datatype=XSD.int)))
+    conforms, report = validate_fam_model(g)
+    assert not conforms
+    assert "M4" in report, report
+
+    # Untyped submit action: the dish block still has a button, but it no
+    # longer activates an obop:SubmitBlockAction (M6).
+    g = fresh()
+    g.remove(
+        (URIRef(f"{BASE}submit_action_dish"), RDF.type, OBOP.SubmitBlockAction)
+    )
+    conforms, report = validate_fam_model(g)
+    assert not conforms
+    assert "M6" in report, report

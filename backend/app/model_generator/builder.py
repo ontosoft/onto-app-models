@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from rdflib import RDF, Graph
 from rdflib.namespace import OWL
 
+from .meta_shapes import validate_fam_model
 from .owl_axioms import shacl_to_owl_axioms
 from .shacl_reader import read_shapes
 from .templates import DEFAULT_BASE, build_model_graph
@@ -70,6 +71,15 @@ def generate_model_graph(
     for header in set(shapes.subjects(RDF.type, OWL.Ontology)):
         shapes -= shapes.cbd(header)
     model += shapes
+    # Post-condition: the generator's own output must satisfy the FAM
+    # meta-shapes. A violation here is a generator bug, never a
+    # property of the input — so fail loudly instead of handing a broken
+    # model to the engine.
+    conforms, report = validate_fam_model(model)
+    if not conforms:
+        raise ValueError(
+            f"generated model violates the FAM meta-shapes (generator bug):\n{report}"
+        )
     return model
 
 

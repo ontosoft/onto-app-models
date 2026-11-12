@@ -208,6 +208,7 @@ order:
 | M5 | Every `obop:Block` is referenced from the BBO process (a `bbo:UserTask`-reachable `GenerateJSONForm` action) | unreachable dead form | `sh:sparql` over FAM+BBO |
 | M6 | Every block with fields has ≥1 button whose action is an `obop:SubmitBlockAction` | form that can never submit | `sh:sparql` |
 | M7 | Every `obop:Connection` has `connectionHasSource`, `connectionHasTarget`, ≥1 `hasConnector` | dangling relation — generated app would drop the triple | plain counts |
+| M8 | Every `obop:Button` activates ≥1 action, sits in exactly one layout, has one position and a label | dead button that does nothing when clicked | plain counts |
 
 Integration points (both cheap):
 

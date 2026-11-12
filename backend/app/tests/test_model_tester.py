@@ -156,7 +156,8 @@ class _AdversarialDecider:
 
 def test_cooperative_run_confirms_string_form_model() -> None:
     """Green light end to end: generated model + cooperative agent must pass
-    all three oracles (completion, SHACL round-trip, DL trace consistency)."""
+    all oracles (FAM well-formedness, completion, SHACL round-trip, DL trace
+    consistency)."""
     shapes_ttl = (EXAMPLES / "string_form.shapes.ttl").read_text(encoding="utf-8")
     generated = generate_appmodel_from_shacl(shapes_ttl)
 
@@ -168,6 +169,9 @@ def test_cooperative_run_confirms_string_form_model() -> None:
     )
 
     oracle_names = {oracle.name: oracle for oracle in report.oracles}
+    assert oracle_names["fam_well_formed"].passed, oracle_names[
+        "fam_well_formed"
+    ].detail
     assert oracle_names["process_completed"].passed, oracle_names[
         "process_completed"
     ].detail

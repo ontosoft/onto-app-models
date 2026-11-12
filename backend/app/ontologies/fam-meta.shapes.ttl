@@ -1,0 +1,304 @@
+# FAM meta-shapes: SHACL shapes that validate FAM MODELS themselves.
+#
+# The embedded per-entity shapes validate the DATA a generated app collects;
+# these shapes validate the generated model's own structure (CWA counterpart
+# of the OBOP TBox axioms - see docs/agentic-model-generator.md, Part B).
+# They are enforced as a post-condition of the deterministic generator
+# (model_generator.builder) and as the model_tester's "fam_well_formed"
+# oracle, and they are the first gate for agent-edited models.
+#
+# "M" = meta-shape; the numbers are the check IDs from the design draft
+# (docs/agentic-model-generator.md, Part B), so reports, code and docs
+# cross-reference the same IDs:
+#
+#   M1 - every field is placed, positioned, labelled and shape-backed
+#   M2 - every block has exactly one main layout
+#   M3 - every generated property shape is covered by exactly one field,
+#        and that field sits on the shape's own block
+#   M4 - position numbers are unique among siblings of one layout
+#   M5 - every block is reachable from the process (approximation)
+#   M6 - every field-bearing block has a submit button
+#   M7 - every connection has a source, a target and a connector
+#   M8 - every button activates an action and is placed and labelled
+#
+# Scope note: M3 must not fire on the ORIGINAL input shapes, which the
+# generator embeds verbatim (R9) and which naturally carry no obop:specifiedBy.
+# Generated form shapes are recognised by obop:modelBelongsTo on their node
+# shape - the SPARQL bodies filter on that.
+
+@prefix sh:   <http://www.w3.org/ns/shacl#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix obop: <http://purl.org/net/obop/> .
+@prefix bbo:  <https://www.irit.fr/recherches/MELODI/ontologies/BBO#> .
+@prefix meta: <http://purl.org/net/obop/meta#> .
+
+meta:Ontology a owl:Ontology ;
+    rdfs:comment "Prefix declarations for the SPARQL constraints below." ;
+    sh:declare [ sh:prefix "obop" ;
+                 sh:namespace "http://purl.org/net/obop/"^^xsd:anyURI ] ;
+    sh:declare [ sh:prefix "bbo" ;
+                 sh:namespace "https://www.irit.fr/recherches/MELODI/ontologies/BBO#"^^xsd:anyURI ] ;
+    sh:declare [ sh:prefix "sh" ;
+                 sh:namespace "http://www.w3.org/ns/shacl#"^^xsd:anyURI ] .
+
+
+# ---------------------------------------------------------------------------
+# M1: every field is placed, positioned, labelled and shape-backed.
+# A field without an incoming obop:specifiedBy is the worst case: it would
+# render, but its data would never be SHACL-validated or datatype-typed.
+# ---------------------------------------------------------------------------
+
+meta:FieldShape a sh:NodeShape ;
+    sh:targetClass obop:Field ;
+    sh:property [
+        sh:path obop:belongsTo ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:message "M1: a field must belong to exactly one block" ;
+    ] ;
+    sh:property [
+        sh:path obop:belongsToVisual ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:message "M1: a field must sit in exactly one layout" ;
+    ] ;
+    sh:property [
+        sh:path obop:hasPositionNumber ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:message "M1: a field must have exactly one position number" ;
+    ] ;
+    sh:property [
+        sh:path obop:hasLabel ;
+        sh:minCount 1 ;
+        sh:message "M1: a field must have a label" ;
+    ] ;
+    sh:property [
+        sh:path [ sh:inversePath obop:specifiedBy ] ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:message "M1: a field must be backed by exactly one property shape" ;
+    ] .
+
+
+# ---------------------------------------------------------------------------
+# Block-level checks: M2, M5 and M6 all target obop:Block, so they live on
+# one node shape - each check is its own sh:sparql constraint below.
+# ---------------------------------------------------------------------------
+
+meta:BlockShape a sh:NodeShape ;
+    sh:targetClass obop:Block ;
+
+    # M2a: no main layout. The main layout is the Layout that belongsTo the
+    # block directly (nested layouts use belongsToVisual instead). Without
+    # one, the engine cannot render the block at all.
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "M2: the block has no main layout" ;
+        sh:prefixes meta:Ontology ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    ?layout obop:belongsTo $this ; a ?layout_class .
+                    FILTER (?layout_class IN (
+                        obop:Layout, obop:VerticalLayout, obop:HorizontalLayout
+                    ))
+                }
+            }
+        """ ;
+    ] ;
+
+    # M2b: more than one main layout - the engine's choice between them
+    # would be undefined.
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "M2: the block has more than one main layout" ;
+        sh:prefixes meta:Ontology ;
+        sh:select """
+            SELECT DISTINCT $this WHERE {
+                ?l1 obop:belongsTo $this ; a ?c1 .
+                ?l2 obop:belongsTo $this ; a ?c2 .
+                FILTER (?c1 IN (
+                    obop:Layout, obop:VerticalLayout, obop:HorizontalLayout
+                ))
+                FILTER (?c2 IN (
+                    obop:Layout, obop:VerticalLayout, obop:HorizontalLayout
+                ))
+                FILTER (?l1 != ?l2)
+            }
+        """ ;
+    ] ;
+
+    # M5: the block must be reachable from the process - some task in a
+    # container must execute an action that lives in this block, otherwise
+    # the form is dead weight that is never shown. This is an approximation:
+    # true reachability (a path from the start event) is the job of the
+    # workflow-soundness checker (design draft, Part E).
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "M5: no process task reaches this block - it is never shown" ;
+        sh:prefixes meta:Ontology ;
+        sh:select """
+            SELECT $this WHERE {
+                FILTER NOT EXISTS {
+                    ?action obop:actionInBlock $this .
+                    ?task obop:executesAction ?action ;
+                          bbo:has_container ?container .
+                }
+            }
+        """ ;
+    ] ;
+
+    # M6: a block that carries form fields must have a button activating an
+    # obop:SubmitBlockAction that belongs to the same block - without it the
+    # form can be filled but never submitted. Notification blocks have no
+    # fields and are exempt by the first triple pattern.
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "M6: the block has form fields but no submit button" ;
+        sh:prefixes meta:Ontology ;
+        sh:select """
+            SELECT DISTINCT $this WHERE {
+                ?field a obop:Field ; obop:belongsTo $this .
+                FILTER NOT EXISTS {
+                    ?button a obop:Button ;
+                            obop:belongsTo $this ;
+                            obop:activatesAction ?submit .
+                    ?submit a obop:SubmitBlockAction .
+                }
+            }
+        """ ;
+    ] .
+
+
+# ---------------------------------------------------------------------------
+# M3: field <-> property-shape coverage - the core criterion for "assign
+# fields to the right forms". Focus nodes are all objects of sh:property;
+# each SPARQL body restricts itself to property shapes of GENERATED form
+# shapes (parent node shape has obop:modelBelongsTo), so the verbatim-
+# embedded input shapes are out of scope by construction.
+# ---------------------------------------------------------------------------
+
+meta:PropertyShapeCoverage a sh:NodeShape ;
+    sh:targetObjectsOf sh:property ;
+
+    # M3a: a named property shape with no field at all - its property could
+    # never be entered by the user.
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "M3: a named property shape is not assigned to any field" ;
+        sh:prefixes meta:Ontology ;
+        sh:select """
+            SELECT DISTINCT $this WHERE {
+                ?shape sh:property $this ; obop:modelBelongsTo ?block .
+                $this sh:name ?name .
+                FILTER NOT EXISTS { $this obop:specifiedBy ?field . }
+            }
+        """ ;
+    ] ;
+
+    # M3b: one property shape assigned to several fields - the engine could
+    # not decide which field's value belongs to the property.
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "M3: a property shape is assigned to more than one field" ;
+        sh:prefixes meta:Ontology ;
+        sh:select """
+            SELECT DISTINCT $this WHERE {
+                $this obop:specifiedBy ?f1 , ?f2 .
+                FILTER (?f1 != ?f2)
+            }
+        """ ;
+    ] ;
+
+    # M3c: the assigned field sits on a DIFFERENT block than the shape - the
+    # field ended up on the wrong form. This is exactly the mistake an
+    # LLM-based generator could make when distributing fields over forms.
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "M3: the assigned field sits on a different block than its shape" ;
+        sh:prefixes meta:Ontology ;
+        sh:select """
+            SELECT DISTINCT $this WHERE {
+                ?shape sh:property $this ; obop:modelBelongsTo ?shape_block .
+                $this obop:specifiedBy ?field .
+                FILTER NOT EXISTS { ?field obop:belongsTo ?shape_block . }
+            }
+        """ ;
+    ] .
+
+
+# ---------------------------------------------------------------------------
+# M4: position numbers must be unique among the siblings of one layout -
+# otherwise the rendering order of the colliding elements is undefined.
+# ---------------------------------------------------------------------------
+
+meta:SiblingPositionShape a sh:NodeShape ;
+    sh:targetSubjectsOf obop:belongsToVisual ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "M4: two elements of the same layout share a position number" ;
+        sh:prefixes meta:Ontology ;
+        sh:select """
+            SELECT DISTINCT $this WHERE {
+                $this obop:belongsToVisual ?layout ;
+                      obop:hasPositionNumber ?position .
+                ?other obop:belongsToVisual ?layout ;
+                       obop:hasPositionNumber ?position .
+                FILTER (?other != $this)
+            }
+        """ ;
+    ] .
+
+
+# ---------------------------------------------------------------------------
+# M7: a connection must be complete - exactly one source and target shape,
+# and at least one connector naming the object property to store; a dangling
+# connection would silently drop the relationship triple at runtime.
+# ---------------------------------------------------------------------------
+
+meta:ConnectionShape a sh:NodeShape ;
+    sh:targetClass obop:Connection ;
+    sh:property [
+        sh:path obop:connectionHasSource ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:message "M7: a connection must have exactly one source" ;
+    ] ;
+    sh:property [
+        sh:path obop:connectionHasTarget ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:message "M7: a connection must have exactly one target" ;
+    ] ;
+    sh:property [
+        sh:path obop:hasConnector ;
+        sh:minCount 1 ;
+        sh:message "M7: a connection must have at least one connector" ;
+    ] .
+
+
+# ---------------------------------------------------------------------------
+# M8: a button must activate an action (it would otherwise do nothing) and,
+# like a field, must be placed in exactly one layout, positioned and
+# labelled.
+# ---------------------------------------------------------------------------
+
+meta:ButtonShape a sh:NodeShape ;
+    sh:targetClass obop:Button ;
+    sh:property [
+        sh:path obop:activatesAction ;
+        sh:minCount 1 ;
+        sh:message "M8: a button must activate at least one action" ;
+    ] ;
+    sh:property [
+        sh:path obop:belongsToVisual ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:message "M8: a button must sit in exactly one layout" ;
+    ] ;
+    sh:property [
+        sh:path obop:hasPositionNumber ;
+        sh:minCount 1 ; sh:maxCount 1 ;
+        sh:message "M8: a button must have exactly one position number" ;
+    ] ;
+    sh:property [
+        sh:path obop:hasLabel ;
+        sh:minCount 1 ;
+        sh:message "M8: a button must have a label" ;
+    ] .

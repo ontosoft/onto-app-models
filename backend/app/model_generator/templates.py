@@ -241,7 +241,13 @@ class ModelBuilder:
         self.position(vlayout, 0)
         hlayout = self.ind(f"{n}_hlayout", OBOP.HorizontalLayout)
         self.link(hlayout, OBOP.belongsToVisual, vlayout)
-        self.position(hlayout, 4)
+        # The button row comes after every field (positions 0..len-1) and
+        # picker (len..len+k-1) in the vlayout. A fixed position collided
+        # with the 5th field's position number (meta-shape M4).
+        self.position(
+            hlayout,
+            len(ent.properties) + len(self._pending_connections.get(n, [])),
+        )
 
         shape = self.ind(f"{n}_shape", SH.NodeShape)
         self.link(shape, OBOP.modelBelongsTo, block)

@@ -52,7 +52,7 @@ from app.model_tester.agent_core import (
     run_agent,
 )
 from app.model_tester.env_protocol import ProtocolEnv
-from app.model_tester.oracles import OracleResult, shacl_round_trip
+from app.model_tester.oracles import OracleResult, fam_well_formed, shacl_round_trip
 from app.model_tester.reasoning import check_trace_consistency
 from app.model_tester.violations import DeterministicDecider
 
@@ -114,6 +114,11 @@ def run_model_test(
     )
 
     oracles: list[OracleResult] = []
+
+    # Oracle 0: the model itself must be well-formed (FAM meta-shapes).
+    # Independent of the run — the deterministic generator already enforces
+    # it as a post-condition, so this guards agent-edited models.
+    oracles.append(fam_well_formed(fam_ttl))
 
     # Oracle 1: the process must have reached an end event of the main
     # process. In adversarial mode this covers the post-rejection recovery
