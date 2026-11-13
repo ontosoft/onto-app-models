@@ -37,6 +37,10 @@ class PropSpec:
     label: str  # human-facing field label (sh:name, else the path local name)
     iri_token: str  # snake_case fragment minting IRIs (field_<entity>_<iri_token>)
     order: int  # display order (sh:order)
+    # Fields sharing a row number render inside one nested HorizontalLayout
+    # (a horizontal row in the form). None = directly in the vertical layout.
+    # Set by the edit operations (editing.group_fields), never from the input.
+    row: int | None = None
     # Input constraints copied onto the generated property shape (R9): the
     # embedded shapes must demand exactly what the input shapes demand.
     constraints: list[ConstraintSpec] = field(default_factory=list)

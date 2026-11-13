@@ -11,8 +11,11 @@ from .builder import (
     generate_appmodel_from_shacl,
     generate_model_graph,
 )
+from .editing import EditError, EditSession
 
 __all__ = [
+    "EditError",
+    "EditSession",
     "GeneratedModel",
     "generate_appmodel_from_shacl",
     "generate_model_graph",

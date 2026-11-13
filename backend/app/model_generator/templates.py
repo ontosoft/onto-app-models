@@ -262,14 +262,32 @@ class ModelBuilder:
         self.link(gen_action, OBOP.actionInBlock, block)
         self.link(nodes["gen"], OBOP.executesAction, gen_action)
 
+        # Fields with a row number share one nested HorizontalLayout; the row
+        # takes the vlayout position of its first member, members count 0..k
+        # inside it (position numbers stay unique per layout - meta-shape M4).
+        rows: dict[int, URIRef] = {}
+        row_members: dict[int, int] = {}
         for i, prop in enumerate(ent.properties):
             field = self.ind(f"field_{n}_{prop.iri_token}", OBOP.Field)
             self.link(field, OBOP.belongsTo, block)
-            self.link(field, OBOP.belongsToVisual, vlayout)
+            if prop.row is None:
+                self.link(field, OBOP.belongsToVisual, vlayout)
+                self.position(field, i)
+            else:
+                if prop.row not in rows:
+                    row_layout = self.ind(
+                        f"{n}_row_{prop.row}", OBOP.HorizontalLayout
+                    )
+                    self.link(row_layout, OBOP.belongsToVisual, vlayout)
+                    self.position(row_layout, i)
+                    rows[prop.row] = row_layout
+                    row_members[prop.row] = 0
+                self.link(field, OBOP.belongsToVisual, rows[prop.row])
+                self.position(field, row_members[prop.row])
+                row_members[prop.row] += 1
             self.link(field, OBOP.containsDatatype, URIRef(prop.path))
             self.link(field, OBOP.isRelatedToTargetOntologyInstance, shape)
             self.lit(field, OBOP.hasLabel, prop.label)
-            self.position(field, i)
             # property shape (bnode) linked to the field via obop:specifiedBy
             ps = BNode()
             self.g.add((shape, SH.property, ps))
