@@ -1,7 +1,11 @@
 # Draft: the agent-based model generator
 
-Status: **design draft** (2026-11-12) — nothing in here is implemented yet.
-It specifies the three artifacts an LLM-based `model_generator` variant needs
+Status: **steps 1–4 implemented** (2026-11-13) — Part A lives in `obop.owl`
+V 0.2, Part B in `backend/app/ontologies/fam-meta.shapes.ttl`, Part C in
+`model_generator/editing.py` plus the LLM loop in `backend/app/model_agent/`,
+and Part D's repair loop in `model_agent/environment.py`. Step 5 (workflow
+soundness) is open.
+The draft specifies the three artifacts an LLM-based `model_generator` variant needs
 *before* any LLM is involved: an axiomatization of OBOP that makes bad designs
 inconsistent (Part A), SHACL meta-shapes that make incomplete designs invalid
 (Part B), and a closed catalog of model-edit operations for the LLM to choose
@@ -253,6 +257,13 @@ experiments showed a 7B model cannot be trusted with. If merge/split proves
 too hairy to re-wire generically, cut both from v1; the remaining eight
 operations already cover the research question's core ("assign fields to
 the right forms, combine loops and other UI elements").
+
+> **As implemented** (`model_generator/editing.py`, `model_agent/actions.py`):
+> the names landed as `group_fields` (for `group_horizontal`) and
+> `add_relation`/`remove_relation` (for `connect`), plus `move_entity` for
+> the form order. `assign_field`, `merge_forms`/`split_form` and
+> `set_button` are deferred — one block populates one entity instance, so
+> they need engine support for multi-shape blocks first.
 
 ### C2 — Schema sketch (constrained decoding)
 
