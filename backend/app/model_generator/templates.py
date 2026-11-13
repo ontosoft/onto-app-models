@@ -32,6 +32,7 @@ there are no string-template / whitespace pitfalls.
 from __future__ import annotations
 
 from rdflib import RDF, RDFS, BNode, Graph, Literal, Namespace, URIRef
+from rdflib.collection import Collection
 from rdflib.namespace import OWL, XSD
 
 from .ir import EntitySpec
@@ -68,6 +69,8 @@ class ModelBuilder:
         # chain, keyed by the iri_token of the subprocess they run in
         # (filled by plan_connections before entities are built)
         self._pending_connections: dict[str, list] = {}
+        # every minted named individual, for the owl:AllDifferent axiom
+        self.minted: set[URIRef] = set()
 
     # -- low-level helpers ----------------------------------------------------
 
@@ -75,6 +78,7 @@ class ModelBuilder:
         """Mint/declare a named individual with the given rdf:types."""
         uri = self.ex[local]
         self.g.add((uri, RDF.type, OWL.NamedIndividual))
+        self.minted.add(uri)
         for t in types:
             self.g.add((uri, RDF.type, t))
         return uri
@@ -238,6 +242,7 @@ class ModelBuilder:
 
         vlayout = self.ind(f"{n}_vlayout", OBOP.VerticalLayout)
         self.link(vlayout, OBOP.belongsTo, block)
+        self.link(block, OBOP.hasMainLayout, vlayout)
         self.position(vlayout, 0)
         hlayout = self.ind(f"{n}_hlayout", OBOP.HorizontalLayout)
         self.link(hlayout, OBOP.belongsToVisual, vlayout)
@@ -344,6 +349,7 @@ class ModelBuilder:
         self.position(notif_block, 0)
         notif_layout = self.ind(f"{n}_notification_layout", OBOP.VerticalLayout)
         self.link(notif_layout, OBOP.belongsTo, notif_block)
+        self.link(notif_block, OBOP.hasMainLayout, notif_layout)
         self.position(notif_layout, 0)
         notif_label = self.ind(f"{n}_notification_label", OBOP.Label)
         self.link(notif_label, OBOP.belongsTo, notif_block)
@@ -468,6 +474,22 @@ class ModelBuilder:
             self.flow(f"flow_{n}_7", sub, nodes["notif_task"], nodes["end"])
         self.flow(f"flow_{n}_abort_end", sub, nodes["abort"], nodes["cancel_end"])
 
+    # -- finalisation -----------------------------------------------------------
+
+    def finalize(self) -> None:
+        """Declare every minted individual pairwise distinct (owl:AllDifferent).
+
+        OWL has no unique-name assumption: without this axiom the V 0.2
+        functional properties (belongsTo, belongsToVisual, ...) would make a
+        reasoner silently MERGE two layouts or blocks instead of reporting
+        the design error as an inconsistency.
+        """
+        all_different = BNode()
+        self.g.add((all_different, RDF.type, OWL.AllDifferent))
+        members = BNode()
+        Collection(self.g, members, sorted(self.minted))
+        self.g.add((all_different, OWL.distinctMembers, members))
+
 
 def build_model_graph(
     entities: list[EntitySpec],
@@ -481,4 +503,5 @@ def build_model_graph(
     for ent in entities:
         b.build_entity(ent)
     b.build_main_process(entities)
+    b.finalize()
     return b.g

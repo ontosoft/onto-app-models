@@ -304,3 +304,37 @@ def test_dl_trace_oracle_detects_category_confusion() -> None:
         "Pellet should report an inconsistency for an Action observed as an "
         f"EngineDecision, but said: {detail}"
     )
+
+
+def test_obop_axioms_reject_category_confusion_in_the_model() -> None:
+    """The OBOP V 0.2 TBox must make a mis-assembled MODEL inconsistent even
+    with an empty trace: a node typed as both Field and Button violates the
+    visual-element disjointness, and a button sitting in two layouts violates
+    the functional belongsToVisual together with the generator's
+    owl:AllDifferent (without which the reasoner would just merge the two
+    layouts)."""
+    shapes_ttl = (EXAMPLES / "string_form.shapes.ttl").read_text(encoding="utf-8")
+    generated = generate_appmodel_from_shacl(shapes_ttl)
+
+    # A field that is also a button (disjointness axiom).
+    graph = Graph()
+    graph.parse(data=generated.rdf, format="turtle")
+    field = next(graph.subjects(RDF.type, OBOP.Field))
+    graph.add((field, RDF.type, OBOP.Button))
+    consistent, detail = check_trace_consistency(graph.serialize(format="turtle"), [])
+    assert not consistent, f"Field+Button typing should be inconsistent: {detail}"
+
+    # A button placed in two distinct layouts (functionality + AllDifferent).
+    graph = Graph()
+    graph.parse(data=generated.rdf, format="turtle")
+    button = next(graph.subjects(RDF.type, OBOP.Button))
+    second_layout = next(
+        layout
+        for layout in graph.subjects(RDF.type, OBOP.VerticalLayout)
+        if (button, OBOP.belongsToVisual, layout) not in graph
+    )
+    graph.add((button, OBOP.belongsToVisual, second_layout))
+    consistent, detail = check_trace_consistency(graph.serialize(format="turtle"), [])
+    assert not consistent, (
+        f"two layouts for one button should be inconsistent: {detail}"
+    )

@@ -25,7 +25,7 @@
 
         Note: The base URI of OBOP is http://purl.org/obop/. Please make sure you are only using element identifiers in this namespace, e.g. http://purl.org/obop/Block .</rdfs:comment>
         <rdfs:label xml:lang="en">Ontology for Ontology-based Ontology Population</rdfs:label>
-        <owl:versionInfo xml:lang="en">V 0.1, Release 2021-01-01</owl:versionInfo>
+        <owl:versionInfo xml:lang="en">V 0.2, Release 2026-11-12. Adds design-checking TBox axioms (visual-element disjointness, tightened domains/ranges, functional properties, hasMainLayout) so that mis-assembled interface models become reasoner-detectable; see docs/agentic-model-generator.md, Part A.</owl:versionInfo>
         <foaf:homepage rdf:resource="http://purl.org/net/obop/"/>
     </owl:Ontology>
     
@@ -156,7 +156,10 @@
     <!-- http://purl.org/net/obop/activatesAction -->
 
     <owl:ObjectProperty rdf:about="http://purl.org/net/obop/activatesAction">
-        <rdfs:domain rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
+        <!-- Deliberately VisualElement, not Button: other interactive
+             elements (fields, list fields, ...) may activate actions in
+             future form behaviours. -->
+        <rdfs:domain rdf:resource="http://purl.org/net/obop/VisualElement"/>
         <rdfs:range rdf:resource="http://purl.org/net/obop/Action"/>
         <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
         <rdfs:label xml:lang="en">activatesAction</rdfs:label>
@@ -176,8 +179,10 @@
     <!-- http://purl.org/net/obop/belongsTo -->
 
     <owl:ObjectProperty rdf:about="http://purl.org/net/obop/belongsTo">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
         <rdfs:domain rdf:resource="http://purl.org/net/obop/VisualElement"/>
+        <rdfs:range rdf:resource="http://purl.org/net/obop/Block"/>
         <rdfs:comment xml:lang="en-gb">The belongsTo property relates visual element or other elements to different
         entities, e.g., to blocks that represent HTML forms. </rdfs:comment>
         <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
@@ -202,9 +207,11 @@
     <!-- http://purl.org/net/obop/belongsToVisual -->
 
     <owl:ObjectProperty rdf:about="http://purl.org/net/obop/belongsToVisual">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:subPropertyOf rdf:resource="http://www.w3.org/2002/07/owl#topObjectProperty"/>
         <rdfs:domain rdf:resource="http://purl.org/net/obop/VisualElement"/>
-        <rdfs:comment xml:lang="en-gb">The belongsTo property relates a visual element to an interface container it belongs to.</rdfs:comment>
+        <rdfs:range rdf:resource="http://purl.org/net/obop/Layout"/>
+        <rdfs:comment xml:lang="en-gb">The belongsTo property relates a visual element to an interface container it belongs to. For now those are only Layouts.</rdfs:comment>
         <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
         <rdfs:label xml:lang="en">belongsToVisual</rdfs:label>
     </owl:ObjectProperty>
@@ -214,6 +221,7 @@
     <!-- http://purl.org/net/obop/connectionHasSource -->
 
     <owl:ObjectProperty rdf:about="http://purl.org/net/obop/connectionHasSource">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://purl.org/net/obop/Connection"/>
         <rdfs:range rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
         <rdfs:comment xml:lang="en">This property relates a Connection element to an individual representing the source of an ObjectProperty. That would be the subject of the ObjectProperty created during runtime.</rdfs:comment>
@@ -226,6 +234,7 @@
     <!-- http://purl.org/net/obop/connectionHasTarget -->
 
     <owl:ObjectProperty rdf:about="http://purl.org/net/obop/connectionHasTarget">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:domain rdf:resource="http://purl.org/net/obop/Connection"/>
         <rdfs:range rdf:resource="http://www.w3.org/2002/07/owl#Thing"/>
         <rdfs:comment xml:lang="en">The connectionHasTarget property relates a Connection element to an individual which is an object of an ObjectProperty.</rdfs:comment>
@@ -238,6 +247,7 @@
     <!-- http://purl.org/net/obop/containsDatatype -->
 
     <owl:ObjectProperty rdf:about="http://purl.org/net/obop/containsDatatype">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
         <rdfs:comment xml:lang="en-gb">The containsDatatype relates a field to a DataProperty which should be inserted into the field. In this way, the domain ontology is related to the graphical user interface</rdfs:comment>
         <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
         <rdfs:label xml:lang="en">contains datatype</rdfs:label>
@@ -542,7 +552,17 @@
     <!-- http://purl.org/net/obop/hasPositionNumber -->
 
     <owl:DatatypeProperty rdf:about="http://purl.org/net/obop/hasPositionNumber">
-        <rdfs:domain rdf:resource="http://purl.org/net/obop/Field"/>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <!-- Positions sit on every placeable element: fields, buttons,
+             labels, layouts (VisualElement) and blocks (FunctionalContainer). -->
+        <rdfs:domain>
+            <owl:Class>
+                <owl:unionOf rdf:parseType="Collection">
+                    <rdf:Description rdf:about="http://purl.org/net/obop/VisualElement"/>
+                    <rdf:Description rdf:about="http://purl.org/net/obop/FunctionalContainer"/>
+                </owl:unionOf>
+            </owl:Class>
+        </rdfs:domain>
         <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#nonNegativeInteger"/>
         <rdfs:comment xml:lang="en">This property specifies the position of an element on a HTML form. 
 This is an integer number that represents the ordinary position among all other elements in the corresponding form looking from the upper left corner.</rdfs:comment>
@@ -683,6 +703,7 @@ This can be used to track the version of the interface used to populate the know
 
     <owl:Class rdf:about="http://purl.org/net/obop/Block">
         <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/FunctionalContainer"/>
+        <owl:disjointWith rdf:resource="http://purl.org/net/obop/VisualElement"/>
         <rdfs:label rdf:resource="http://purl.org/net/obop/v01"/>
         <rdfs:label xml:lang="en">Block</rdfs:label>
     </owl:Class>
@@ -710,6 +731,12 @@ This can be used to track the version of the interface used to populate the know
 
     <owl:Class rdf:about="http://purl.org/net/obop/Button">
         <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/VisualElement"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://purl.org/net/obop/activatesAction"/>
+                <owl:someValuesFrom rdf:resource="http://purl.org/net/obop/Action"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
         <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
         <rdfs:label xml:lang="en">Button</rdfs:label>
     </owl:Class>
@@ -756,6 +783,13 @@ This can be used to track the version of the interface used to populate the know
     <!-- http://purl.org/net/obop/Connection -->
 
     <owl:Class rdf:about="http://purl.org/net/obop/Connection">
+        <owl:disjointWith rdf:resource="http://purl.org/net/obop/Connector"/>
+        <rdfs:subClassOf>
+            <owl:Restriction>
+                <owl:onProperty rdf:resource="http://purl.org/net/obop/hasConnector"/>
+                <owl:someValuesFrom rdf:resource="http://purl.org/net/obop/Connector"/>
+            </owl:Restriction>
+        </rdfs:subClassOf>
         <rdfs:subClassOf>
             <owl:Restriction>
                 <owl:onProperty rdf:resource="http://purl.org/net/obop/connectionHasSource"/>
@@ -833,6 +867,7 @@ This can be used to track the version of the interface used to populate the know
 
     <owl:Class rdf:about="http://purl.org/net/obop/HorizontalLayout">
         <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/Layout"/>
+        <owl:disjointWith rdf:resource="http://purl.org/net/obop/VerticalLayout"/>
         <rdfs:label rdf:resource="http://purl.org/net/obop/v01"/>
         <rdfs:label xml:lang="en">HorizontalLayout</rdfs:label>
     </owl:Class>
@@ -888,6 +923,7 @@ This can be used to track the version of the interface used to populate the know
 
     <owl:Class rdf:about="http://purl.org/net/obop/Loop">
         <rdfs:subClassOf rdf:resource="http://purl.org/net/obop/FunctionalContainer"/>
+        <owl:disjointWith rdf:resource="http://purl.org/net/obop/Branching"/>
         <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
         <rdfs:label xml:lang="en">Loop</rdfs:label>
     </owl:Class>
@@ -1048,18 +1084,47 @@ This can be used to track the version of the interface used to populate the know
     <!-- http://purl.org/net/obop/VisualElement -->
 
     <owl:Class rdf:about="http://purl.org/net/obop/VisualElement">
-        <owl:equivalentClass>
-            <owl:Class>
-                <owl:unionOf rdf:parseType="Collection">
-                    <rdf:Description rdf:about="http://purl.org/net/obop/Field"/>
-                    <rdf:Description rdf:about="http://purl.org/net/obop/FunctionalContainer"/>
-                    <rdf:Description rdf:about="http://purl.org/net/obop/Loop"/>
-                </owl:unionOf>
-            </owl:Class>
-        </owl:equivalentClass>
+        <!-- V 0.2: the former equivalentClass unionOf(Field,
+             FunctionalContainer, Loop) was removed - it made every Block a
+             VisualElement and forced Buttons/Labels/Layouts into the union,
+             which contradicts the V 0.2 disjointness axioms. VisualElement
+             is a plain superclass of Field, Button, Label and Layout. -->
         <rdfs:isDefinedBy rdf:resource="http://purl.org/net/obop/v01"/>
         <rdfs:label xml:lang="en">VisualElement</rdfs:label>
     </owl:Class>
+
+
+
+    <!-- http://purl.org/net/obop/hasMainLayout -->
+
+    <owl:ObjectProperty rdf:about="http://purl.org/net/obop/hasMainLayout">
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#FunctionalProperty"/>
+        <rdfs:subPropertyOf>
+            <owl:ObjectProperty>
+                <owl:inverseOf rdf:resource="http://purl.org/net/obop/belongsTo"/>
+            </owl:ObjectProperty>
+        </rdfs:subPropertyOf>
+        <rdfs:domain rdf:resource="http://purl.org/net/obop/Block"/>
+        <rdfs:range rdf:resource="http://purl.org/net/obop/Layout"/>
+        <rdfs:comment xml:lang="en">Relates a block to its single root layout (the layout that holds the block's elements directly; nested layouts attach via belongsToVisual instead). Implies the inverse belongsTo triple.</rdfs:comment>
+        <rdfs:label xml:lang="en">hasMainLayout</rdfs:label>
+    </owl:ObjectProperty>
+
+
+
+    <!-- The kinds of visual elements are pairwise disjoint: one node cannot
+         be both a field and a button, a label and a layout, etc. This is
+         what lets a reasoner reject a mis-assembled interface model. -->
+
+    <rdf:Description>
+        <rdf:type rdf:resource="http://www.w3.org/2002/07/owl#AllDisjointClasses"/>
+        <owl:members rdf:parseType="Collection">
+            <rdf:Description rdf:about="http://purl.org/net/obop/Button"/>
+            <rdf:Description rdf:about="http://purl.org/net/obop/Field"/>
+            <rdf:Description rdf:about="http://purl.org/net/obop/Label"/>
+            <rdf:Description rdf:about="http://purl.org/net/obop/Layout"/>
+        </owl:members>
+    </rdf:Description>
     
 
 

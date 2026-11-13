@@ -84,8 +84,9 @@ obop:belongsTo        rdfs:domain [ owl:unionOf ( obop:VisualElement obop:Action
                       rdfs:range  obop:Block .
 obop:belongsToVisual  rdfs:domain obop:VisualElement ;
                       rdfs:range  obop:Layout .
-obop:activatesAction  rdfs:domain obop:Button ;
-                      rdfs:range  obop:Action .
+obop:activatesAction  rdfs:domain obop:VisualElement ;  # not Button: other
+                      rdfs:range  obop:Action .         # elements may activate
+                                                        # actions in the future
 obop:connectionHasSource rdfs:domain obop:Connection .
 obop:connectionHasTarget rdfs:domain obop:Connection .
 obop:hasConnector     rdfs:domain obop:Connection ;
