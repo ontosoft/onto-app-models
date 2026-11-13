@@ -131,14 +131,20 @@ relations) and you answer with exactly ONE operation as JSON:
 
 _DESIGN_RULES = """You are improving a DRAFT: the model below was generated deterministically
 from the SHACL shapes, it is already correct but plain. Rules:
-- Make a SMALL number of targeted edits - improve the design, do not
-  rebuild it.
+- Make a SMALL number of targeted edits - at most about 6, then send
+  "done". Improve the design, do not rebuild it.
 - Group fields that belong together semantically into one row (for
   example price + description, postal code + city, first + last name).
   Never group more than three fields into one row.
 - Put the most identifying field of a form (a name or title) first.
+- The forms already come in a sensible order; move a form only if that
+  order is clearly wrong. reorder_field and move_entity ALWAYS need the
+  integer "position".
 - Keep every field and every form. Do not invent relations that are not
   backed by the shapes.
+- If an operation is rejected, never repeat it unchanged: fix exactly
+  what the rejection names, or do something else. After two rejections
+  of the same operation, send "done".
 - When you are satisfied, send "done". The design is then verified. If
   verification rejects it, the model view shows REPAIR FEEDBACK naming
   what is wrong - fix exactly that, then send "done" again."""
