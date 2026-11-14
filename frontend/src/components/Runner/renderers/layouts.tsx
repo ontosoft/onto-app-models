@@ -43,7 +43,7 @@ export const verticalLayoutTester: RankedTester = rankWith(
 const HorizontalLayoutBase = (props: LayoutProps) => {
   if (props.visible === false) return null
   return (
-    <div className="flex flex-row flex-wrap items-end gap-4">
+    <div className="flex flex-row flex-wrap items-start gap-4">
       {renderChildren(props)}
     </div>
   )

@@ -53,6 +53,9 @@ export function AppRunner({ appModelId, appModelTitle }: AppRunnerProps) {
   const [busy, setBusy] = useState(false)
   // Bumped on every page change so JsonForms re-initialises with fresh data.
   const [pageKey, setPageKey] = useState(0)
+  // Validation errors stay hidden until the first action attempt on a page,
+  // so a pristine form does not open covered in "required" messages.
+  const [showErrors, setShowErrors] = useState(false)
   // Latest non-empty output graph. The engine sends the cumulative graph on
   // every response, but if one ever arrives empty we keep showing the last one.
   const [graph, setGraph] = useState("")
@@ -67,6 +70,7 @@ export function AppRunner({ appModelId, appModelTitle }: AppRunnerProps) {
     const content = next.message_content as Partial<FormContent>
     setFormData((content?.data as Record<string, unknown>) ?? {})
     setPageKey((k) => k + 1)
+    setShowErrors(false)
     if (next.output_knowledge_graph?.trim())
       setGraph(next.output_knowledge_graph)
   }, [])
@@ -102,6 +106,7 @@ export function AppRunner({ appModelId, appModelTitle }: AppRunnerProps) {
 
   const triggerAction = useCallback(
     (action: UiAction) => {
+      setShowErrors(true)
       setBusy(true)
       ;(async () => {
         try {
@@ -175,6 +180,7 @@ export function AppRunner({ appModelId, appModelTitle }: AppRunnerProps) {
             pageKey={pageKey}
             data={formData}
             onDataChange={setFormData}
+            showErrors={showErrors}
           />
           <GraphPanel turtle={graph} />
         </RunnerActionContext.Provider>
@@ -188,11 +194,13 @@ function RenderPage({
   pageKey,
   data,
   onDataChange,
+  showErrors,
 }: {
   page: AppExchangeGetOutput
   pageKey: number
   data: Record<string, unknown>
   onDataChange: (d: Record<string, unknown>) => void
+  showErrors: boolean
 }) {
   if (page.message_type === "layout") {
     const content = page.message_content as unknown as FormContent
@@ -206,6 +214,7 @@ function RenderPage({
           data={data}
           renderers={shadcnRenderers}
           cells={[]}
+          validationMode={showErrors ? "ValidateAndShow" : "ValidateAndHide"}
           onChange={({ data: d }) => onDataChange(d as Record<string, unknown>)}
         />
       </div>
