@@ -40,6 +40,9 @@ services:
     # No published port: only the API container talks to Ollama.
     volumes:
       - ../model_files:/model_files
+      # Ollama's own model store: pulled/created models survive container
+      # re-creation on deploys instead of living in the writable layer.
+      - ollama_data:/root/.ollama
     depends_on:
       model-downloader:
         condition: service_completed_successfully
@@ -232,3 +235,4 @@ volumes:
   redis_data:
   caddy-data:
   caddy-config:
+  ollama_data:
