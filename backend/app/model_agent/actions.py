@@ -47,7 +47,8 @@ EDIT_SCHEMA: dict[str, Any] = {
         },
         "position": {
             "type": "integer",
-            "description": "reorder_field/move_entity: the target position, 0-based.",
+            "description": "reorder_field/move_entity: the target position, "
+            "0-based. Always present; give 0 for actions without a position.",
         },
         "fields": {
             "type": "array",
@@ -91,7 +92,11 @@ EDIT_SCHEMA: dict[str, Any] = {
     # "reasoning" is required on purpose: forcing the model to verbalise a
     # justification before the operation improves small-model reliability
     # and gives the transcript an explanation for every step.
-    "required": ["action", "reasoning"],
+    # "position" is required globally because this flat schema cannot make
+    # it conditionally required per action; without it, models emit
+    # move_entity with no position and loop on the rejection until the
+    # repeat guard aborts. Actions that take no position ignore the value.
+    "required": ["action", "reasoning", "position"],
 }
 
 
