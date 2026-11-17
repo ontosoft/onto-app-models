@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from typing import Any
 
 from app.model_generator.templates import DEFAULT_BASE
 
@@ -25,8 +26,8 @@ def _live(decide: EditDecider) -> EditDecider:
     LLM step, and watching the agent think is the whole point of a manual
     experiment run."""
 
-    def wrapped(system_prompt: str, user_prompt: str):
-        action, ms = decide(system_prompt, user_prompt)
+    def wrapped(system_prompt: str, user_prompt: str, schema: dict[str, Any]):
+        action, ms = decide(system_prompt, user_prompt, schema)
         print(f"  [{ms:>6} ms] {action.describe()}", flush=True)
         if action.reasoning:
             print(f"            ({action.reasoning})", flush=True)
@@ -61,6 +62,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-steps", type=int, default=20)
     parser.add_argument("--max-repair-rounds", type=int, default=5)
     parser.add_argument(
+        "--schema",
+        choices=("dynamic", "static"),
+        default="dynamic",
+        help="Action schema per step: 'dynamic' = enums of the names that "
+        "currently exist in the model, 'static' = the fixed EDIT_SCHEMA "
+        "(ablation baseline)",
+    )
+    parser.add_argument(
         "-o", "--output", help="Write the confirmed model's Turtle here"
     )
     parser.add_argument("--report", help="Write the full run report (JSON) here")
@@ -78,6 +87,7 @@ def main(argv: list[str] | None = None) -> int:
         base=args.base,
         max_steps=args.max_steps,
         max_repair_rounds=args.max_repair_rounds,
+        dynamic_schema=(args.schema == "dynamic"),
     )
 
     print(
@@ -86,8 +96,11 @@ def main(argv: list[str] | None = None) -> int:
         f"{result.repair_rounds} repair round(s); {result.transcript.reason}"
     )
     if args.report:
+        # The run's condition belongs in the archived report: every file in
+        # evaluation/runs/ must say by itself how it was produced.
+        data = result.to_dict() | {"schema": args.schema, "model": args.model}
         with open(args.report, "w", encoding="utf-8") as fh:
-            json.dump(result.to_dict(), fh, indent=2)
+            json.dump(data, fh, indent=2)
         print(f"Wrote {args.report}", file=sys.stderr)
     if result.model is not None:
         if args.output:

@@ -29,8 +29,17 @@ class ScriptedDecider:
     def __init__(self, actions: list[dict[str, Any]]) -> None:
         self._actions = actions
         self._index = 0
+        #: The schema handed in per step - lets tests pin the loop's
+        #: dynamic/static schema contract.
+        self.schemas: list[dict[str, Any] | None] = []
 
-    def __call__(self, system_prompt: str, user_prompt: str) -> tuple[EditAction, int]:
+    def __call__(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        schema: dict[str, Any] | None = None,
+    ) -> tuple[EditAction, int]:
+        self.schemas.append(schema)
         data = self._actions[min(self._index, len(self._actions) - 1)]
         self._index += 1
         return EditAction.from_dict(data), 0
@@ -162,3 +171,43 @@ def test_edit_action_schema_and_describe() -> None:
         "inspect",
         "done",
     }
+
+
+def test_dynamic_schema_tracks_the_session_state() -> None:
+    """The per-step schema enumerates exactly the names that currently
+    exist, follows mutations, and leaves the static EDIT_SCHEMA untouched;
+    the static ablation condition hands the constant to the decider."""
+    from app.model_agent.environment import EditEnv
+    from app.model_generator.editing import EditSession
+
+    shapes = _restaurant_shapes()
+    session = EditSession.from_shacl(shapes)
+    env = EditEnv(session, shapes)
+
+    schema = env.edit_schema()
+    props = schema["properties"]
+    names = [ent.iri_token for ent in session.entities]
+    labels = [prop.label for ent in session.entities for prop in ent.properties]
+    assert props["entity"]["enum"] == names
+    assert props["source"]["enum"] == names
+    assert props["target"]["enum"] == names
+    assert props["field"]["enum"] == labels
+    assert props["fields"]["items"]["enum"] == labels
+    assert "Price" in labels
+    assert props["position"]["minimum"] == 0
+    assert props["position"]["maximum"] >= 1
+    # The static base schema must stay enum-free (the ablation baseline).
+    assert "enum" not in EDIT_SCHEMA["properties"]["field"]
+
+    # A mutation is reflected in the next build.
+    session.move_entity(names[-1], 0)
+    assert env.edit_schema()["properties"]["entity"]["enum"][0] == names[-1]
+
+    # The loop hands the chosen condition to the decider.
+    dynamic = ScriptedDecider([{"action": "done", "rationale": "ok"}])
+    agentic_generate(shapes, dynamic, checkers=(_stub_green,))
+    assert "enum" in dynamic.schemas[0]["properties"]["entity"]  # type: ignore[index]
+
+    static = ScriptedDecider([{"action": "done", "rationale": "ok"}])
+    agentic_generate(shapes, static, checkers=(_stub_green,), dynamic_schema=False)
+    assert static.schemas[0] is EDIT_SCHEMA

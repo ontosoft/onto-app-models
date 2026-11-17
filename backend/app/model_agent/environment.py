@@ -16,6 +16,7 @@ observation (repair feedback), until the repair budget is exhausted.
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import Any
 
 from app.model_generator.builder import GeneratedModel
 from app.model_generator.editing import EditError, EditSession
@@ -23,7 +24,7 @@ from app.model_tester import run_model_test
 from app.model_tester.reasoning import check_trace_consistency
 from app.model_tester.violations import DeterministicDecider
 
-from .actions import EDIT_SCHEMA, EditAction
+from .actions import EDIT_SCHEMA, EditAction, build_edit_schema
 
 #: A checker: (fam_ttl, shapes_ttl) -> (ok, detail). The detail of a red
 #: checker is fed back to the agent verbatim, so it must be specific enough
@@ -122,6 +123,25 @@ class EditEnv:
     def result(self) -> GeneratedModel | None:
         """The confirmed model, or None (not finished / budget exhausted)."""
         return self._result
+
+    def edit_schema(self) -> dict[str, Any]:
+        """The action schema specialised to the session's CURRENT state.
+
+        The environment is the one place that knows what is referencable
+        right now, so it also says what the decoding grammar may emit.
+        Rebuilt per step: edits change the valid vocabulary.
+        """
+        entities = self.session.entities
+        labels = [prop.label for ent in entities for prop in ent.properties]
+        names = [ent.iri_token for ent in entities]
+        max_position = (
+            max(
+                len(entities),
+                max((len(ent.properties) for ent in entities), default=0),
+            )
+            - 1
+        )
+        return build_edit_schema(labels, names, max_position)
 
     def observe(self) -> str:
         """The agent's view: the IR summary, plus pending repair feedback.

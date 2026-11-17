@@ -30,10 +30,13 @@ from .environment import Checker, EditEnv
 
 logger = logging.getLogger("ontoui_app")
 
-#: A decision function: decide(system_prompt, step_prompt) -> (action, llm_ms).
-#: Same contract as the tester's ``Decider``, with EditAction as the payload;
-#: scripted deciders (tests) return llm_ms=0.
-EditDecider = Callable[[str, str], tuple[EditAction, int]]
+#: A decision function:
+#: decide(system_prompt, step_prompt, schema) -> (action, llm_ms).
+#: Same contract as the tester's ``Decider``, with EditAction as the payload
+#: plus the action schema for THIS step (static, or specialised to the
+#: current model state); scripted deciders (tests) ignore it and return
+#: llm_ms=0.
+EditDecider = Callable[[str, str, dict[str, Any]], tuple[EditAction, int]]
 
 
 def _user_prompt(history: list[str], observation: str) -> str:
@@ -57,8 +60,14 @@ def run_edit_loop(
     decide: EditDecider,
     system_prompt: str,
     max_steps: int = 20,
+    dynamic_schema: bool = True,
 ) -> Transcript:
     """Run the loop until the environment finishes or a guard trips.
+
+    ``dynamic_schema`` picks the action schema handed to the decider each
+    step: the environment's state-specialised one (enums of the names that
+    exist right now), or the static ``EDIT_SCHEMA`` as the ablation
+    baseline - everything else is identical between the two conditions.
 
     Termination is one of:
 
@@ -77,7 +86,10 @@ def run_edit_loop(
 
     for index in range(max_steps):
         observation = env.observe()
-        action, llm_ms = decide(system_prompt, _user_prompt(history, observation))
+        schema = env.edit_schema() if dynamic_schema else EDIT_SCHEMA
+        action, llm_ms = decide(
+            system_prompt, _user_prompt(history, observation), schema
+        )
         logger.debug("design agent step %d: %s", index, action.describe())
 
         outcome = env.apply(action)
@@ -211,6 +223,7 @@ def agentic_generate(
     max_steps: int = 20,
     max_repair_rounds: int = 5,
     checkers: tuple[Checker, ...] | None = None,
+    dynamic_schema: bool = True,
 ) -> AgenticResult:
     """Generate a model agentically: deterministic draft + LLM edits + checkers.
 
@@ -229,7 +242,13 @@ def agentic_generate(
         max_repair_rounds=max_repair_rounds,
     )
     system_prompt = build_design_prompt(shapes_ttl, instructions)
-    transcript = run_edit_loop(env, decide, system_prompt, max_steps=max_steps)
+    transcript = run_edit_loop(
+        env,
+        decide,
+        system_prompt,
+        max_steps=max_steps,
+        dynamic_schema=dynamic_schema,
+    )
     return AgenticResult(
         confirmed=env.confirmed,
         model=env.result,
@@ -266,7 +285,12 @@ class OllamaEditDecider:
             host=host or os.environ.get("OLLAMA_HOST", "http://localhost:11434")
         )
 
-    def __call__(self, system_prompt: str, user_prompt: str) -> tuple[EditAction, int]:
+    def __call__(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        schema: dict[str, Any] | None = None,
+    ) -> tuple[EditAction, int]:
         started = time.monotonic()
         response = self._client.chat(
             model=self.model,
@@ -274,7 +298,7 @@ class OllamaEditDecider:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ],
-            format=EDIT_SCHEMA,
+            format=schema if schema is not None else EDIT_SCHEMA,
             options={"temperature": 0, "num_ctx": self.num_ctx},
         )
         raw = response.message.content or "{}"

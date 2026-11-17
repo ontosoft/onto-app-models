@@ -13,6 +13,7 @@ reliable when every key has its own type and description to condition on
 
 from __future__ import annotations
 
+import copy
 from dataclasses import dataclass
 from typing import Any
 
@@ -98,6 +99,37 @@ EDIT_SCHEMA: dict[str, Any] = {
     # repeat guard aborts. Actions that take no position ignore the value.
     "required": ["action", "reasoning", "position"],
 }
+
+
+def build_edit_schema(
+    field_labels: list[str],
+    entity_names: list[str],
+    max_position: int,
+) -> dict[str, Any]:
+    """EDIT_SCHEMA specialised to the CURRENT model state.
+
+    The reference parameters become ``enum``s of exactly the names that
+    exist right now, so constrained decoding cannot emit a dangling
+    reference - the grammar-level counterpart of the environment's
+    "no field named X" feedback. Callers rebuild it before every LLM
+    call, because edits change the valid vocabulary.
+
+    ``property_iri`` stays a free string on purpose: ``add_relation``
+    introduces NEW IRIs from the shapes vocabulary, which an enum of the
+    existing ones would forbid. The ``position`` bounds are advisory -
+    enums translate into the decoding grammar, numeric ranges may not -
+    and the operations clamp positions anyway.
+    """
+    schema = copy.deepcopy(EDIT_SCHEMA)
+    props = schema["properties"]
+    props["field"]["enum"] = list(field_labels)
+    props["fields"]["items"]["enum"] = list(field_labels)
+    props["entity"]["enum"] = list(entity_names)
+    props["source"]["enum"] = list(entity_names)
+    props["target"]["enum"] = list(entity_names)
+    props["position"]["minimum"] = 0
+    props["position"]["maximum"] = max(0, max_position)
+    return schema
 
 
 @dataclass
