@@ -27,7 +27,9 @@ variable "image" {
 variable "flavor" {
   description = "Nova flavor name for the VM."
   type        = string
-  default     = "gp1.large"
+  # 16 GiB / 8 vCPUs so a quantized 14B model fits into the Ollama
+  # container next to the app stack (gp1.large's 8 GiB could not).
+  default     = "m1.extra_large"
 }
 
 variable "network_name" {
