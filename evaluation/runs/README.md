@@ -32,6 +32,8 @@ Note the schema/prompt variant in the table below with every run.
 | 7 | 2026-11-17 | qwen2.5:7b-instruct | sharpened | position required | ✓ confirmed in 10 steps, 0 repair rounds |
 | 8 | 2026-11-17 | qwen2.5:14b-instruct | original | position required | ✓ confirmed in 12 steps, 0 repair rounds |
 | 9 | 2026-11-17 | qwen2.5:14b-instruct | sharpened | position required | ✓ confirmed in 12 steps, 0 repair rounds |
+| 10 | 2026-11-17 | qwen2.5:14b-instruct | sharpened | dynamic enums | ✓ confirmed in 12 steps, 0 repair rounds |
+| 11 | 2026-11-17 | qwen2.5:14b-instruct | sharpened | static (ablation) | ✓ confirmed in 12 steps, 0 repair rounds |
 
 Reports for runs 1–5 were written to a session scratchpad and lost; the
 step transcripts are preserved in the research notes. Key finding of the
@@ -42,6 +44,13 @@ JSON but not action-specific fields. Neither prompt sharpening nor model
 scale removes it; the larger model hits it more often because it attempts
 form reordering at all. Fixed by making `position` globally required in
 `backend/app/model_agent/actions.py` (runs ≥ 6 use the fixed schema).
+
+Runs 10/11 are the dynamic-schema ablation pair (c6d193a, `--schema`
+switch; reports ≥ 10 record their condition themselves): on the small
+restaurant shapes both conditions produced STEP-IDENTICAL action
+sequences and identical latency (~10.8 s/step) — a null result showing
+the enums are cost-neutral; their protective value must be measured on
+larger shape sets where dangling references actually occur.
 
 Runs 6–9 repeated the full matrix with the fixed schema (staging Ollama,
 8 vCPU; original-prompt cells from a worktree that reverts only loop.py
