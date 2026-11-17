@@ -1,0 +1,1578 @@
+@prefix : <http://example.org/generated/> .
+@prefix bbo: <https://www.irit.fr/recherches/MELODI/ontologies/BBO#> .
+@prefix obop: <http://purl.org/net/obop/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix shacl: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://example.org/generated/restaurant/DishShape> a shacl:NodeShape ;
+    shacl:order 2 ;
+    shacl:property [ shacl:datatype xsd:string ;
+            shacl:name "Description" ;
+            shacl:order 2 ;
+            shacl:path <http://example.org/generated/restaurant/description> ],
+        [ shacl:node <http://example.org/generated/restaurant/MenuShape> ;
+            shacl:order 3 ;
+            shacl:path <http://example.org/generated/restaurant/belongsToMenu> ],
+        [ shacl:class <http://example.org/generated/restaurant/Ingredient> ;
+            shacl:order 4 ;
+            shacl:path <http://example.org/generated/restaurant/hasIngredient> ],
+        [ shacl:datatype xsd:string ;
+            shacl:name "Dish name" ;
+            shacl:order 0 ;
+            shacl:path <http://example.org/generated/restaurant/dishName> ],
+        [ shacl:datatype xsd:decimal ;
+            shacl:name "Price" ;
+            shacl:order 1 ;
+            shacl:path <http://example.org/generated/restaurant/price> ] ;
+    shacl:targetClass <http://example.org/generated/restaurant/Dish> .
+
+<http://example.org/generated/restaurant/IngredientShape> a shacl:NodeShape ;
+    shacl:order 3 ;
+    shacl:property [ shacl:datatype xsd:string ;
+            shacl:name "Ingredient name" ;
+            shacl:order 0 ;
+            shacl:path <http://example.org/generated/restaurant/ingredientName> ] ;
+    shacl:targetClass <http://example.org/generated/restaurant/Ingredient> .
+
+<http://example.org/generated/restaurant/RestaurantShape> a shacl:NodeShape ;
+    shacl:order 0 ;
+    shacl:property [ shacl:datatype xsd:string ;
+            shacl:name "Restaurant name" ;
+            shacl:order 0 ;
+            shacl:path <http://purl.org/goodrelations/v1#legalName> ],
+        [ shacl:datatype xsd:string ;
+            shacl:name "Address" ;
+            shacl:order 1 ;
+            shacl:path <http://schema.org/streetAddress> ],
+        [ shacl:datatype xsd:string ;
+            shacl:name "Postal code" ;
+            shacl:order 2 ;
+            shacl:path <http://schema.org/postalCode> ],
+        [ shacl:node <http://example.org/generated/restaurant/MenuShape> ;
+            shacl:order 3 ;
+            shacl:path <http://schema.org/hasMenu> ],
+        [ shacl:node <http://example.org/generated/restaurant/MenuShape> ;
+            shacl:order 4 ;
+            shacl:path <http://purl.org/goodrelations/v1#offers> ] ;
+    shacl:targetClass <http://purl.org/goodrelations/v1#BusinessEntity> .
+
+:add_another_btn_ingredient a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :add_another_action_ingredient ;
+    obop:belongsTo :ingredient_notification_block ;
+    obop:belongsToVisual :ingredient_notification_layout ;
+    obop:hasLabel "Add another Ingredient" ;
+    obop:hasPositionNumber "2"^^xsd:int .
+
+:add_another_btn_menu a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :add_another_action_menu ;
+    obop:belongsTo :menu_notification_block ;
+    obop:belongsToVisual :menu_notification_layout ;
+    obop:hasLabel "Add another Menu" ;
+    obop:hasPositionNumber "2"^^xsd:int .
+
+:app_model a obop:Model,
+        owl:NamedIndividual .
+
+:business_entity_notification_label a obop:Label,
+        owl:NamedIndividual ;
+    obop:belongsTo :business_entity_notification_block ;
+    obop:belongsToVisual :business_entity_notification_layout ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:hasText "The BusinessEntity data have been stored in the database."^^rdf:PlainLiteral .
+
+:cancel_btn_business_entity a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :cancel_action_business_entity ;
+    obop:belongsTo :business_entity_block ;
+    obop:belongsToVisual :business_entity_hlayout ;
+    obop:hasLabel "Cancel" ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+:cancel_btn_dish a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :cancel_action_dish ;
+    obop:belongsTo :dish_block ;
+    obop:belongsToVisual :dish_hlayout ;
+    obop:hasLabel "Cancel" ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+:cancel_btn_ingredient a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :cancel_action_ingredient ;
+    obop:belongsTo :ingredient_block ;
+    obop:belongsToVisual :ingredient_hlayout ;
+    obop:hasLabel "Cancel" ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+:cancel_btn_menu a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :cancel_action_menu ;
+    obop:belongsTo :menu_block ;
+    obop:belongsToVisual :menu_hlayout ;
+    obop:hasLabel "Cancel" ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+:continue_btn_business_entity a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :continue_action ;
+    obop:belongsTo :business_entity_notification_block ;
+    obop:belongsToVisual :business_entity_notification_layout ;
+    obop:hasLabel "Continue" ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+:continue_btn_dish a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :continue_action ;
+    obop:belongsTo :dish_notification_block ;
+    obop:belongsToVisual :dish_notification_layout ;
+    obop:hasLabel "Continue" ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+:continue_btn_ingredient a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :continue_action ;
+    obop:belongsTo :ingredient_notification_block ;
+    obop:belongsToVisual :ingredient_notification_layout ;
+    obop:hasLabel "Continue" ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+:continue_btn_menu a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :continue_action ;
+    obop:belongsTo :menu_notification_block ;
+    obop:belongsToVisual :menu_notification_layout ;
+    obop:hasLabel "Continue" ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+:dish_notification_label a obop:Label,
+        owl:NamedIndividual ;
+    obop:belongsTo :dish_notification_block ;
+    obop:belongsToVisual :dish_notification_layout ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:hasText "The Dish data have been stored in the database."^^rdf:PlainLiteral .
+
+:flow_business_entity_1 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_business_entity ;
+    bbo:has_sourceRef :start_business_entity ;
+    bbo:has_targetRef :generate_form_business_entity .
+
+:flow_business_entity_2 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_business_entity ;
+    bbo:has_sourceRef :generate_form_business_entity ;
+    bbo:has_targetRef :user_enters_business_entity .
+
+:flow_business_entity_3 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_business_entity ;
+    bbo:has_sourceRef :user_enters_business_entity ;
+    bbo:has_targetRef :processing_business_entity .
+
+:flow_business_entity_4 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_business_entity ;
+    bbo:has_sourceRef :processing_business_entity ;
+    bbo:has_targetRef :gateway_business_entity .
+
+:flow_business_entity_5 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_business_entity ;
+    bbo:has_sourceRef :save_business_entity ;
+    bbo:has_targetRef :confirmation_business_entity .
+
+:flow_business_entity_6 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_business_entity ;
+    bbo:has_sourceRef :confirmation_business_entity ;
+    bbo:has_targetRef :user_gets_notification_business_entity .
+
+:flow_business_entity_7 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_business_entity ;
+    bbo:has_sourceRef :user_gets_notification_business_entity ;
+    bbo:has_targetRef :end_business_entity .
+
+:flow_business_entity_abort_end a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_business_entity ;
+    bbo:has_sourceRef :abort_business_entity ;
+    bbo:has_targetRef :cancel_end_business_entity .
+
+:flow_business_entity_cancel a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :cancel_cond_business_entity ;
+    bbo:has_container :insert_business_entity ;
+    bbo:has_sourceRef :gateway_business_entity ;
+    bbo:has_targetRef :abort_business_entity .
+
+:flow_business_entity_submit a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :submit_cond_business_entity ;
+    bbo:has_container :insert_business_entity ;
+    bbo:has_sourceRef :gateway_business_entity ;
+    bbo:has_targetRef :validate_form_business_entity .
+
+:flow_business_entity_val_fail a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :val_fail_cond_business_entity ;
+    bbo:has_container :insert_business_entity ;
+    bbo:has_sourceRef :validation_gateway_business_entity ;
+    bbo:has_targetRef :user_enters_business_entity .
+
+:flow_business_entity_val_ok a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :val_ok_cond_business_entity ;
+    bbo:has_container :insert_business_entity ;
+    bbo:has_sourceRef :validation_gateway_business_entity ;
+    bbo:has_targetRef :save_business_entity .
+
+:flow_business_entity_validate a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_business_entity ;
+    bbo:has_sourceRef :validate_form_business_entity ;
+    bbo:has_targetRef :validation_gateway_business_entity .
+
+:flow_dish_1 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_dish ;
+    bbo:has_sourceRef :start_dish ;
+    bbo:has_targetRef :generate_form_dish .
+
+:flow_dish_2 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_dish ;
+    bbo:has_sourceRef :generate_form_dish ;
+    bbo:has_targetRef :user_enters_dish .
+
+:flow_dish_3 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_dish ;
+    bbo:has_sourceRef :user_enters_dish ;
+    bbo:has_targetRef :processing_dish .
+
+:flow_dish_4 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_dish ;
+    bbo:has_sourceRef :processing_dish ;
+    bbo:has_targetRef :gateway_dish .
+
+:flow_dish_5 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_dish ;
+    bbo:has_sourceRef :make_connection_dish_menu ;
+    bbo:has_targetRef :confirmation_dish .
+
+:flow_dish_5_conn_0 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_dish ;
+    bbo:has_sourceRef :save_dish ;
+    bbo:has_targetRef :make_connection_dish_menu .
+
+:flow_dish_6 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_dish ;
+    bbo:has_sourceRef :confirmation_dish ;
+    bbo:has_targetRef :user_gets_notification_dish .
+
+:flow_dish_7 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_dish ;
+    bbo:has_sourceRef :user_gets_notification_dish ;
+    bbo:has_targetRef :end_dish .
+
+:flow_dish_abort_end a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_dish ;
+    bbo:has_sourceRef :abort_dish ;
+    bbo:has_targetRef :cancel_end_dish .
+
+:flow_dish_cancel a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :cancel_cond_dish ;
+    bbo:has_container :insert_dish ;
+    bbo:has_sourceRef :gateway_dish ;
+    bbo:has_targetRef :abort_dish .
+
+:flow_dish_submit a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :submit_cond_dish ;
+    bbo:has_container :insert_dish ;
+    bbo:has_sourceRef :gateway_dish ;
+    bbo:has_targetRef :validate_form_dish .
+
+:flow_dish_val_fail a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :val_fail_cond_dish ;
+    bbo:has_container :insert_dish ;
+    bbo:has_sourceRef :validation_gateway_dish ;
+    bbo:has_targetRef :user_enters_dish .
+
+:flow_dish_val_ok a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :val_ok_cond_dish ;
+    bbo:has_container :insert_dish ;
+    bbo:has_sourceRef :validation_gateway_dish ;
+    bbo:has_targetRef :save_dish .
+
+:flow_dish_validate a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_dish ;
+    bbo:has_sourceRef :validate_form_dish ;
+    bbo:has_targetRef :validation_gateway_dish .
+
+:flow_ingredient_1 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_ingredient ;
+    bbo:has_sourceRef :start_ingredient ;
+    bbo:has_targetRef :generate_form_ingredient .
+
+:flow_ingredient_2 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_ingredient ;
+    bbo:has_sourceRef :generate_form_ingredient ;
+    bbo:has_targetRef :user_enters_ingredient .
+
+:flow_ingredient_3 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_ingredient ;
+    bbo:has_sourceRef :user_enters_ingredient ;
+    bbo:has_targetRef :processing_ingredient .
+
+:flow_ingredient_4 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_ingredient ;
+    bbo:has_sourceRef :processing_ingredient ;
+    bbo:has_targetRef :gateway_ingredient .
+
+:flow_ingredient_5 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_ingredient ;
+    bbo:has_sourceRef :make_connection_dish_ingredient ;
+    bbo:has_targetRef :confirmation_ingredient .
+
+:flow_ingredient_5_conn_0 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_ingredient ;
+    bbo:has_sourceRef :save_ingredient ;
+    bbo:has_targetRef :make_connection_dish_ingredient .
+
+:flow_ingredient_6 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_ingredient ;
+    bbo:has_sourceRef :confirmation_ingredient ;
+    bbo:has_targetRef :user_gets_notification_ingredient .
+
+:flow_ingredient_7 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_ingredient ;
+    bbo:has_sourceRef :user_gets_notification_ingredient ;
+    bbo:has_targetRef :loop_gateway_ingredient .
+
+:flow_ingredient_abort_end a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_ingredient ;
+    bbo:has_sourceRef :abort_ingredient ;
+    bbo:has_targetRef :cancel_end_ingredient .
+
+:flow_ingredient_cancel a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :cancel_cond_ingredient ;
+    bbo:has_container :insert_ingredient ;
+    bbo:has_sourceRef :gateway_ingredient ;
+    bbo:has_targetRef :abort_ingredient .
+
+:flow_ingredient_loop_again a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :loop_again_cond_ingredient ;
+    bbo:has_container :insert_ingredient ;
+    bbo:has_sourceRef :loop_gateway_ingredient ;
+    bbo:has_targetRef :generate_form_ingredient .
+
+:flow_ingredient_loop_end a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :loop_continue_cond_ingredient ;
+    bbo:has_container :insert_ingredient ;
+    bbo:has_sourceRef :loop_gateway_ingredient ;
+    bbo:has_targetRef :end_ingredient .
+
+:flow_ingredient_submit a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :submit_cond_ingredient ;
+    bbo:has_container :insert_ingredient ;
+    bbo:has_sourceRef :gateway_ingredient ;
+    bbo:has_targetRef :validate_form_ingredient .
+
+:flow_ingredient_val_fail a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :val_fail_cond_ingredient ;
+    bbo:has_container :insert_ingredient ;
+    bbo:has_sourceRef :validation_gateway_ingredient ;
+    bbo:has_targetRef :user_enters_ingredient .
+
+:flow_ingredient_val_ok a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :val_ok_cond_ingredient ;
+    bbo:has_container :insert_ingredient ;
+    bbo:has_sourceRef :validation_gateway_ingredient ;
+    bbo:has_targetRef :save_ingredient .
+
+:flow_ingredient_validate a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_ingredient ;
+    bbo:has_sourceRef :validate_form_ingredient ;
+    bbo:has_targetRef :validation_gateway_ingredient .
+
+:flow_main_0 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :app_process ;
+    bbo:has_sourceRef :start ;
+    bbo:has_targetRef :insert_business_entity .
+
+:flow_main_1 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :app_process ;
+    bbo:has_sourceRef :insert_business_entity ;
+    bbo:has_targetRef :insert_menu .
+
+:flow_main_2 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :app_process ;
+    bbo:has_sourceRef :insert_menu ;
+    bbo:has_targetRef :insert_dish .
+
+:flow_main_3 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :app_process ;
+    bbo:has_sourceRef :insert_dish ;
+    bbo:has_targetRef :insert_ingredient .
+
+:flow_main_end a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :app_process ;
+    bbo:has_sourceRef :user_receives_validation ;
+    bbo:has_targetRef :end_event .
+
+:flow_main_final a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :app_process ;
+    bbo:has_sourceRef :insert_ingredient ;
+    bbo:has_targetRef :final_validation .
+
+:flow_main_urv a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :app_process ;
+    bbo:has_sourceRef :final_validation ;
+    bbo:has_targetRef :user_receives_validation .
+
+:flow_menu_1 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_menu ;
+    bbo:has_sourceRef :start_menu ;
+    bbo:has_targetRef :generate_form_menu .
+
+:flow_menu_2 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_menu ;
+    bbo:has_sourceRef :generate_form_menu ;
+    bbo:has_targetRef :user_enters_menu .
+
+:flow_menu_3 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_menu ;
+    bbo:has_sourceRef :user_enters_menu ;
+    bbo:has_targetRef :processing_menu .
+
+:flow_menu_4 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_menu ;
+    bbo:has_sourceRef :processing_menu ;
+    bbo:has_targetRef :gateway_menu .
+
+:flow_menu_5 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_menu ;
+    bbo:has_sourceRef :make_connection_business_entity_menu ;
+    bbo:has_targetRef :confirmation_menu .
+
+:flow_menu_5_conn_0 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_menu ;
+    bbo:has_sourceRef :save_menu ;
+    bbo:has_targetRef :make_connection_business_entity_menu .
+
+:flow_menu_6 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_menu ;
+    bbo:has_sourceRef :confirmation_menu ;
+    bbo:has_targetRef :user_gets_notification_menu .
+
+:flow_menu_7 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_menu ;
+    bbo:has_sourceRef :user_gets_notification_menu ;
+    bbo:has_targetRef :loop_gateway_menu .
+
+:flow_menu_abort_end a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_menu ;
+    bbo:has_sourceRef :abort_menu ;
+    bbo:has_targetRef :cancel_end_menu .
+
+:flow_menu_cancel a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :cancel_cond_menu ;
+    bbo:has_container :insert_menu ;
+    bbo:has_sourceRef :gateway_menu ;
+    bbo:has_targetRef :abort_menu .
+
+:flow_menu_loop_again a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :loop_again_cond_menu ;
+    bbo:has_container :insert_menu ;
+    bbo:has_sourceRef :loop_gateway_menu ;
+    bbo:has_targetRef :generate_form_menu .
+
+:flow_menu_loop_end a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :loop_continue_cond_menu ;
+    bbo:has_container :insert_menu ;
+    bbo:has_sourceRef :loop_gateway_menu ;
+    bbo:has_targetRef :end_menu .
+
+:flow_menu_submit a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :submit_cond_menu ;
+    bbo:has_container :insert_menu ;
+    bbo:has_sourceRef :gateway_menu ;
+    bbo:has_targetRef :validate_form_menu .
+
+:flow_menu_val_fail a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :val_fail_cond_menu ;
+    bbo:has_container :insert_menu ;
+    bbo:has_sourceRef :validation_gateway_menu ;
+    bbo:has_targetRef :user_enters_menu .
+
+:flow_menu_val_ok a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :val_ok_cond_menu ;
+    bbo:has_container :insert_menu ;
+    bbo:has_sourceRef :validation_gateway_menu ;
+    bbo:has_targetRef :save_menu .
+
+:flow_menu_validate a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_menu ;
+    bbo:has_sourceRef :validate_form_menu ;
+    bbo:has_targetRef :validation_gateway_menu .
+
+:ingredient_notification_label a obop:Label,
+        owl:NamedIndividual ;
+    obop:belongsTo :ingredient_notification_block ;
+    obop:belongsToVisual :ingredient_notification_layout ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:hasText "The Ingredient data have been stored in the database."^^rdf:PlainLiteral .
+
+:menu_notification_label a obop:Label,
+        owl:NamedIndividual ;
+    obop:belongsTo :menu_notification_block ;
+    obop:belongsToVisual :menu_notification_layout ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:hasText "The Menu data have been stored in the database."^^rdf:PlainLiteral .
+
+:picker_dish_dish_menu a obop:ListField,
+        owl:NamedIndividual ;
+    obop:belongsTo :dish_block ;
+    obop:belongsToVisual :dish_vlayout ;
+    obop:hasLabel "Menu" ;
+    obop:hasPositionNumber "3"^^xsd:int ;
+    obop:picksInstanceFor :dish_menu_connection .
+
+:picker_ingredient_dish_ingredient a obop:ListField,
+        owl:NamedIndividual ;
+    obop:belongsTo :ingredient_block ;
+    obop:belongsToVisual :ingredient_vlayout ;
+    obop:hasLabel "Dish" ;
+    obop:hasPositionNumber "1"^^xsd:int ;
+    obop:picksInstanceFor :dish_ingredient_connection .
+
+:picker_menu_business_entity_menu a obop:ListField,
+        owl:NamedIndividual ;
+    obop:belongsTo :menu_block ;
+    obop:belongsToVisual :menu_vlayout ;
+    obop:hasLabel "BusinessEntity" ;
+    obop:hasPositionNumber "2"^^xsd:int ;
+    obop:picksInstanceFor :business_entity_menu_connection .
+
+:submit_btn_business_entity a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :submit_action_business_entity ;
+    obop:belongsTo :business_entity_block ;
+    obop:belongsToVisual :business_entity_hlayout ;
+    obop:hasLabel "Submit" ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:submit_btn_dish a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :submit_action_dish ;
+    obop:belongsTo :dish_block ;
+    obop:belongsToVisual :dish_hlayout ;
+    obop:hasLabel "Submit" ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:submit_btn_ingredient a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :submit_action_ingredient ;
+    obop:belongsTo :ingredient_block ;
+    obop:belongsToVisual :ingredient_hlayout ;
+    obop:hasLabel "Submit" ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:submit_btn_menu a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :submit_action_menu ;
+    obop:belongsTo :menu_block ;
+    obop:belongsToVisual :menu_hlayout ;
+    obop:hasLabel "Submit" ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:cancel_cond_business_entity a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :cancel_action_business_entity .
+
+:cancel_cond_dish a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :cancel_action_dish .
+
+:cancel_cond_ingredient a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :cancel_action_ingredient .
+
+:cancel_cond_menu a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :cancel_action_menu .
+
+:cancel_end_business_entity a owl:NamedIndividual,
+        bbo:EndEvent ;
+    rdfs:comment "BusinessEntity data entry cancelled." ;
+    bbo:has_container :insert_business_entity .
+
+:cancel_end_dish a owl:NamedIndividual,
+        bbo:EndEvent ;
+    rdfs:comment "Dish data entry cancelled." ;
+    bbo:has_container :insert_dish .
+
+:cancel_end_ingredient a owl:NamedIndividual,
+        bbo:EndEvent ;
+    rdfs:comment "Ingredient data entry cancelled." ;
+    bbo:has_container :insert_ingredient .
+
+:cancel_end_menu a owl:NamedIndividual,
+        bbo:EndEvent ;
+    rdfs:comment "Menu data entry cancelled." ;
+    bbo:has_container :insert_menu .
+
+:confirm_action_business_entity a obop:GenerateJSONForm,
+        owl:NamedIndividual ;
+    obop:actionInBlock :business_entity_notification_block .
+
+:confirm_action_dish a obop:GenerateJSONForm,
+        owl:NamedIndividual ;
+    obop:actionInBlock :dish_notification_block .
+
+:confirm_action_ingredient a obop:GenerateJSONForm,
+        owl:NamedIndividual ;
+    obop:actionInBlock :ingredient_notification_block .
+
+:confirm_action_menu a obop:GenerateJSONForm,
+        owl:NamedIndividual ;
+    obop:actionInBlock :menu_notification_block .
+
+:connection_action_business_entity_menu a obop:MakeConnectionAction,
+        owl:NamedIndividual ;
+    obop:hasConnection :business_entity_menu_connection .
+
+:connection_action_dish_ingredient a obop:MakeConnectionAction,
+        owl:NamedIndividual ;
+    obop:hasConnection :dish_ingredient_connection .
+
+:connection_action_dish_menu a obop:MakeConnectionAction,
+        owl:NamedIndividual ;
+    obop:hasConnection :dish_menu_connection .
+
+:connector_business_entity_menu_has_menu a obop:Connector,
+        owl:NamedIndividual ;
+    shacl:path <http://schema.org/hasMenu> .
+
+:connector_business_entity_menu_offers a obop:Connector,
+        owl:NamedIndividual ;
+    shacl:path <http://purl.org/goodrelations/v1#offers> .
+
+:connector_dish_ingredient_has_ingredient a obop:Connector,
+        owl:NamedIndividual ;
+    shacl:path <http://example.org/generated/restaurant/hasIngredient> .
+
+:connector_dish_menu_belongs_to_menu a obop:Connector,
+        owl:NamedIndividual ;
+    shacl:path <http://example.org/generated/restaurant/belongsToMenu> .
+
+:end_business_entity a owl:NamedIndividual,
+        bbo:EndEvent ;
+    rdfs:comment "BusinessEntity data stored." ;
+    bbo:has_container :insert_business_entity .
+
+:end_dish a owl:NamedIndividual,
+        bbo:EndEvent ;
+    rdfs:comment "Dish data stored." ;
+    bbo:has_container :insert_dish .
+
+:end_event a owl:NamedIndividual,
+        bbo:EndEvent ;
+    rdfs:comment "The data insertion process is completed." ;
+    bbo:has_container :app_process .
+
+:end_ingredient a owl:NamedIndividual,
+        bbo:EndEvent ;
+    rdfs:comment "Ingredient data stored." ;
+    bbo:has_container :insert_ingredient .
+
+:end_menu a owl:NamedIndividual,
+        bbo:EndEvent ;
+    rdfs:comment "Menu data stored." ;
+    bbo:has_container :insert_menu .
+
+:field_business_entity_legal_name a obop:Field,
+        owl:NamedIndividual ;
+    obop:belongsTo :business_entity_block ;
+    obop:belongsToVisual :business_entity_vlayout ;
+    obop:containsDatatype <http://purl.org/goodrelations/v1#legalName> ;
+    obop:hasLabel "Restaurant name" ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:isRelatedToTargetOntologyInstance :business_entity_shape .
+
+:field_business_entity_postal_code a obop:Field,
+        owl:NamedIndividual ;
+    obop:belongsTo :business_entity_block ;
+    obop:belongsToVisual :business_entity_row_0 ;
+    obop:containsDatatype <http://schema.org/postalCode> ;
+    obop:hasLabel "Postal code" ;
+    obop:hasPositionNumber "1"^^xsd:int ;
+    obop:isRelatedToTargetOntologyInstance :business_entity_shape .
+
+:field_business_entity_street_address a obop:Field,
+        owl:NamedIndividual ;
+    obop:belongsTo :business_entity_block ;
+    obop:belongsToVisual :business_entity_row_0 ;
+    obop:containsDatatype <http://schema.org/streetAddress> ;
+    obop:hasLabel "Address" ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:isRelatedToTargetOntologyInstance :business_entity_shape .
+
+:field_dish_description a obop:Field,
+        owl:NamedIndividual ;
+    obop:belongsTo :dish_block ;
+    obop:belongsToVisual :dish_row_2 ;
+    obop:containsDatatype <http://example.org/generated/restaurant/description> ;
+    obop:hasLabel "Description" ;
+    obop:hasPositionNumber "2"^^xsd:int ;
+    obop:isRelatedToTargetOntologyInstance :dish_shape .
+
+:field_dish_dish_name a obop:Field,
+        owl:NamedIndividual ;
+    obop:belongsTo :dish_block ;
+    obop:belongsToVisual :dish_row_2 ;
+    obop:containsDatatype <http://example.org/generated/restaurant/dishName> ;
+    obop:hasLabel "Dish name" ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:isRelatedToTargetOntologyInstance :dish_shape .
+
+:field_dish_price a obop:Field,
+        owl:NamedIndividual ;
+    obop:belongsTo :dish_block ;
+    obop:belongsToVisual :dish_row_2 ;
+    obop:containsDatatype <http://example.org/generated/restaurant/price> ;
+    obop:hasLabel "Price" ;
+    obop:hasPositionNumber "1"^^xsd:int ;
+    obop:isRelatedToTargetOntologyInstance :dish_shape .
+
+:field_ingredient_ingredient_name a obop:Field,
+        owl:NamedIndividual ;
+    obop:belongsTo :ingredient_block ;
+    obop:belongsToVisual :ingredient_vlayout ;
+    obop:containsDatatype <http://example.org/generated/restaurant/ingredientName> ;
+    obop:hasLabel "Ingredient name" ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:isRelatedToTargetOntologyInstance :ingredient_shape .
+
+:field_menu_menu_name a obop:Field,
+        owl:NamedIndividual ;
+    obop:belongsTo :menu_block ;
+    obop:belongsToVisual :menu_row_3 ;
+    obop:containsDatatype <http://example.org/generated/restaurant/menuName> ;
+    obop:hasLabel "Menu name" ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:isRelatedToTargetOntologyInstance :menu_shape .
+
+:field_menu_menu_type a obop:Field,
+        owl:NamedIndividual ;
+    obop:belongsTo :menu_block ;
+    obop:belongsToVisual :menu_row_3 ;
+    obop:containsDatatype <http://example.org/generated/restaurant/menuType> ;
+    obop:hasLabel "Menu type" ;
+    obop:hasPositionNumber "1"^^xsd:int ;
+    obop:isRelatedToTargetOntologyInstance :menu_shape .
+
+:final_validation_action a obop:SHACLGraphValidation,
+        owl:NamedIndividual ;
+    obop:hasInitiator "onClick",
+        "onEnter" .
+
+:gen_action_business_entity a obop:GenerateJSONForm,
+        owl:NamedIndividual ;
+    obop:actionInBlock :business_entity_block .
+
+:gen_action_dish a obop:GenerateJSONForm,
+        owl:NamedIndividual ;
+    obop:actionInBlock :dish_block .
+
+:gen_action_ingredient a obop:GenerateJSONForm,
+        owl:NamedIndividual ;
+    obop:actionInBlock :ingredient_block .
+
+:gen_action_menu a obop:GenerateJSONForm,
+        owl:NamedIndividual ;
+    obop:actionInBlock :menu_block .
+
+:loop_again_cond_ingredient a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :add_another_action_ingredient .
+
+:loop_again_cond_menu a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :add_another_action_menu .
+
+:loop_continue_cond_ingredient a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :continue_action .
+
+:loop_continue_cond_menu a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :continue_action .
+
+:start a owl:NamedIndividual,
+        bbo:ProcessStartEvent ;
+    bbo:has_container :app_process .
+
+:start_business_entity a owl:NamedIndividual,
+        bbo:SubProcessStartEvent ;
+    bbo:has_container :insert_business_entity .
+
+:start_dish a owl:NamedIndividual,
+        bbo:SubProcessStartEvent ;
+    bbo:has_container :insert_dish .
+
+:start_ingredient a owl:NamedIndividual,
+        bbo:SubProcessStartEvent ;
+    bbo:has_container :insert_ingredient .
+
+:start_menu a owl:NamedIndividual,
+        bbo:SubProcessStartEvent ;
+    bbo:has_container :insert_menu .
+
+:submit_cond_business_entity a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :submit_action_business_entity .
+
+:submit_cond_dish a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :submit_action_dish .
+
+:submit_cond_ingredient a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :submit_action_ingredient .
+
+:submit_cond_menu a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :submit_action_menu .
+
+:val_fail_cond_business_entity a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:engineDecision obop:FormValidationViolation .
+
+:val_fail_cond_dish a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:engineDecision obop:FormValidationViolation .
+
+:val_fail_cond_ingredient a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:engineDecision obop:FormValidationViolation .
+
+:val_fail_cond_menu a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:engineDecision obop:FormValidationViolation .
+
+:val_ok_cond_business_entity a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:engineDecision obop:FormValidationConforms .
+
+:val_ok_cond_dish a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:engineDecision obop:FormValidationConforms .
+
+:val_ok_cond_ingredient a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:engineDecision obop:FormValidationConforms .
+
+:val_ok_cond_menu a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:engineDecision obop:FormValidationConforms .
+
+:validate_action_business_entity a obop:SHACLFormValidation,
+        owl:NamedIndividual ;
+    obop:actionInBlock :business_entity_block .
+
+:validate_action_dish a obop:SHACLFormValidation,
+        owl:NamedIndividual ;
+    obop:actionInBlock :dish_block .
+
+:validate_action_ingredient a obop:SHACLFormValidation,
+        owl:NamedIndividual ;
+    obop:actionInBlock :ingredient_block .
+
+:validate_action_menu a obop:SHACLFormValidation,
+        owl:NamedIndividual ;
+    obop:actionInBlock :menu_block .
+
+:abort_business_entity a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :cancel_action_business_entity ;
+    bbo:has_container :insert_business_entity .
+
+:abort_dish a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :cancel_action_dish ;
+    bbo:has_container :insert_dish .
+
+:abort_ingredient a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :cancel_action_ingredient ;
+    bbo:has_container :insert_ingredient .
+
+:abort_menu a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :cancel_action_menu ;
+    bbo:has_container :insert_menu .
+
+:add_another_action_ingredient a obop:Action,
+        owl:NamedIndividual ;
+    obop:hasInitiator "onClick" ;
+    obop:hasLabel "Add another Ingredient" ;
+    rdfs:comment "Loop back to enter one more Ingredient." .
+
+:add_another_action_menu a obop:Action,
+        owl:NamedIndividual ;
+    obop:hasInitiator "onClick" ;
+    obop:hasLabel "Add another Menu" ;
+    rdfs:comment "Loop back to enter one more Menu." .
+
+:business_entity_hlayout a obop:HorizontalLayout,
+        owl:NamedIndividual ;
+    obop:belongsToVisual :business_entity_vlayout ;
+    obop:hasPositionNumber "3"^^xsd:int .
+
+:business_entity_menu_connection a obop:Connection,
+        owl:NamedIndividual ;
+    obop:connectionHasSource :business_entity_shape ;
+    obop:connectionHasTarget :menu_shape ;
+    obop:hasConnector :connector_business_entity_menu_has_menu,
+        :connector_business_entity_menu_offers .
+
+:business_entity_row_0 a obop:HorizontalLayout,
+        owl:NamedIndividual ;
+    obop:belongsToVisual :business_entity_vlayout ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+:confirmation_business_entity a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :confirm_action_business_entity ;
+    bbo:has_container :insert_business_entity .
+
+:confirmation_dish a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :confirm_action_dish ;
+    bbo:has_container :insert_dish .
+
+:confirmation_ingredient a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :confirm_action_ingredient ;
+    bbo:has_container :insert_ingredient .
+
+:confirmation_menu a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :confirm_action_menu ;
+    bbo:has_container :insert_menu .
+
+:dish_hlayout a obop:HorizontalLayout,
+        owl:NamedIndividual ;
+    obop:belongsToVisual :dish_vlayout ;
+    obop:hasPositionNumber "4"^^xsd:int .
+
+:dish_ingredient_connection a obop:Connection,
+        owl:NamedIndividual ;
+    obop:connectionHasSource :dish_shape ;
+    obop:connectionHasTarget :ingredient_shape ;
+    obop:hasConnector :connector_dish_ingredient_has_ingredient .
+
+:dish_menu_connection a obop:Connection,
+        owl:NamedIndividual ;
+    obop:connectionHasSource :dish_shape ;
+    obop:connectionHasTarget :menu_shape ;
+    obop:hasConnector :connector_dish_menu_belongs_to_menu .
+
+:final_validation a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :final_validation_action ;
+    rdfs:comment "Validate the whole stored knowledge graph using SHACL shapes." ;
+    bbo:has_container :app_process .
+
+:generate_form_business_entity a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :gen_action_business_entity ;
+    bbo:has_container :insert_business_entity .
+
+:generate_form_dish a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :gen_action_dish ;
+    bbo:has_container :insert_dish .
+
+:ingredient_hlayout a obop:HorizontalLayout,
+        owl:NamedIndividual ;
+    obop:belongsToVisual :ingredient_vlayout ;
+    obop:hasPositionNumber "2"^^xsd:int .
+
+:make_connection_business_entity_menu a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :connection_action_business_entity_menu ;
+    rdfs:comment "Save the object properties linking the business_entity instance to the menu instance." ;
+    bbo:has_container :insert_menu .
+
+:make_connection_dish_ingredient a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :connection_action_dish_ingredient ;
+    rdfs:comment "Save the object properties linking the dish instance to the ingredient instance." ;
+    bbo:has_container :insert_ingredient .
+
+:make_connection_dish_menu a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :connection_action_dish_menu ;
+    rdfs:comment "Save the object properties linking the dish instance to the menu instance." ;
+    bbo:has_container :insert_dish .
+
+:menu_hlayout a obop:HorizontalLayout,
+        owl:NamedIndividual ;
+    obop:belongsToVisual :menu_vlayout ;
+    obop:hasPositionNumber "3"^^xsd:int .
+
+:menu_row_3 a obop:HorizontalLayout,
+        owl:NamedIndividual ;
+    obop:belongsToVisual :menu_vlayout ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:processing_business_entity a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    bbo:has_container :insert_business_entity .
+
+:processing_dish a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    bbo:has_container :insert_dish .
+
+:processing_ingredient a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    bbo:has_container :insert_ingredient .
+
+:processing_menu a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    bbo:has_container :insert_menu .
+
+<http://example.org/generated/restaurant/Dish> a owl:Class ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:allValuesFrom <http://example.org/generated/restaurant/Menu> ;
+            owl:onProperty <http://example.org/generated/restaurant/belongsToMenu> ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty <http://example.org/generated/restaurant/dishName> ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:decimal ;
+            owl:onProperty <http://example.org/generated/restaurant/price> ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom <http://example.org/generated/restaurant/Ingredient> ;
+            owl:onProperty <http://example.org/generated/restaurant/hasIngredient> ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty <http://example.org/generated/restaurant/description> ] .
+
+<http://example.org/generated/restaurant/MenuShape> a shacl:NodeShape ;
+    shacl:order 1 ;
+    shacl:property [ shacl:datatype xsd:string ;
+            shacl:minCount 1 ;
+            shacl:name "Menu name" ;
+            shacl:order 0 ;
+            shacl:path <http://example.org/generated/restaurant/menuName> ],
+        [ shacl:datatype xsd:string ;
+            shacl:name "Menu type" ;
+            shacl:order 1 ;
+            shacl:path <http://example.org/generated/restaurant/menuType> ] ;
+    shacl:targetClass <http://example.org/generated/restaurant/Menu> .
+
+:save_business_entity a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :submit_action_business_entity ;
+    bbo:has_container :insert_business_entity .
+
+:save_dish a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :submit_action_dish ;
+    bbo:has_container :insert_dish .
+
+:save_ingredient a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :submit_action_ingredient ;
+    bbo:has_container :insert_ingredient .
+
+:save_menu a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :submit_action_menu ;
+    bbo:has_container :insert_menu .
+
+:user_gets_notification_business_entity a owl:NamedIndividual,
+        bbo:UserTask ;
+    bbo:has_container :insert_business_entity .
+
+:user_gets_notification_dish a owl:NamedIndividual,
+        bbo:UserTask ;
+    bbo:has_container :insert_dish .
+
+:user_gets_notification_ingredient a owl:NamedIndividual,
+        bbo:UserTask ;
+    bbo:has_container :insert_ingredient .
+
+:user_gets_notification_menu a owl:NamedIndividual,
+        bbo:UserTask ;
+    bbo:has_container :insert_menu .
+
+:user_receives_validation a owl:NamedIndividual,
+        bbo:UserTask ;
+    rdfs:comment "User receives the validation results." ;
+    bbo:has_container :app_process .
+
+:validate_form_business_entity a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :validate_action_business_entity ;
+    rdfs:comment "Validate the entered BusinessEntity data against its field shapes." ;
+    bbo:has_container :insert_business_entity .
+
+:validate_form_dish a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :validate_action_dish ;
+    rdfs:comment "Validate the entered Dish data against its field shapes." ;
+    bbo:has_container :insert_dish .
+
+:validate_form_ingredient a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :validate_action_ingredient ;
+    rdfs:comment "Validate the entered Ingredient data against its field shapes." ;
+    bbo:has_container :insert_ingredient .
+
+:validate_form_menu a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :validate_action_menu ;
+    rdfs:comment "Validate the entered Menu data against its field shapes." ;
+    bbo:has_container :insert_menu .
+
+<http://purl.org/goodrelations/v1#BusinessEntity> a owl:Class ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:allValuesFrom <http://example.org/generated/restaurant/Menu> ;
+            owl:onProperty <http://schema.org/hasMenu> ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty <http://schema.org/postalCode> ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom <http://example.org/generated/restaurant/Menu> ;
+            owl:onProperty <http://purl.org/goodrelations/v1#offers> ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty <http://purl.org/goodrelations/v1#legalName> ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty <http://schema.org/streetAddress> ] .
+
+:business_entity_notification_layout a obop:VerticalLayout,
+        owl:NamedIndividual ;
+    obop:belongsTo :business_entity_notification_block ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:cancel_action_business_entity a obop:CancelBlockAction,
+        owl:NamedIndividual ;
+    obop:actionInBlock :business_entity_block ;
+    obop:hasInitiator "onClick" ;
+    obop:hasLabel "Cancel" .
+
+:cancel_action_dish a obop:CancelBlockAction,
+        owl:NamedIndividual ;
+    obop:actionInBlock :dish_block ;
+    obop:hasInitiator "onClick" ;
+    obop:hasLabel "Cancel" .
+
+:cancel_action_ingredient a obop:CancelBlockAction,
+        owl:NamedIndividual ;
+    obop:actionInBlock :ingredient_block ;
+    obop:hasInitiator "onClick" ;
+    obop:hasLabel "Cancel" .
+
+:cancel_action_menu a obop:CancelBlockAction,
+        owl:NamedIndividual ;
+    obop:actionInBlock :menu_block ;
+    obop:hasInitiator "onClick" ;
+    obop:hasLabel "Cancel" .
+
+:dish_notification_layout a obop:VerticalLayout,
+        owl:NamedIndividual ;
+    obop:belongsTo :dish_notification_block ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:dish_row_2 a obop:HorizontalLayout,
+        owl:NamedIndividual ;
+    obop:belongsToVisual :dish_vlayout ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:gateway_business_entity a owl:NamedIndividual,
+        bbo:ExclusiveGateway ;
+    bbo:has_container :insert_business_entity .
+
+:gateway_dish a owl:NamedIndividual,
+        bbo:ExclusiveGateway ;
+    bbo:has_container :insert_dish .
+
+:gateway_ingredient a owl:NamedIndividual,
+        bbo:ExclusiveGateway ;
+    bbo:has_container :insert_ingredient .
+
+:gateway_menu a owl:NamedIndividual,
+        bbo:ExclusiveGateway ;
+    bbo:has_container :insert_menu .
+
+:generate_form_ingredient a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :gen_action_ingredient ;
+    bbo:has_container :insert_ingredient .
+
+:generate_form_menu a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :gen_action_menu ;
+    bbo:has_container :insert_menu .
+
+:ingredient_shape a owl:NamedIndividual,
+        shacl:NodeShape ;
+    obop:modelBelongsTo :ingredient_block ;
+    shacl:property [ obop:specifiedBy :field_ingredient_ingredient_name ;
+            shacl:datatype xsd:string ;
+            shacl:name "Ingredient name" ;
+            shacl:order 0 ;
+            shacl:path <http://example.org/generated/restaurant/ingredientName> ] ;
+    shacl:targetClass <http://example.org/generated/restaurant/Ingredient> .
+
+:loop_gateway_ingredient a owl:NamedIndividual,
+        bbo:ExclusiveGateway ;
+    bbo:has_container :insert_ingredient .
+
+:loop_gateway_menu a owl:NamedIndividual,
+        bbo:ExclusiveGateway ;
+    bbo:has_container :insert_menu .
+
+<http://example.org/generated/restaurant/belongsToMenu> a owl:ObjectProperty .
+
+<http://example.org/generated/restaurant/description> a owl:DatatypeProperty .
+
+<http://example.org/generated/restaurant/dishName> a owl:DatatypeProperty .
+
+<http://example.org/generated/restaurant/hasIngredient> a owl:ObjectProperty .
+
+<http://example.org/generated/restaurant/ingredientName> a owl:DatatypeProperty .
+
+<http://example.org/generated/restaurant/menuType> a owl:DatatypeProperty .
+
+<http://example.org/generated/restaurant/price> a owl:DatatypeProperty .
+
+:submit_action_business_entity a obop:SubmitBlockAction,
+        owl:NamedIndividual ;
+    obop:actionInBlock :business_entity_block ;
+    obop:hasInitiator "onClick",
+        "onEnter" ;
+    obop:hasLabel "Submit" .
+
+:submit_action_dish a obop:SubmitBlockAction,
+        owl:NamedIndividual ;
+    obop:actionInBlock :dish_block ;
+    obop:hasInitiator "onClick",
+        "onEnter" ;
+    obop:hasLabel "Submit" .
+
+:submit_action_ingredient a obop:SubmitBlockAction,
+        owl:NamedIndividual ;
+    obop:actionInBlock :ingredient_block ;
+    obop:hasInitiator "onClick",
+        "onEnter" ;
+    obop:hasLabel "Submit" .
+
+:submit_action_menu a obop:SubmitBlockAction,
+        owl:NamedIndividual ;
+    obop:actionInBlock :menu_block ;
+    obop:hasInitiator "onClick",
+        "onEnter" ;
+    obop:hasLabel "Submit" .
+
+:user_enters_business_entity a owl:NamedIndividual,
+        bbo:UserTask ;
+    bbo:has_container :insert_business_entity .
+
+:user_enters_dish a owl:NamedIndividual,
+        bbo:UserTask ;
+    bbo:has_container :insert_dish .
+
+:user_enters_ingredient a owl:NamedIndividual,
+        bbo:UserTask ;
+    bbo:has_container :insert_ingredient .
+
+:user_enters_menu a owl:NamedIndividual,
+        bbo:UserTask ;
+    bbo:has_container :insert_menu .
+
+:validation_gateway_business_entity a owl:NamedIndividual,
+        bbo:ExclusiveGateway ;
+    bbo:has_container :insert_business_entity .
+
+:validation_gateway_dish a owl:NamedIndividual,
+        bbo:ExclusiveGateway ;
+    bbo:has_container :insert_dish .
+
+:validation_gateway_ingredient a owl:NamedIndividual,
+        bbo:ExclusiveGateway ;
+    bbo:has_container :insert_ingredient .
+
+:validation_gateway_menu a owl:NamedIndividual,
+        bbo:ExclusiveGateway ;
+    bbo:has_container :insert_menu .
+
+<http://purl.org/goodrelations/v1#legalName> a owl:DatatypeProperty .
+
+<http://purl.org/goodrelations/v1#offers> a owl:ObjectProperty .
+
+<http://schema.org/hasMenu> a owl:ObjectProperty .
+
+<http://schema.org/postalCode> a owl:DatatypeProperty .
+
+<http://schema.org/streetAddress> a owl:DatatypeProperty .
+
+:business_entity_notification_block a obop:Block,
+        owl:NamedIndividual ;
+    rdfs:label "BusinessEntity saved - Notification"^^rdf:PlainLiteral ;
+    obop:hasMainLayout :business_entity_notification_layout ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:business_entity_shape a owl:NamedIndividual,
+        shacl:NodeShape ;
+    obop:modelBelongsTo :business_entity_block ;
+    shacl:property [ obop:specifiedBy :field_business_entity_postal_code ;
+            shacl:datatype xsd:string ;
+            shacl:name "Postal code" ;
+            shacl:order 2 ;
+            shacl:path <http://schema.org/postalCode> ],
+        [ shacl:node :menu_shape ;
+            shacl:path <http://purl.org/goodrelations/v1#offers> ],
+        [ obop:specifiedBy :field_business_entity_street_address ;
+            shacl:datatype xsd:string ;
+            shacl:name "Address" ;
+            shacl:order 1 ;
+            shacl:path <http://schema.org/streetAddress> ],
+        [ shacl:node :menu_shape ;
+            shacl:path <http://schema.org/hasMenu> ],
+        [ obop:specifiedBy :field_business_entity_legal_name ;
+            shacl:datatype xsd:string ;
+            shacl:name "Restaurant name" ;
+            shacl:order 0 ;
+            shacl:path <http://purl.org/goodrelations/v1#legalName> ] ;
+    shacl:targetClass <http://purl.org/goodrelations/v1#BusinessEntity> .
+
+:business_entity_vlayout a obop:VerticalLayout,
+        owl:NamedIndividual ;
+    obop:belongsTo :business_entity_block ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:dish_notification_block a obop:Block,
+        owl:NamedIndividual ;
+    rdfs:label "Dish saved - Notification"^^rdf:PlainLiteral ;
+    obop:hasMainLayout :dish_notification_layout ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:dish_vlayout a obop:VerticalLayout,
+        owl:NamedIndividual ;
+    obop:belongsTo :dish_block ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:ingredient_notification_layout a obop:VerticalLayout,
+        owl:NamedIndividual ;
+    obop:belongsTo :ingredient_notification_block ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:ingredient_vlayout a obop:VerticalLayout,
+        owl:NamedIndividual ;
+    obop:belongsTo :ingredient_block ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:menu_notification_layout a obop:VerticalLayout,
+        owl:NamedIndividual ;
+    obop:belongsTo :menu_notification_block ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:menu_vlayout a obop:VerticalLayout,
+        owl:NamedIndividual ;
+    obop:belongsTo :menu_block ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+<http://example.org/generated/restaurant/Ingredient> a owl:Class ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty <http://example.org/generated/restaurant/ingredientName> ] .
+
+<http://example.org/generated/restaurant/menuName> a owl:DatatypeProperty .
+
+:dish_shape a owl:NamedIndividual,
+        shacl:NodeShape ;
+    obop:modelBelongsTo :dish_block ;
+    shacl:property [ shacl:node :ingredient_shape ;
+            shacl:path <http://example.org/generated/restaurant/hasIngredient> ],
+        [ obop:specifiedBy :field_dish_description ;
+            shacl:datatype xsd:string ;
+            shacl:name "Description" ;
+            shacl:order 2 ;
+            shacl:path <http://example.org/generated/restaurant/description> ],
+        [ shacl:node :menu_shape ;
+            shacl:path <http://example.org/generated/restaurant/belongsToMenu> ],
+        [ obop:specifiedBy :field_dish_price ;
+            shacl:datatype xsd:decimal ;
+            shacl:name "Price" ;
+            shacl:order 1 ;
+            shacl:path <http://example.org/generated/restaurant/price> ],
+        [ obop:specifiedBy :field_dish_dish_name ;
+            shacl:datatype xsd:string ;
+            shacl:name "Dish name" ;
+            shacl:order 0 ;
+            shacl:path <http://example.org/generated/restaurant/dishName> ] ;
+    shacl:targetClass <http://example.org/generated/restaurant/Dish> .
+
+:ingredient_notification_block a obop:Block,
+        owl:NamedIndividual ;
+    rdfs:label "Ingredient saved - Notification"^^rdf:PlainLiteral ;
+    obop:hasMainLayout :ingredient_notification_layout ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:menu_notification_block a obop:Block,
+        owl:NamedIndividual ;
+    rdfs:label "Menu saved - Notification"^^rdf:PlainLiteral ;
+    obop:hasMainLayout :menu_notification_layout ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+<http://example.org/generated/restaurant/Menu> a owl:Class ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty <http://example.org/generated/restaurant/menuName> ],
+        [ a owl:Restriction ;
+            owl:minQualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+            owl:onDataRange xsd:string ;
+            owl:onProperty <http://example.org/generated/restaurant/menuName> ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty <http://example.org/generated/restaurant/menuType> ] .
+
+:continue_action a obop:Action,
+        owl:NamedIndividual ;
+    obop:hasInitiator "onClick" ;
+    obop:hasLabel "Continue" ;
+    rdfs:comment "Advance the workflow from a notification screen to the next step." .
+
+:menu_shape a owl:NamedIndividual,
+        shacl:NodeShape ;
+    obop:modelBelongsTo :menu_block ;
+    shacl:property [ obop:specifiedBy :field_menu_menu_name ;
+            shacl:datatype xsd:string ;
+            shacl:minCount 1 ;
+            shacl:name "Menu name" ;
+            shacl:order 0 ;
+            shacl:path <http://example.org/generated/restaurant/menuName> ],
+        [ obop:specifiedBy :field_menu_menu_type ;
+            shacl:datatype xsd:string ;
+            shacl:name "Menu type" ;
+            shacl:order 1 ;
+            shacl:path <http://example.org/generated/restaurant/menuType> ] ;
+    shacl:targetClass <http://example.org/generated/restaurant/Menu> .
+
+:ingredient_block a obop:Block,
+        owl:NamedIndividual ;
+    rdfs:label "Ingredient data"^^rdf:PlainLiteral ;
+    obop:hasMainLayout :ingredient_vlayout ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:targetClass <http://example.org/generated/restaurant/Ingredient> .
+
+:business_entity_block a obop:Block,
+        owl:NamedIndividual ;
+    rdfs:label "BusinessEntity data"^^rdf:PlainLiteral ;
+    obop:hasMainLayout :business_entity_vlayout ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:targetClass <http://purl.org/goodrelations/v1#BusinessEntity> .
+
+:menu_block a obop:Block,
+        owl:NamedIndividual ;
+    rdfs:label "Menu data"^^rdf:PlainLiteral ;
+    obop:hasMainLayout :menu_vlayout ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:targetClass <http://example.org/generated/restaurant/Menu> .
+
+:dish_block a obop:Block,
+        owl:NamedIndividual ;
+    rdfs:label "Dish data"^^rdf:PlainLiteral ;
+    obop:hasMainLayout :dish_vlayout ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:targetClass <http://example.org/generated/restaurant/Dish> .
+
+:app_process a owl:NamedIndividual,
+        bbo:Process .
+
+:insert_business_entity a owl:NamedIndividual,
+        bbo:SubProcess ;
+    rdfs:comment "Insert BusinessEntity data." ;
+    bbo:has_container :app_process .
+
+:insert_dish a owl:NamedIndividual,
+        bbo:SubProcess ;
+    rdfs:comment "Insert Dish data." ;
+    bbo:has_container :app_process .
+
+:insert_ingredient a owl:NamedIndividual,
+        bbo:SubProcess ;
+    rdfs:comment "Insert Ingredient data." ;
+    bbo:has_container :app_process .
+
+:insert_menu a owl:NamedIndividual,
+        bbo:SubProcess ;
+    rdfs:comment "Insert Menu data." ;
+    bbo:has_container :app_process .
+
+[] a owl:AllDifferent ;
+    owl:distinctMembers ( :abort_business_entity :abort_dish :abort_ingredient :abort_menu :add_another_action_ingredient :add_another_action_menu :add_another_btn_ingredient :add_another_btn_menu :app_model :app_process :business_entity_block :business_entity_hlayout :business_entity_menu_connection :business_entity_notification_block :business_entity_notification_label :business_entity_notification_layout :business_entity_row_0 :business_entity_shape :business_entity_vlayout :cancel_action_business_entity :cancel_action_dish :cancel_action_ingredient :cancel_action_menu :cancel_btn_business_entity :cancel_btn_dish :cancel_btn_ingredient :cancel_btn_menu :cancel_cond_business_entity :cancel_cond_dish :cancel_cond_ingredient :cancel_cond_menu :cancel_end_business_entity :cancel_end_dish :cancel_end_ingredient :cancel_end_menu :confirm_action_business_entity :confirm_action_dish :confirm_action_ingredient :confirm_action_menu :confirmation_business_entity :confirmation_dish :confirmation_ingredient :confirmation_menu :connection_action_business_entity_menu :connection_action_dish_ingredient :connection_action_dish_menu :connector_business_entity_menu_has_menu :connector_business_entity_menu_offers :connector_dish_ingredient_has_ingredient :connector_dish_menu_belongs_to_menu :continue_action :continue_btn_business_entity :continue_btn_dish :continue_btn_ingredient :continue_btn_menu :dish_block :dish_hlayout :dish_ingredient_connection :dish_menu_connection :dish_notification_block :dish_notification_label :dish_notification_layout :dish_row_2 :dish_shape :dish_vlayout :end_business_entity :end_dish :end_event :end_ingredient :end_menu :field_business_entity_legal_name :field_business_entity_postal_code :field_business_entity_street_address :field_dish_description :field_dish_dish_name :field_dish_price :field_ingredient_ingredient_name :field_menu_menu_name :field_menu_menu_type :final_validation :final_validation_action :flow_business_entity_1 :flow_business_entity_2 :flow_business_entity_3 :flow_business_entity_4 :flow_business_entity_5 :flow_business_entity_6 :flow_business_entity_7 :flow_business_entity_abort_end :flow_business_entity_cancel :flow_business_entity_submit :flow_business_entity_val_fail :flow_business_entity_val_ok :flow_business_entity_validate :flow_dish_1 :flow_dish_2 :flow_dish_3 :flow_dish_4 :flow_dish_5 :flow_dish_5_conn_0 :flow_dish_6 :flow_dish_7 :flow_dish_abort_end :flow_dish_cancel :flow_dish_submit :flow_dish_val_fail :flow_dish_val_ok :flow_dish_validate :flow_ingredient_1 :flow_ingredient_2 :flow_ingredient_3 :flow_ingredient_4 :flow_ingredient_5 :flow_ingredient_5_conn_0 :flow_ingredient_6 :flow_ingredient_7 :flow_ingredient_abort_end :flow_ingredient_cancel :flow_ingredient_loop_again :flow_ingredient_loop_end :flow_ingredient_submit :flow_ingredient_val_fail :flow_ingredient_val_ok :flow_ingredient_validate :flow_main_0 :flow_main_1 :flow_main_2 :flow_main_3 :flow_main_end :flow_main_final :flow_main_urv :flow_menu_1 :flow_menu_2 :flow_menu_3 :flow_menu_4 :flow_menu_5 :flow_menu_5_conn_0 :flow_menu_6 :flow_menu_7 :flow_menu_abort_end :flow_menu_cancel :flow_menu_loop_again :flow_menu_loop_end :flow_menu_submit :flow_menu_val_fail :flow_menu_val_ok :flow_menu_validate :gateway_business_entity :gateway_dish :gateway_ingredient :gateway_menu :gen_action_business_entity :gen_action_dish :gen_action_ingredient :gen_action_menu :generate_form_business_entity :generate_form_dish :generate_form_ingredient :generate_form_menu :ingredient_block :ingredient_hlayout :ingredient_notification_block :ingredient_notification_label :ingredient_notification_layout :ingredient_shape :ingredient_vlayout :insert_business_entity :insert_dish :insert_ingredient :insert_menu :loop_again_cond_ingredient :loop_again_cond_menu :loop_continue_cond_ingredient :loop_continue_cond_menu :loop_gateway_ingredient :loop_gateway_menu :make_connection_business_entity_menu :make_connection_dish_ingredient :make_connection_dish_menu :menu_block :menu_hlayout :menu_notification_block :menu_notification_label :menu_notification_layout :menu_row_3 :menu_shape :menu_vlayout :picker_dish_dish_menu :picker_ingredient_dish_ingredient :picker_menu_business_entity_menu :processing_business_entity :processing_dish :processing_ingredient :processing_menu :save_business_entity :save_dish :save_ingredient :save_menu :start :start_business_entity :start_dish :start_ingredient :start_menu :submit_action_business_entity :submit_action_dish :submit_action_ingredient :submit_action_menu :submit_btn_business_entity :submit_btn_dish :submit_btn_ingredient :submit_btn_menu :submit_cond_business_entity :submit_cond_dish :submit_cond_ingredient :submit_cond_menu :user_enters_business_entity :user_enters_dish :user_enters_ingredient :user_enters_menu :user_gets_notification_business_entity :user_gets_notification_dish :user_gets_notification_ingredient :user_gets_notification_menu :user_receives_validation :val_fail_cond_business_entity :val_fail_cond_dish :val_fail_cond_ingredient :val_fail_cond_menu :val_ok_cond_business_entity :val_ok_cond_dish :val_ok_cond_ingredient :val_ok_cond_menu :validate_action_business_entity :validate_action_dish :validate_action_ingredient :validate_action_menu :validate_form_business_entity :validate_form_dish :validate_form_ingredient :validate_form_menu :validation_gateway_business_entity :validation_gateway_dish :validation_gateway_ingredient :validation_gateway_menu ) .
+

@@ -28,6 +28,10 @@ Note the schema/prompt variant in the table below with every run.
 | 2 | 2026-11 | qwen2.5:7b-instruct | sharpened | position optional | ✓ confirmed in 6 steps |
 | 4 | 2026-11-16 | qwen2.5:14b-instruct | original | position optional | ✗ repeat-guard abort at step 8 — 3× `move_entity` without `position` after 5 flawless edits |
 | 5 | 2026-11-16 | qwen2.5:14b-instruct | sharpened | position optional | ✗ repeat-guard abort at step 12 — same failure after 9 good edits (incl. first `set_loop`) |
+| 6 | 2026-11-17 | qwen2.5:7b-instruct | original | position required | ✓ confirmed in 4 steps, 0 repair rounds |
+| 7 | 2026-11-17 | qwen2.5:7b-instruct | sharpened | position required | ✓ confirmed in 10 steps, 0 repair rounds |
+| 8 | 2026-11-17 | qwen2.5:14b-instruct | original | position required | ✓ confirmed in 12 steps, 0 repair rounds |
+| 9 | 2026-11-17 | qwen2.5:14b-instruct | sharpened | position required | ✓ confirmed in 12 steps, 0 repair rounds |
 
 Reports for runs 1–5 were written to a session scratchpad and lost; the
 step transcripts are preserved in the research notes. Key finding of the
@@ -38,3 +42,10 @@ JSON but not action-specific fields. Neither prompt sharpening nor model
 scale removes it; the larger model hits it more often because it attempts
 form reordering at all. Fixed by making `position` globally required in
 `backend/app/model_agent/actions.py` (runs ≥ 6 use the fixed schema).
+
+Runs 6–9 repeated the full matrix with the fixed schema (staging Ollama,
+8 vCPU; original-prompt cells from a worktree that reverts only loop.py
+to its pre-sharpening version, so the prompt is the sole variable):
+**4/4 confirmed, 0 repair rounds** — including both cells that failed
+before. `move_entity` now always carries its position. The schema, not
+prompt wording or model scale, was the binding constraint.
