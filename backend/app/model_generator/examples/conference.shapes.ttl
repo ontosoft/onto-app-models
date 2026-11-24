@@ -1,0 +1,79 @@
+# Second evaluation scenario: conference submission & reviewing as SHACL
+# shapes. Deliberately larger and more confusable than restaurant.shapes.ttl:
+# 7 entities, 21 form fields, 7 relationships.
+#
+# Label stress points (for the dynamic-schema ablation): "... title" appears
+# four times (Conference/Track/Session/Paper), person names three times
+# (Chair/Full/Reviewer name), dates four times, and "Affiliation" exactly
+# twice (Author AND Reviewer) - an agent that references fields lexically
+# must disambiguate by entity.
+#
+# Relationship coverage: both declaration forms (sh:node and sh:class) and
+# both subprocess directions - backward references (track -> conference,
+# review -> paper) and forward references (paper -> session, paper -> author,
+# whose subprocesses run later).
+#
+# Date fields use xsd:dateTime, not xsd:date: xsd:date is not in the OWL 2
+# datatype map, so HermiT (which the app_engine runs at model load) rejects
+# any model whose axioms mention it.
+@prefix sh:     <http://www.w3.org/ns/shacl#> .
+@prefix xsd:    <http://www.w3.org/2001/XMLSchema#> .
+@prefix schema: <http://schema.org/> .
+@prefix foaf:   <http://xmlns.com/foaf/0.1/> .
+@prefix c:      <http://example.org/generated/conference/> .
+
+c:ConferenceShape a sh:NodeShape ;
+    sh:targetClass c:Conference ;
+    sh:order 0 ;
+    sh:property [ sh:path schema:name      ; sh:datatype xsd:string ; sh:name "Conference title" ; sh:minCount 1 ; sh:order 0 ] ;
+    sh:property [ sh:path c:acronym        ; sh:datatype xsd:string ; sh:name "Acronym" ;          sh:order 1 ] ;
+    sh:property [ sh:path schema:startDate ; sh:datatype xsd:dateTime ; sh:name "Start date" ;     sh:order 2 ] ;
+    sh:property [ sh:path schema:endDate   ; sh:datatype xsd:dateTime ; sh:name "End date" ;       sh:order 3 ] .
+
+c:TrackShape a sh:NodeShape ;
+    sh:targetClass c:Track ;
+    sh:order 1 ;
+    sh:property [ sh:path c:trackTitle ; sh:datatype xsd:string ; sh:name "Track title" ; sh:minCount 1 ; sh:order 0 ] ;
+    sh:property [ sh:path c:chairName  ; sh:datatype xsd:string ; sh:name "Chair name" ;  sh:order 1 ] ;
+    sh:property [ sh:path c:isTrackOf  ; sh:node c:ConferenceShape ; sh:order 2 ] .
+
+c:PaperShape a sh:NodeShape ;
+    sh:targetClass c:Paper ;
+    sh:order 2 ;
+    sh:property [ sh:path c:paperTitle     ; sh:datatype xsd:string ; sh:name "Paper title" ; sh:minCount 1 ; sh:order 0 ] ;
+    sh:property [ sh:path c:abstract       ; sh:datatype xsd:string ; sh:name "Abstract" ;        sh:order 1 ] ;
+    sh:property [ sh:path c:submissionDate ; sh:datatype xsd:dateTime ; sh:name "Submission date" ; sh:order 2 ] ;
+    sh:property [ sh:path c:submittedTo ; sh:node c:TrackShape ;   sh:order 3 ] ;
+    sh:property [ sh:path c:hasAuthor   ; sh:class c:Author ;      sh:order 4 ] ;
+    sh:property [ sh:path c:presentedIn ; sh:node c:SessionShape ; sh:order 5 ] .
+
+c:AuthorShape a sh:NodeShape ;
+    sh:targetClass c:Author ;
+    sh:order 3 ;
+    sh:property [ sh:path foaf:name     ; sh:datatype xsd:string ; sh:name "Full name" ;   sh:order 0 ] ;
+    sh:property [ sh:path c:affiliation ; sh:datatype xsd:string ; sh:name "Affiliation" ; sh:order 1 ] ;
+    sh:property [ sh:path schema:email  ; sh:datatype xsd:string ; sh:name "Email" ;       sh:order 2 ] .
+
+c:SessionShape a sh:NodeShape ;
+    sh:targetClass c:Session ;
+    sh:order 4 ;
+    sh:property [ sh:path c:sessionTitle ; sh:datatype xsd:string ; sh:name "Session title" ; sh:order 0 ] ;
+    sh:property [ sh:path c:sessionDate  ; sh:datatype xsd:dateTime ; sh:name "Session date" ; sh:order 1 ] ;
+    sh:property [ sh:path c:room         ; sh:datatype xsd:string ; sh:name "Room" ;          sh:order 2 ] ;
+    sh:property [ sh:path c:partOfTrack  ; sh:node c:TrackShape ;  sh:order 3 ] .
+
+c:ReviewerShape a sh:NodeShape ;
+    sh:targetClass c:Reviewer ;
+    sh:order 5 ;
+    sh:property [ sh:path c:reviewerName ; sh:datatype xsd:string ; sh:name "Reviewer name" ; sh:order 0 ] ;
+    sh:property [ sh:path c:affiliation  ; sh:datatype xsd:string ; sh:name "Affiliation" ;   sh:order 1 ] ;
+    sh:property [ sh:path c:expertise    ; sh:datatype xsd:string ; sh:name "Expertise" ;     sh:order 2 ] .
+
+c:ReviewShape a sh:NodeShape ;
+    sh:targetClass c:Review ;
+    sh:order 6 ;
+    sh:property [ sh:path c:score      ; sh:datatype xsd:integer ; sh:name "Score" ;       sh:order 0 ] ;
+    sh:property [ sh:path c:reviewText ; sh:datatype xsd:string  ; sh:name "Review text" ; sh:order 1 ] ;
+    sh:property [ sh:path c:reviewDate ; sh:datatype xsd:dateTime ; sh:name "Review date" ; sh:order 2 ] ;
+    sh:property [ sh:path c:reviews   ; sh:node c:PaperShape ; sh:order 3 ] ;
+    sh:property [ sh:path c:writtenBy ; sh:class c:Reviewer ;  sh:order 4 ] .

@@ -70,6 +70,13 @@ def main(argv: list[str] | None = None) -> int:
         "(ablation baseline)",
     )
     parser.add_argument(
+        "--num-ctx",
+        type=int,
+        default=8192,
+        help="Ollama context window in tokens; raise for larger shapes files "
+        "(Ollama silently truncates from the front on overflow)",
+    )
+    parser.add_argument(
         "-o", "--output", help="Write the confirmed model's Turtle here"
     )
     parser.add_argument("--report", help="Write the full run report (JSON) here")
@@ -78,7 +85,11 @@ def main(argv: list[str] | None = None) -> int:
     with open(args.shapes, encoding="utf-8") as fh:
         shapes_ttl = fh.read()
 
-    decide = _live(OllamaEditDecider(model=args.model, host=args.ollama_host))
+    decide = _live(
+        OllamaEditDecider(
+            model=args.model, host=args.ollama_host, num_ctx=args.num_ctx
+        )
+    )
     print(f"designing with {args.model} ...", flush=True)
     result = agentic_generate(
         shapes_ttl,

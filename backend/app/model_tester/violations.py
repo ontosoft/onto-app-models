@@ -129,6 +129,8 @@ def valid_value(spec: FieldSpec | None, enum_options: list[str]) -> str:
         return "true"
     if spec.datatype == f"{_XSD}date":
         return "2024-01-01"
+    if spec.datatype == f"{_XSD}dateTime":
+        return "2024-01-01T09:00:00"
     if spec.pattern:
         return _example_matching(spec.pattern)
     value = "Valid text"
