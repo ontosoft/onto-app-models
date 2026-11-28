@@ -34,6 +34,8 @@ Note the schema/prompt variant in the table below with every run.
 | 9 | 2026-11-17 | qwen2.5:14b-instruct | sharpened | position required | ✓ confirmed in 12 steps, 0 repair rounds |
 | 10 | 2026-11-17 | qwen2.5:14b-instruct | sharpened | dynamic enums | ✓ confirmed in 12 steps, 0 repair rounds |
 | 11 | 2026-11-17 | qwen2.5:14b-instruct | sharpened | static (ablation) | ✓ confirmed in 12 steps, 0 repair rounds |
+| 12 | 2026-11-24 | qwen2.5:14b-instruct | sharpened | dynamic enums | ✓ confirmed in 11 steps, 0 repair rounds — conference scenario |
+| 13 | 2026-11-24 | qwen2.5:14b-instruct | sharpened | static (ablation) | ✓ confirmed in 11 steps, 0 repair rounds — conference scenario |
 
 Reports for runs 1–5 were written to a session scratchpad and lost; the
 step transcripts are preserved in the research notes. Key finding of the
@@ -51,6 +53,17 @@ restaurant shapes both conditions produced STEP-IDENTICAL action
 sequences and identical latency (~10.8 s/step) — a null result showing
 the enums are cost-neutral; their protective value must be measured on
 larger shape sets where dangling references actually occur.
+
+Runs 12/13 repeated the ablation pair on the larger conference scenario
+(`conference.shapes.ttl`, 7 entities / 21 fields / 7 relations, commit
+5360e76; executed server-side, `--num-ctx 16384`): again step-identical
+sequences, isomorphic output graphs, identical latency (~14.1 s/step),
+both confirmed in 11 steps. New finding: BOTH conditions were rejected
+twice for grouping "Reviewer name" with "Affiliation" — "Affiliation"
+exists on two entities and the environment resolved it to the wrong
+(author) form. Dynamic enums guard against nonexistent labels but not
+against AMBIGUOUS ones; fixing that needs entity-scoped reference
+resolution or per-step reasoning guards (improvement-ladder rungs 2–3).
 
 Runs 6–9 repeated the full matrix with the fixed schema (staging Ollama,
 8 vCPU; original-prompt cells from a worktree that reverts only loop.py

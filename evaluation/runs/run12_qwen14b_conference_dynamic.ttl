@@ -1,0 +1,2993 @@
+@prefix : <http://example.org/generated/> .
+@prefix bbo: <https://www.irit.fr/recherches/MELODI/ontologies/BBO#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix obop: <http://purl.org/net/obop/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix shacl: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<http://example.org/generated/conference/AuthorShape> a shacl:NodeShape ;
+    shacl:order 3 ;
+    shacl:property [ shacl:datatype xsd:string ;
+            shacl:name "Full name" ;
+            shacl:order 0 ;
+            shacl:path foaf:name ],
+        [ shacl:datatype xsd:string ;
+            shacl:name "Affiliation" ;
+            shacl:order 1 ;
+            shacl:path <http://example.org/generated/conference/affiliation> ],
+        [ shacl:datatype xsd:string ;
+            shacl:name "Email" ;
+            shacl:order 2 ;
+            shacl:path <http://schema.org/email> ] ;
+    shacl:targetClass <http://example.org/generated/conference/Author> .
+
+<http://example.org/generated/conference/ReviewShape> a shacl:NodeShape ;
+    shacl:order 6 ;
+    shacl:property [ shacl:datatype xsd:integer ;
+            shacl:name "Score" ;
+            shacl:order 0 ;
+            shacl:path <http://example.org/generated/conference/score> ],
+        [ shacl:datatype xsd:string ;
+            shacl:name "Review text" ;
+            shacl:order 1 ;
+            shacl:path <http://example.org/generated/conference/reviewText> ],
+        [ shacl:datatype xsd:dateTime ;
+            shacl:name "Review date" ;
+            shacl:order 2 ;
+            shacl:path <http://example.org/generated/conference/reviewDate> ],
+        [ shacl:node <http://example.org/generated/conference/PaperShape> ;
+            shacl:order 3 ;
+            shacl:path <http://example.org/generated/conference/reviews> ],
+        [ shacl:class <http://example.org/generated/conference/Reviewer> ;
+            shacl:order 4 ;
+            shacl:path <http://example.org/generated/conference/writtenBy> ] ;
+    shacl:targetClass <http://example.org/generated/conference/Review> .
+
+<http://example.org/generated/conference/ReviewerShape> a shacl:NodeShape ;
+    shacl:order 5 ;
+    shacl:property [ shacl:datatype xsd:string ;
+            shacl:name "Reviewer name" ;
+            shacl:order 0 ;
+            shacl:path <http://example.org/generated/conference/reviewerName> ],
+        [ shacl:datatype xsd:string ;
+            shacl:name "Affiliation" ;
+            shacl:order 1 ;
+            shacl:path <http://example.org/generated/conference/affiliation> ],
+        [ shacl:datatype xsd:string ;
+            shacl:name "Expertise" ;
+            shacl:order 2 ;
+            shacl:path <http://example.org/generated/conference/expertise> ] ;
+    shacl:targetClass <http://example.org/generated/conference/Reviewer> .
+
+:add_another_btn_author a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :add_another_action_author ;
+    obop:belongsTo :author_notification_block ;
+    obop:belongsToVisual :author_notification_layout ;
+    obop:hasLabel "Add another Author" ;
+    obop:hasPositionNumber "2"^^xsd:int .
+
+:add_another_btn_conference a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :add_another_action_conference ;
+    obop:belongsTo :conference_notification_block ;
+    obop:belongsToVisual :conference_notification_layout ;
+    obop:hasLabel "Add another Conference" ;
+    obop:hasPositionNumber "2"^^xsd:int .
+
+:add_another_btn_paper a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :add_another_action_paper ;
+    obop:belongsTo :paper_notification_block ;
+    obop:belongsToVisual :paper_notification_layout ;
+    obop:hasLabel "Add another Paper" ;
+    obop:hasPositionNumber "2"^^xsd:int .
+
+:add_another_btn_reviewer a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :add_another_action_reviewer ;
+    obop:belongsTo :reviewer_notification_block ;
+    obop:belongsToVisual :reviewer_notification_layout ;
+    obop:hasLabel "Add another Reviewer" ;
+    obop:hasPositionNumber "2"^^xsd:int .
+
+:add_another_btn_session a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :add_another_action_session ;
+    obop:belongsTo :session_notification_block ;
+    obop:belongsToVisual :session_notification_layout ;
+    obop:hasLabel "Add another Session" ;
+    obop:hasPositionNumber "2"^^xsd:int .
+
+:add_another_btn_track a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :add_another_action_track ;
+    obop:belongsTo :track_notification_block ;
+    obop:belongsToVisual :track_notification_layout ;
+    obop:hasLabel "Add another Track" ;
+    obop:hasPositionNumber "2"^^xsd:int .
+
+:app_model a obop:Model,
+        owl:NamedIndividual .
+
+:author_notification_label a obop:Label,
+        owl:NamedIndividual ;
+    obop:belongsTo :author_notification_block ;
+    obop:belongsToVisual :author_notification_layout ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:hasText "The Author data have been stored in the database."^^rdf:PlainLiteral .
+
+:cancel_btn_author a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :cancel_action_author ;
+    obop:belongsTo :author_block ;
+    obop:belongsToVisual :author_hlayout ;
+    obop:hasLabel "Cancel" ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+:cancel_btn_conference a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :cancel_action_conference ;
+    obop:belongsTo :conference_block ;
+    obop:belongsToVisual :conference_hlayout ;
+    obop:hasLabel "Cancel" ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+:cancel_btn_paper a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :cancel_action_paper ;
+    obop:belongsTo :paper_block ;
+    obop:belongsToVisual :paper_hlayout ;
+    obop:hasLabel "Cancel" ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+:cancel_btn_review a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :cancel_action_review ;
+    obop:belongsTo :review_block ;
+    obop:belongsToVisual :review_hlayout ;
+    obop:hasLabel "Cancel" ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+:cancel_btn_reviewer a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :cancel_action_reviewer ;
+    obop:belongsTo :reviewer_block ;
+    obop:belongsToVisual :reviewer_hlayout ;
+    obop:hasLabel "Cancel" ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+:cancel_btn_session a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :cancel_action_session ;
+    obop:belongsTo :session_block ;
+    obop:belongsToVisual :session_hlayout ;
+    obop:hasLabel "Cancel" ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+:cancel_btn_track a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :cancel_action_track ;
+    obop:belongsTo :track_block ;
+    obop:belongsToVisual :track_hlayout ;
+    obop:hasLabel "Cancel" ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+<http://example.org/generated/conference/ConferenceShape> a shacl:NodeShape ;
+    shacl:order 0 ;
+    shacl:property [ shacl:datatype xsd:string ;
+            shacl:minCount 1 ;
+            shacl:name "Conference title" ;
+            shacl:order 0 ;
+            shacl:path <http://schema.org/name> ],
+        [ shacl:datatype xsd:string ;
+            shacl:name "Acronym" ;
+            shacl:order 1 ;
+            shacl:path <http://example.org/generated/conference/acronym> ],
+        [ shacl:datatype xsd:dateTime ;
+            shacl:name "Start date" ;
+            shacl:order 2 ;
+            shacl:path <http://schema.org/startDate> ],
+        [ shacl:datatype xsd:dateTime ;
+            shacl:name "End date" ;
+            shacl:order 3 ;
+            shacl:path <http://schema.org/endDate> ] ;
+    shacl:targetClass <http://example.org/generated/conference/Conference> .
+
+<http://example.org/generated/conference/PaperShape> a shacl:NodeShape ;
+    shacl:order 2 ;
+    shacl:property [ shacl:datatype xsd:dateTime ;
+            shacl:name "Submission date" ;
+            shacl:order 2 ;
+            shacl:path <http://example.org/generated/conference/submissionDate> ],
+        [ shacl:node <http://example.org/generated/conference/TrackShape> ;
+            shacl:order 3 ;
+            shacl:path <http://example.org/generated/conference/submittedTo> ],
+        [ shacl:class <http://example.org/generated/conference/Author> ;
+            shacl:order 4 ;
+            shacl:path <http://example.org/generated/conference/hasAuthor> ],
+        [ shacl:node <http://example.org/generated/conference/SessionShape> ;
+            shacl:order 5 ;
+            shacl:path <http://example.org/generated/conference/presentedIn> ],
+        [ shacl:datatype xsd:string ;
+            shacl:minCount 1 ;
+            shacl:name "Paper title" ;
+            shacl:order 0 ;
+            shacl:path <http://example.org/generated/conference/paperTitle> ],
+        [ shacl:datatype xsd:string ;
+            shacl:name "Abstract" ;
+            shacl:order 1 ;
+            shacl:path <http://example.org/generated/conference/abstract> ] ;
+    shacl:targetClass <http://example.org/generated/conference/Paper> .
+
+<http://example.org/generated/conference/SessionShape> a shacl:NodeShape ;
+    shacl:order 4 ;
+    shacl:property [ shacl:datatype xsd:string ;
+            shacl:name "Session title" ;
+            shacl:order 0 ;
+            shacl:path <http://example.org/generated/conference/sessionTitle> ],
+        [ shacl:datatype xsd:dateTime ;
+            shacl:name "Session date" ;
+            shacl:order 1 ;
+            shacl:path <http://example.org/generated/conference/sessionDate> ],
+        [ shacl:datatype xsd:string ;
+            shacl:name "Room" ;
+            shacl:order 2 ;
+            shacl:path <http://example.org/generated/conference/room> ],
+        [ shacl:node <http://example.org/generated/conference/TrackShape> ;
+            shacl:order 3 ;
+            shacl:path <http://example.org/generated/conference/partOfTrack> ] ;
+    shacl:targetClass <http://example.org/generated/conference/Session> .
+
+:conference_notification_label a obop:Label,
+        owl:NamedIndividual ;
+    obop:belongsTo :conference_notification_block ;
+    obop:belongsToVisual :conference_notification_layout ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:hasText "The Conference data have been stored in the database."^^rdf:PlainLiteral .
+
+:continue_btn_author a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :continue_action ;
+    obop:belongsTo :author_notification_block ;
+    obop:belongsToVisual :author_notification_layout ;
+    obop:hasLabel "Continue" ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+:continue_btn_conference a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :continue_action ;
+    obop:belongsTo :conference_notification_block ;
+    obop:belongsToVisual :conference_notification_layout ;
+    obop:hasLabel "Continue" ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+:continue_btn_paper a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :continue_action ;
+    obop:belongsTo :paper_notification_block ;
+    obop:belongsToVisual :paper_notification_layout ;
+    obop:hasLabel "Continue" ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+:continue_btn_review a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :continue_action ;
+    obop:belongsTo :review_notification_block ;
+    obop:belongsToVisual :review_notification_layout ;
+    obop:hasLabel "Continue" ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+:continue_btn_reviewer a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :continue_action ;
+    obop:belongsTo :reviewer_notification_block ;
+    obop:belongsToVisual :reviewer_notification_layout ;
+    obop:hasLabel "Continue" ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+:continue_btn_session a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :continue_action ;
+    obop:belongsTo :session_notification_block ;
+    obop:belongsToVisual :session_notification_layout ;
+    obop:hasLabel "Continue" ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+:continue_btn_track a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :continue_action ;
+    obop:belongsTo :track_notification_block ;
+    obop:belongsToVisual :track_notification_layout ;
+    obop:hasLabel "Continue" ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+:flow_author_1 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_author ;
+    bbo:has_sourceRef :start_author ;
+    bbo:has_targetRef :generate_form_author .
+
+:flow_author_2 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_author ;
+    bbo:has_sourceRef :generate_form_author ;
+    bbo:has_targetRef :user_enters_author .
+
+:flow_author_3 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_author ;
+    bbo:has_sourceRef :user_enters_author ;
+    bbo:has_targetRef :processing_author .
+
+:flow_author_4 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_author ;
+    bbo:has_sourceRef :processing_author ;
+    bbo:has_targetRef :gateway_author .
+
+:flow_author_5 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_author ;
+    bbo:has_sourceRef :make_connection_paper_author ;
+    bbo:has_targetRef :confirmation_author .
+
+:flow_author_5_conn_0 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_author ;
+    bbo:has_sourceRef :save_author ;
+    bbo:has_targetRef :make_connection_paper_author .
+
+:flow_author_6 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_author ;
+    bbo:has_sourceRef :confirmation_author ;
+    bbo:has_targetRef :user_gets_notification_author .
+
+:flow_author_7 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_author ;
+    bbo:has_sourceRef :user_gets_notification_author ;
+    bbo:has_targetRef :loop_gateway_author .
+
+:flow_author_abort_end a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_author ;
+    bbo:has_sourceRef :abort_author ;
+    bbo:has_targetRef :cancel_end_author .
+
+:flow_author_cancel a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :cancel_cond_author ;
+    bbo:has_container :insert_author ;
+    bbo:has_sourceRef :gateway_author ;
+    bbo:has_targetRef :abort_author .
+
+:flow_author_loop_again a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :loop_again_cond_author ;
+    bbo:has_container :insert_author ;
+    bbo:has_sourceRef :loop_gateway_author ;
+    bbo:has_targetRef :generate_form_author .
+
+:flow_author_loop_end a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :loop_continue_cond_author ;
+    bbo:has_container :insert_author ;
+    bbo:has_sourceRef :loop_gateway_author ;
+    bbo:has_targetRef :end_author .
+
+:flow_author_submit a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :submit_cond_author ;
+    bbo:has_container :insert_author ;
+    bbo:has_sourceRef :gateway_author ;
+    bbo:has_targetRef :validate_form_author .
+
+:flow_author_val_fail a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :val_fail_cond_author ;
+    bbo:has_container :insert_author ;
+    bbo:has_sourceRef :validation_gateway_author ;
+    bbo:has_targetRef :user_enters_author .
+
+:flow_author_val_ok a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :val_ok_cond_author ;
+    bbo:has_container :insert_author ;
+    bbo:has_sourceRef :validation_gateway_author ;
+    bbo:has_targetRef :save_author .
+
+:flow_author_validate a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_author ;
+    bbo:has_sourceRef :validate_form_author ;
+    bbo:has_targetRef :validation_gateway_author .
+
+:flow_conference_1 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_conference ;
+    bbo:has_sourceRef :start_conference ;
+    bbo:has_targetRef :generate_form_conference .
+
+:flow_conference_2 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_conference ;
+    bbo:has_sourceRef :generate_form_conference ;
+    bbo:has_targetRef :user_enters_conference .
+
+:flow_conference_3 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_conference ;
+    bbo:has_sourceRef :user_enters_conference ;
+    bbo:has_targetRef :processing_conference .
+
+:flow_conference_4 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_conference ;
+    bbo:has_sourceRef :processing_conference ;
+    bbo:has_targetRef :gateway_conference .
+
+:flow_conference_5 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_conference ;
+    bbo:has_sourceRef :save_conference ;
+    bbo:has_targetRef :confirmation_conference .
+
+:flow_conference_6 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_conference ;
+    bbo:has_sourceRef :confirmation_conference ;
+    bbo:has_targetRef :user_gets_notification_conference .
+
+:flow_conference_7 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_conference ;
+    bbo:has_sourceRef :user_gets_notification_conference ;
+    bbo:has_targetRef :loop_gateway_conference .
+
+:flow_conference_abort_end a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_conference ;
+    bbo:has_sourceRef :abort_conference ;
+    bbo:has_targetRef :cancel_end_conference .
+
+:flow_conference_cancel a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :cancel_cond_conference ;
+    bbo:has_container :insert_conference ;
+    bbo:has_sourceRef :gateway_conference ;
+    bbo:has_targetRef :abort_conference .
+
+:flow_conference_loop_again a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :loop_again_cond_conference ;
+    bbo:has_container :insert_conference ;
+    bbo:has_sourceRef :loop_gateway_conference ;
+    bbo:has_targetRef :generate_form_conference .
+
+:flow_conference_loop_end a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :loop_continue_cond_conference ;
+    bbo:has_container :insert_conference ;
+    bbo:has_sourceRef :loop_gateway_conference ;
+    bbo:has_targetRef :end_conference .
+
+:flow_conference_submit a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :submit_cond_conference ;
+    bbo:has_container :insert_conference ;
+    bbo:has_sourceRef :gateway_conference ;
+    bbo:has_targetRef :validate_form_conference .
+
+:flow_conference_val_fail a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :val_fail_cond_conference ;
+    bbo:has_container :insert_conference ;
+    bbo:has_sourceRef :validation_gateway_conference ;
+    bbo:has_targetRef :user_enters_conference .
+
+:flow_conference_val_ok a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :val_ok_cond_conference ;
+    bbo:has_container :insert_conference ;
+    bbo:has_sourceRef :validation_gateway_conference ;
+    bbo:has_targetRef :save_conference .
+
+:flow_conference_validate a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_conference ;
+    bbo:has_sourceRef :validate_form_conference ;
+    bbo:has_targetRef :validation_gateway_conference .
+
+:flow_main_0 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :app_process ;
+    bbo:has_sourceRef :start ;
+    bbo:has_targetRef :insert_conference .
+
+:flow_main_1 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :app_process ;
+    bbo:has_sourceRef :insert_conference ;
+    bbo:has_targetRef :insert_track .
+
+:flow_main_2 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :app_process ;
+    bbo:has_sourceRef :insert_track ;
+    bbo:has_targetRef :insert_paper .
+
+:flow_main_3 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :app_process ;
+    bbo:has_sourceRef :insert_paper ;
+    bbo:has_targetRef :insert_author .
+
+:flow_main_4 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :app_process ;
+    bbo:has_sourceRef :insert_author ;
+    bbo:has_targetRef :insert_session .
+
+:flow_main_5 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :app_process ;
+    bbo:has_sourceRef :insert_session ;
+    bbo:has_targetRef :insert_reviewer .
+
+:flow_main_6 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :app_process ;
+    bbo:has_sourceRef :insert_reviewer ;
+    bbo:has_targetRef :insert_review .
+
+:flow_main_end a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :app_process ;
+    bbo:has_sourceRef :user_receives_validation ;
+    bbo:has_targetRef :end_event .
+
+:flow_main_final a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :app_process ;
+    bbo:has_sourceRef :insert_review ;
+    bbo:has_targetRef :final_validation .
+
+:flow_main_urv a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :app_process ;
+    bbo:has_sourceRef :final_validation ;
+    bbo:has_targetRef :user_receives_validation .
+
+:flow_paper_1 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_paper ;
+    bbo:has_sourceRef :start_paper ;
+    bbo:has_targetRef :generate_form_paper .
+
+:flow_paper_2 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_paper ;
+    bbo:has_sourceRef :generate_form_paper ;
+    bbo:has_targetRef :user_enters_paper .
+
+:flow_paper_3 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_paper ;
+    bbo:has_sourceRef :user_enters_paper ;
+    bbo:has_targetRef :processing_paper .
+
+:flow_paper_4 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_paper ;
+    bbo:has_sourceRef :processing_paper ;
+    bbo:has_targetRef :gateway_paper .
+
+:flow_paper_5 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_paper ;
+    bbo:has_sourceRef :make_connection_paper_track ;
+    bbo:has_targetRef :confirmation_paper .
+
+:flow_paper_5_conn_0 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_paper ;
+    bbo:has_sourceRef :save_paper ;
+    bbo:has_targetRef :make_connection_paper_track .
+
+:flow_paper_6 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_paper ;
+    bbo:has_sourceRef :confirmation_paper ;
+    bbo:has_targetRef :user_gets_notification_paper .
+
+:flow_paper_7 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_paper ;
+    bbo:has_sourceRef :user_gets_notification_paper ;
+    bbo:has_targetRef :loop_gateway_paper .
+
+:flow_paper_abort_end a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_paper ;
+    bbo:has_sourceRef :abort_paper ;
+    bbo:has_targetRef :cancel_end_paper .
+
+:flow_paper_cancel a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :cancel_cond_paper ;
+    bbo:has_container :insert_paper ;
+    bbo:has_sourceRef :gateway_paper ;
+    bbo:has_targetRef :abort_paper .
+
+:flow_paper_loop_again a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :loop_again_cond_paper ;
+    bbo:has_container :insert_paper ;
+    bbo:has_sourceRef :loop_gateway_paper ;
+    bbo:has_targetRef :generate_form_paper .
+
+:flow_paper_loop_end a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :loop_continue_cond_paper ;
+    bbo:has_container :insert_paper ;
+    bbo:has_sourceRef :loop_gateway_paper ;
+    bbo:has_targetRef :end_paper .
+
+:flow_paper_submit a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :submit_cond_paper ;
+    bbo:has_container :insert_paper ;
+    bbo:has_sourceRef :gateway_paper ;
+    bbo:has_targetRef :validate_form_paper .
+
+:flow_paper_val_fail a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :val_fail_cond_paper ;
+    bbo:has_container :insert_paper ;
+    bbo:has_sourceRef :validation_gateway_paper ;
+    bbo:has_targetRef :user_enters_paper .
+
+:flow_paper_val_ok a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :val_ok_cond_paper ;
+    bbo:has_container :insert_paper ;
+    bbo:has_sourceRef :validation_gateway_paper ;
+    bbo:has_targetRef :save_paper .
+
+:flow_paper_validate a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_paper ;
+    bbo:has_sourceRef :validate_form_paper ;
+    bbo:has_targetRef :validation_gateway_paper .
+
+:flow_review_1 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_review ;
+    bbo:has_sourceRef :start_review ;
+    bbo:has_targetRef :generate_form_review .
+
+:flow_review_2 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_review ;
+    bbo:has_sourceRef :generate_form_review ;
+    bbo:has_targetRef :user_enters_review .
+
+:flow_review_3 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_review ;
+    bbo:has_sourceRef :user_enters_review ;
+    bbo:has_targetRef :processing_review .
+
+:flow_review_4 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_review ;
+    bbo:has_sourceRef :processing_review ;
+    bbo:has_targetRef :gateway_review .
+
+:flow_review_5 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_review ;
+    bbo:has_sourceRef :make_connection_review_reviewer ;
+    bbo:has_targetRef :confirmation_review .
+
+:flow_review_5_conn_0 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_review ;
+    bbo:has_sourceRef :save_review ;
+    bbo:has_targetRef :make_connection_review_paper .
+
+:flow_review_5_conn_1 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_review ;
+    bbo:has_sourceRef :make_connection_review_paper ;
+    bbo:has_targetRef :make_connection_review_reviewer .
+
+:flow_review_6 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_review ;
+    bbo:has_sourceRef :confirmation_review ;
+    bbo:has_targetRef :user_gets_notification_review .
+
+:flow_review_7 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_review ;
+    bbo:has_sourceRef :user_gets_notification_review ;
+    bbo:has_targetRef :end_review .
+
+:flow_review_abort_end a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_review ;
+    bbo:has_sourceRef :abort_review ;
+    bbo:has_targetRef :cancel_end_review .
+
+:flow_review_cancel a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :cancel_cond_review ;
+    bbo:has_container :insert_review ;
+    bbo:has_sourceRef :gateway_review ;
+    bbo:has_targetRef :abort_review .
+
+:flow_review_submit a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :submit_cond_review ;
+    bbo:has_container :insert_review ;
+    bbo:has_sourceRef :gateway_review ;
+    bbo:has_targetRef :validate_form_review .
+
+:flow_review_val_fail a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :val_fail_cond_review ;
+    bbo:has_container :insert_review ;
+    bbo:has_sourceRef :validation_gateway_review ;
+    bbo:has_targetRef :user_enters_review .
+
+:flow_review_val_ok a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :val_ok_cond_review ;
+    bbo:has_container :insert_review ;
+    bbo:has_sourceRef :validation_gateway_review ;
+    bbo:has_targetRef :save_review .
+
+:flow_review_validate a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_review ;
+    bbo:has_sourceRef :validate_form_review ;
+    bbo:has_targetRef :validation_gateway_review .
+
+:flow_reviewer_1 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_reviewer ;
+    bbo:has_sourceRef :start_reviewer ;
+    bbo:has_targetRef :generate_form_reviewer .
+
+:flow_reviewer_2 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_reviewer ;
+    bbo:has_sourceRef :generate_form_reviewer ;
+    bbo:has_targetRef :user_enters_reviewer .
+
+:flow_reviewer_3 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_reviewer ;
+    bbo:has_sourceRef :user_enters_reviewer ;
+    bbo:has_targetRef :processing_reviewer .
+
+:flow_reviewer_4 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_reviewer ;
+    bbo:has_sourceRef :processing_reviewer ;
+    bbo:has_targetRef :gateway_reviewer .
+
+:flow_reviewer_5 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_reviewer ;
+    bbo:has_sourceRef :save_reviewer ;
+    bbo:has_targetRef :confirmation_reviewer .
+
+:flow_reviewer_6 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_reviewer ;
+    bbo:has_sourceRef :confirmation_reviewer ;
+    bbo:has_targetRef :user_gets_notification_reviewer .
+
+:flow_reviewer_7 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_reviewer ;
+    bbo:has_sourceRef :user_gets_notification_reviewer ;
+    bbo:has_targetRef :loop_gateway_reviewer .
+
+:flow_reviewer_abort_end a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_reviewer ;
+    bbo:has_sourceRef :abort_reviewer ;
+    bbo:has_targetRef :cancel_end_reviewer .
+
+:flow_reviewer_cancel a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :cancel_cond_reviewer ;
+    bbo:has_container :insert_reviewer ;
+    bbo:has_sourceRef :gateway_reviewer ;
+    bbo:has_targetRef :abort_reviewer .
+
+:flow_reviewer_loop_again a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :loop_again_cond_reviewer ;
+    bbo:has_container :insert_reviewer ;
+    bbo:has_sourceRef :loop_gateway_reviewer ;
+    bbo:has_targetRef :generate_form_reviewer .
+
+:flow_reviewer_loop_end a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :loop_continue_cond_reviewer ;
+    bbo:has_container :insert_reviewer ;
+    bbo:has_sourceRef :loop_gateway_reviewer ;
+    bbo:has_targetRef :end_reviewer .
+
+:flow_reviewer_submit a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :submit_cond_reviewer ;
+    bbo:has_container :insert_reviewer ;
+    bbo:has_sourceRef :gateway_reviewer ;
+    bbo:has_targetRef :validate_form_reviewer .
+
+:flow_reviewer_val_fail a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :val_fail_cond_reviewer ;
+    bbo:has_container :insert_reviewer ;
+    bbo:has_sourceRef :validation_gateway_reviewer ;
+    bbo:has_targetRef :user_enters_reviewer .
+
+:flow_reviewer_val_ok a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :val_ok_cond_reviewer ;
+    bbo:has_container :insert_reviewer ;
+    bbo:has_sourceRef :validation_gateway_reviewer ;
+    bbo:has_targetRef :save_reviewer .
+
+:flow_reviewer_validate a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_reviewer ;
+    bbo:has_sourceRef :validate_form_reviewer ;
+    bbo:has_targetRef :validation_gateway_reviewer .
+
+:flow_session_1 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_session ;
+    bbo:has_sourceRef :start_session ;
+    bbo:has_targetRef :generate_form_session .
+
+:flow_session_2 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_session ;
+    bbo:has_sourceRef :generate_form_session ;
+    bbo:has_targetRef :user_enters_session .
+
+:flow_session_3 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_session ;
+    bbo:has_sourceRef :user_enters_session ;
+    bbo:has_targetRef :processing_session .
+
+:flow_session_4 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_session ;
+    bbo:has_sourceRef :processing_session ;
+    bbo:has_targetRef :gateway_session .
+
+:flow_session_5 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_session ;
+    bbo:has_sourceRef :make_connection_session_track ;
+    bbo:has_targetRef :confirmation_session .
+
+:flow_session_5_conn_0 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_session ;
+    bbo:has_sourceRef :save_session ;
+    bbo:has_targetRef :make_connection_paper_session .
+
+:flow_session_5_conn_1 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_session ;
+    bbo:has_sourceRef :make_connection_paper_session ;
+    bbo:has_targetRef :make_connection_session_track .
+
+:flow_session_6 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_session ;
+    bbo:has_sourceRef :confirmation_session ;
+    bbo:has_targetRef :user_gets_notification_session .
+
+:flow_session_7 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_session ;
+    bbo:has_sourceRef :user_gets_notification_session ;
+    bbo:has_targetRef :loop_gateway_session .
+
+:flow_session_abort_end a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_session ;
+    bbo:has_sourceRef :abort_session ;
+    bbo:has_targetRef :cancel_end_session .
+
+:flow_session_cancel a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :cancel_cond_session ;
+    bbo:has_container :insert_session ;
+    bbo:has_sourceRef :gateway_session ;
+    bbo:has_targetRef :abort_session .
+
+:flow_session_loop_again a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :loop_again_cond_session ;
+    bbo:has_container :insert_session ;
+    bbo:has_sourceRef :loop_gateway_session ;
+    bbo:has_targetRef :generate_form_session .
+
+:flow_session_loop_end a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :loop_continue_cond_session ;
+    bbo:has_container :insert_session ;
+    bbo:has_sourceRef :loop_gateway_session ;
+    bbo:has_targetRef :end_session .
+
+:flow_session_submit a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :submit_cond_session ;
+    bbo:has_container :insert_session ;
+    bbo:has_sourceRef :gateway_session ;
+    bbo:has_targetRef :validate_form_session .
+
+:flow_session_val_fail a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :val_fail_cond_session ;
+    bbo:has_container :insert_session ;
+    bbo:has_sourceRef :validation_gateway_session ;
+    bbo:has_targetRef :user_enters_session .
+
+:flow_session_val_ok a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :val_ok_cond_session ;
+    bbo:has_container :insert_session ;
+    bbo:has_sourceRef :validation_gateway_session ;
+    bbo:has_targetRef :save_session .
+
+:flow_session_validate a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_session ;
+    bbo:has_sourceRef :validate_form_session ;
+    bbo:has_targetRef :validation_gateway_session .
+
+:flow_track_1 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_track ;
+    bbo:has_sourceRef :start_track ;
+    bbo:has_targetRef :generate_form_track .
+
+:flow_track_2 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_track ;
+    bbo:has_sourceRef :generate_form_track ;
+    bbo:has_targetRef :user_enters_track .
+
+:flow_track_3 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_track ;
+    bbo:has_sourceRef :user_enters_track ;
+    bbo:has_targetRef :processing_track .
+
+:flow_track_4 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_track ;
+    bbo:has_sourceRef :processing_track ;
+    bbo:has_targetRef :gateway_track .
+
+:flow_track_5 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_track ;
+    bbo:has_sourceRef :make_connection_track_conference ;
+    bbo:has_targetRef :confirmation_track .
+
+:flow_track_5_conn_0 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_track ;
+    bbo:has_sourceRef :save_track ;
+    bbo:has_targetRef :make_connection_track_conference .
+
+:flow_track_6 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_track ;
+    bbo:has_sourceRef :confirmation_track ;
+    bbo:has_targetRef :user_gets_notification_track .
+
+:flow_track_7 a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_track ;
+    bbo:has_sourceRef :user_gets_notification_track ;
+    bbo:has_targetRef :loop_gateway_track .
+
+:flow_track_abort_end a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_track ;
+    bbo:has_sourceRef :abort_track ;
+    bbo:has_targetRef :cancel_end_track .
+
+:flow_track_cancel a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :cancel_cond_track ;
+    bbo:has_container :insert_track ;
+    bbo:has_sourceRef :gateway_track ;
+    bbo:has_targetRef :abort_track .
+
+:flow_track_loop_again a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :loop_again_cond_track ;
+    bbo:has_container :insert_track ;
+    bbo:has_sourceRef :loop_gateway_track ;
+    bbo:has_targetRef :generate_form_track .
+
+:flow_track_loop_end a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :loop_continue_cond_track ;
+    bbo:has_container :insert_track ;
+    bbo:has_sourceRef :loop_gateway_track ;
+    bbo:has_targetRef :end_track .
+
+:flow_track_submit a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :submit_cond_track ;
+    bbo:has_container :insert_track ;
+    bbo:has_sourceRef :gateway_track ;
+    bbo:has_targetRef :validate_form_track .
+
+:flow_track_val_fail a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :val_fail_cond_track ;
+    bbo:has_container :insert_track ;
+    bbo:has_sourceRef :validation_gateway_track ;
+    bbo:has_targetRef :user_enters_track .
+
+:flow_track_val_ok a owl:NamedIndividual,
+        bbo:ConditionalSequenceFlow ;
+    bbo:has_conditionExpression :val_ok_cond_track ;
+    bbo:has_container :insert_track ;
+    bbo:has_sourceRef :validation_gateway_track ;
+    bbo:has_targetRef :save_track .
+
+:flow_track_validate a owl:NamedIndividual,
+        bbo:NormalSequenceFlow ;
+    bbo:has_container :insert_track ;
+    bbo:has_sourceRef :validate_form_track ;
+    bbo:has_targetRef :validation_gateway_track .
+
+:paper_notification_label a obop:Label,
+        owl:NamedIndividual ;
+    obop:belongsTo :paper_notification_block ;
+    obop:belongsToVisual :paper_notification_layout ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:hasText "The Paper data have been stored in the database."^^rdf:PlainLiteral .
+
+:picker_author_paper_author a obop:ListField,
+        owl:NamedIndividual ;
+    obop:belongsTo :author_block ;
+    obop:belongsToVisual :author_vlayout ;
+    obop:hasLabel "Paper" ;
+    obop:hasPositionNumber "3"^^xsd:int ;
+    obop:picksInstanceFor :paper_author_connection .
+
+:picker_paper_paper_track a obop:ListField,
+        owl:NamedIndividual ;
+    obop:belongsTo :paper_block ;
+    obop:belongsToVisual :paper_vlayout ;
+    obop:hasLabel "Track" ;
+    obop:hasPositionNumber "3"^^xsd:int ;
+    obop:picksInstanceFor :paper_track_connection .
+
+:picker_review_review_paper a obop:ListField,
+        owl:NamedIndividual ;
+    obop:belongsTo :review_block ;
+    obop:belongsToVisual :review_vlayout ;
+    obop:hasLabel "Paper" ;
+    obop:hasPositionNumber "3"^^xsd:int ;
+    obop:picksInstanceFor :review_paper_connection .
+
+:picker_review_review_reviewer a obop:ListField,
+        owl:NamedIndividual ;
+    obop:belongsTo :review_block ;
+    obop:belongsToVisual :review_vlayout ;
+    obop:hasLabel "Reviewer" ;
+    obop:hasPositionNumber "4"^^xsd:int ;
+    obop:picksInstanceFor :review_reviewer_connection .
+
+:picker_session_paper_session a obop:ListField,
+        owl:NamedIndividual ;
+    obop:belongsTo :session_block ;
+    obop:belongsToVisual :session_vlayout ;
+    obop:hasLabel "Paper" ;
+    obop:hasPositionNumber "3"^^xsd:int ;
+    obop:picksInstanceFor :paper_session_connection .
+
+:picker_session_session_track a obop:ListField,
+        owl:NamedIndividual ;
+    obop:belongsTo :session_block ;
+    obop:belongsToVisual :session_vlayout ;
+    obop:hasLabel "Track" ;
+    obop:hasPositionNumber "4"^^xsd:int ;
+    obop:picksInstanceFor :session_track_connection .
+
+:picker_track_track_conference a obop:ListField,
+        owl:NamedIndividual ;
+    obop:belongsTo :track_block ;
+    obop:belongsToVisual :track_vlayout ;
+    obop:hasLabel "Conference" ;
+    obop:hasPositionNumber "2"^^xsd:int ;
+    obop:picksInstanceFor :track_conference_connection .
+
+:review_notification_label a obop:Label,
+        owl:NamedIndividual ;
+    obop:belongsTo :review_notification_block ;
+    obop:belongsToVisual :review_notification_layout ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:hasText "The Review data have been stored in the database."^^rdf:PlainLiteral .
+
+:reviewer_notification_label a obop:Label,
+        owl:NamedIndividual ;
+    obop:belongsTo :reviewer_notification_block ;
+    obop:belongsToVisual :reviewer_notification_layout ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:hasText "The Reviewer data have been stored in the database."^^rdf:PlainLiteral .
+
+:session_notification_label a obop:Label,
+        owl:NamedIndividual ;
+    obop:belongsTo :session_notification_block ;
+    obop:belongsToVisual :session_notification_layout ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:hasText "The Session data have been stored in the database."^^rdf:PlainLiteral .
+
+:submit_btn_author a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :submit_action_author ;
+    obop:belongsTo :author_block ;
+    obop:belongsToVisual :author_hlayout ;
+    obop:hasLabel "Submit" ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:submit_btn_conference a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :submit_action_conference ;
+    obop:belongsTo :conference_block ;
+    obop:belongsToVisual :conference_hlayout ;
+    obop:hasLabel "Submit" ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:submit_btn_paper a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :submit_action_paper ;
+    obop:belongsTo :paper_block ;
+    obop:belongsToVisual :paper_hlayout ;
+    obop:hasLabel "Submit" ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:submit_btn_review a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :submit_action_review ;
+    obop:belongsTo :review_block ;
+    obop:belongsToVisual :review_hlayout ;
+    obop:hasLabel "Submit" ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:submit_btn_reviewer a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :submit_action_reviewer ;
+    obop:belongsTo :reviewer_block ;
+    obop:belongsToVisual :reviewer_hlayout ;
+    obop:hasLabel "Submit" ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:submit_btn_session a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :submit_action_session ;
+    obop:belongsTo :session_block ;
+    obop:belongsToVisual :session_hlayout ;
+    obop:hasLabel "Submit" ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:submit_btn_track a obop:Button,
+        owl:NamedIndividual ;
+    obop:activatesAction :submit_action_track ;
+    obop:belongsTo :track_block ;
+    obop:belongsToVisual :track_hlayout ;
+    obop:hasLabel "Submit" ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:track_notification_label a obop:Label,
+        owl:NamedIndividual ;
+    obop:belongsTo :track_notification_block ;
+    obop:belongsToVisual :track_notification_layout ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:hasText "The Track data have been stored in the database."^^rdf:PlainLiteral .
+
+:cancel_cond_author a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :cancel_action_author .
+
+:cancel_cond_conference a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :cancel_action_conference .
+
+:cancel_cond_paper a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :cancel_action_paper .
+
+:cancel_cond_review a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :cancel_action_review .
+
+:cancel_cond_reviewer a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :cancel_action_reviewer .
+
+:cancel_cond_session a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :cancel_action_session .
+
+:cancel_cond_track a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :cancel_action_track .
+
+:cancel_end_author a owl:NamedIndividual,
+        bbo:EndEvent ;
+    rdfs:comment "Author data entry cancelled." ;
+    bbo:has_container :insert_author .
+
+:cancel_end_conference a owl:NamedIndividual,
+        bbo:EndEvent ;
+    rdfs:comment "Conference data entry cancelled." ;
+    bbo:has_container :insert_conference .
+
+:cancel_end_paper a owl:NamedIndividual,
+        bbo:EndEvent ;
+    rdfs:comment "Paper data entry cancelled." ;
+    bbo:has_container :insert_paper .
+
+:cancel_end_review a owl:NamedIndividual,
+        bbo:EndEvent ;
+    rdfs:comment "Review data entry cancelled." ;
+    bbo:has_container :insert_review .
+
+:cancel_end_reviewer a owl:NamedIndividual,
+        bbo:EndEvent ;
+    rdfs:comment "Reviewer data entry cancelled." ;
+    bbo:has_container :insert_reviewer .
+
+:cancel_end_session a owl:NamedIndividual,
+        bbo:EndEvent ;
+    rdfs:comment "Session data entry cancelled." ;
+    bbo:has_container :insert_session .
+
+:cancel_end_track a owl:NamedIndividual,
+        bbo:EndEvent ;
+    rdfs:comment "Track data entry cancelled." ;
+    bbo:has_container :insert_track .
+
+<http://example.org/generated/conference/TrackShape> a shacl:NodeShape ;
+    shacl:order 1 ;
+    shacl:property [ shacl:datatype xsd:string ;
+            shacl:minCount 1 ;
+            shacl:name "Track title" ;
+            shacl:order 0 ;
+            shacl:path <http://example.org/generated/conference/trackTitle> ],
+        [ shacl:datatype xsd:string ;
+            shacl:name "Chair name" ;
+            shacl:order 1 ;
+            shacl:path <http://example.org/generated/conference/chairName> ],
+        [ shacl:node <http://example.org/generated/conference/ConferenceShape> ;
+            shacl:order 2 ;
+            shacl:path <http://example.org/generated/conference/isTrackOf> ] ;
+    shacl:targetClass <http://example.org/generated/conference/Track> .
+
+:confirm_action_author a obop:GenerateJSONForm,
+        owl:NamedIndividual ;
+    obop:actionInBlock :author_notification_block .
+
+:confirm_action_conference a obop:GenerateJSONForm,
+        owl:NamedIndividual ;
+    obop:actionInBlock :conference_notification_block .
+
+:confirm_action_paper a obop:GenerateJSONForm,
+        owl:NamedIndividual ;
+    obop:actionInBlock :paper_notification_block .
+
+:confirm_action_review a obop:GenerateJSONForm,
+        owl:NamedIndividual ;
+    obop:actionInBlock :review_notification_block .
+
+:confirm_action_reviewer a obop:GenerateJSONForm,
+        owl:NamedIndividual ;
+    obop:actionInBlock :reviewer_notification_block .
+
+:confirm_action_session a obop:GenerateJSONForm,
+        owl:NamedIndividual ;
+    obop:actionInBlock :session_notification_block .
+
+:confirm_action_track a obop:GenerateJSONForm,
+        owl:NamedIndividual ;
+    obop:actionInBlock :track_notification_block .
+
+:connection_action_paper_author a obop:MakeConnectionAction,
+        owl:NamedIndividual ;
+    obop:hasConnection :paper_author_connection .
+
+:connection_action_paper_session a obop:MakeConnectionAction,
+        owl:NamedIndividual ;
+    obop:hasConnection :paper_session_connection .
+
+:connection_action_paper_track a obop:MakeConnectionAction,
+        owl:NamedIndividual ;
+    obop:hasConnection :paper_track_connection .
+
+:connection_action_review_paper a obop:MakeConnectionAction,
+        owl:NamedIndividual ;
+    obop:hasConnection :review_paper_connection .
+
+:connection_action_review_reviewer a obop:MakeConnectionAction,
+        owl:NamedIndividual ;
+    obop:hasConnection :review_reviewer_connection .
+
+:connection_action_session_track a obop:MakeConnectionAction,
+        owl:NamedIndividual ;
+    obop:hasConnection :session_track_connection .
+
+:connection_action_track_conference a obop:MakeConnectionAction,
+        owl:NamedIndividual ;
+    obop:hasConnection :track_conference_connection .
+
+:connector_paper_author_has_author a obop:Connector,
+        owl:NamedIndividual ;
+    shacl:path <http://example.org/generated/conference/hasAuthor> .
+
+:connector_paper_session_presented_in a obop:Connector,
+        owl:NamedIndividual ;
+    shacl:path <http://example.org/generated/conference/presentedIn> .
+
+:connector_paper_track_submitted_to a obop:Connector,
+        owl:NamedIndividual ;
+    shacl:path <http://example.org/generated/conference/submittedTo> .
+
+:connector_review_paper_reviews a obop:Connector,
+        owl:NamedIndividual ;
+    shacl:path <http://example.org/generated/conference/reviews> .
+
+:connector_review_reviewer_written_by a obop:Connector,
+        owl:NamedIndividual ;
+    shacl:path <http://example.org/generated/conference/writtenBy> .
+
+:connector_session_track_part_of_track a obop:Connector,
+        owl:NamedIndividual ;
+    shacl:path <http://example.org/generated/conference/partOfTrack> .
+
+:connector_track_conference_is_track_of a obop:Connector,
+        owl:NamedIndividual ;
+    shacl:path <http://example.org/generated/conference/isTrackOf> .
+
+:end_author a owl:NamedIndividual,
+        bbo:EndEvent ;
+    rdfs:comment "Author data stored." ;
+    bbo:has_container :insert_author .
+
+:end_conference a owl:NamedIndividual,
+        bbo:EndEvent ;
+    rdfs:comment "Conference data stored." ;
+    bbo:has_container :insert_conference .
+
+:end_event a owl:NamedIndividual,
+        bbo:EndEvent ;
+    rdfs:comment "The data insertion process is completed." ;
+    bbo:has_container :app_process .
+
+:end_paper a owl:NamedIndividual,
+        bbo:EndEvent ;
+    rdfs:comment "Paper data stored." ;
+    bbo:has_container :insert_paper .
+
+:end_review a owl:NamedIndividual,
+        bbo:EndEvent ;
+    rdfs:comment "Review data stored." ;
+    bbo:has_container :insert_review .
+
+:end_reviewer a owl:NamedIndividual,
+        bbo:EndEvent ;
+    rdfs:comment "Reviewer data stored." ;
+    bbo:has_container :insert_reviewer .
+
+:end_session a owl:NamedIndividual,
+        bbo:EndEvent ;
+    rdfs:comment "Session data stored." ;
+    bbo:has_container :insert_session .
+
+:end_track a owl:NamedIndividual,
+        bbo:EndEvent ;
+    rdfs:comment "Track data stored." ;
+    bbo:has_container :insert_track .
+
+:field_author_affiliation a obop:Field,
+        owl:NamedIndividual ;
+    obop:belongsTo :author_block ;
+    obop:belongsToVisual :author_row_4 ;
+    obop:containsDatatype <http://example.org/generated/conference/affiliation> ;
+    obop:hasLabel "Affiliation" ;
+    obop:hasPositionNumber "1"^^xsd:int ;
+    obop:isRelatedToTargetOntologyInstance :author_shape .
+
+:field_author_email a obop:Field,
+        owl:NamedIndividual ;
+    obop:belongsTo :author_block ;
+    obop:belongsToVisual :author_vlayout ;
+    obop:containsDatatype <http://schema.org/email> ;
+    obop:hasLabel "Email" ;
+    obop:hasPositionNumber "2"^^xsd:int ;
+    obop:isRelatedToTargetOntologyInstance :author_shape .
+
+:field_author_name a obop:Field,
+        owl:NamedIndividual ;
+    obop:belongsTo :author_block ;
+    obop:belongsToVisual :author_row_4 ;
+    obop:containsDatatype foaf:name ;
+    obop:hasLabel "Full name" ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:isRelatedToTargetOntologyInstance :author_shape .
+
+:field_conference_acronym a obop:Field,
+        owl:NamedIndividual ;
+    obop:belongsTo :conference_block ;
+    obop:belongsToVisual :conference_vlayout ;
+    obop:containsDatatype <http://example.org/generated/conference/acronym> ;
+    obop:hasLabel "Acronym" ;
+    obop:hasPositionNumber "1"^^xsd:int ;
+    obop:isRelatedToTargetOntologyInstance :conference_shape .
+
+:field_conference_end_date a obop:Field,
+        owl:NamedIndividual ;
+    obop:belongsTo :conference_block ;
+    obop:belongsToVisual :conference_row_0 ;
+    obop:containsDatatype <http://schema.org/endDate> ;
+    obop:hasLabel "End date" ;
+    obop:hasPositionNumber "1"^^xsd:int ;
+    obop:isRelatedToTargetOntologyInstance :conference_shape .
+
+:field_conference_name a obop:Field,
+        owl:NamedIndividual ;
+    obop:belongsTo :conference_block ;
+    obop:belongsToVisual :conference_vlayout ;
+    obop:containsDatatype <http://schema.org/name> ;
+    obop:hasLabel "Conference title" ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:isRelatedToTargetOntologyInstance :conference_shape .
+
+:field_conference_start_date a obop:Field,
+        owl:NamedIndividual ;
+    obop:belongsTo :conference_block ;
+    obop:belongsToVisual :conference_row_0 ;
+    obop:containsDatatype <http://schema.org/startDate> ;
+    obop:hasLabel "Start date" ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:isRelatedToTargetOntologyInstance :conference_shape .
+
+:field_paper_abstract a obop:Field,
+        owl:NamedIndividual ;
+    obop:belongsTo :paper_block ;
+    obop:belongsToVisual :paper_row_5 ;
+    obop:containsDatatype <http://example.org/generated/conference/abstract> ;
+    obop:hasLabel "Abstract" ;
+    obop:hasPositionNumber "1"^^xsd:int ;
+    obop:isRelatedToTargetOntologyInstance :paper_shape .
+
+:field_paper_paper_title a obop:Field,
+        owl:NamedIndividual ;
+    obop:belongsTo :paper_block ;
+    obop:belongsToVisual :paper_row_5 ;
+    obop:containsDatatype <http://example.org/generated/conference/paperTitle> ;
+    obop:hasLabel "Paper title" ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:isRelatedToTargetOntologyInstance :paper_shape .
+
+:field_paper_submission_date a obop:Field,
+        owl:NamedIndividual ;
+    obop:belongsTo :paper_block ;
+    obop:belongsToVisual :paper_row_1 ;
+    obop:containsDatatype <http://example.org/generated/conference/submissionDate> ;
+    obop:hasLabel "Submission date" ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:isRelatedToTargetOntologyInstance :paper_shape .
+
+:field_review_review_date a obop:Field,
+        owl:NamedIndividual ;
+    obop:belongsTo :review_block ;
+    obop:belongsToVisual :review_vlayout ;
+    obop:containsDatatype <http://example.org/generated/conference/reviewDate> ;
+    obop:hasLabel "Review date" ;
+    obop:hasPositionNumber "2"^^xsd:int ;
+    obop:isRelatedToTargetOntologyInstance :review_shape .
+
+:field_review_review_text a obop:Field,
+        owl:NamedIndividual ;
+    obop:belongsTo :review_block ;
+    obop:belongsToVisual :review_vlayout ;
+    obop:containsDatatype <http://example.org/generated/conference/reviewText> ;
+    obop:hasLabel "Review text" ;
+    obop:hasPositionNumber "1"^^xsd:int ;
+    obop:isRelatedToTargetOntologyInstance :review_shape .
+
+:field_review_score a obop:Field,
+        owl:NamedIndividual ;
+    obop:belongsTo :review_block ;
+    obop:belongsToVisual :review_vlayout ;
+    obop:containsDatatype <http://example.org/generated/conference/score> ;
+    obop:hasLabel "Score" ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:isRelatedToTargetOntologyInstance :review_shape .
+
+:field_reviewer_affiliation a obop:Field,
+        owl:NamedIndividual ;
+    obop:belongsTo :reviewer_block ;
+    obop:belongsToVisual :reviewer_vlayout ;
+    obop:containsDatatype <http://example.org/generated/conference/affiliation> ;
+    obop:hasLabel "Affiliation" ;
+    obop:hasPositionNumber "1"^^xsd:int ;
+    obop:isRelatedToTargetOntologyInstance :reviewer_shape .
+
+:field_reviewer_expertise a obop:Field,
+        owl:NamedIndividual ;
+    obop:belongsTo :reviewer_block ;
+    obop:belongsToVisual :reviewer_vlayout ;
+    obop:containsDatatype <http://example.org/generated/conference/expertise> ;
+    obop:hasLabel "Expertise" ;
+    obop:hasPositionNumber "2"^^xsd:int ;
+    obop:isRelatedToTargetOntologyInstance :reviewer_shape .
+
+:field_reviewer_reviewer_name a obop:Field,
+        owl:NamedIndividual ;
+    obop:belongsTo :reviewer_block ;
+    obop:belongsToVisual :reviewer_vlayout ;
+    obop:containsDatatype <http://example.org/generated/conference/reviewerName> ;
+    obop:hasLabel "Reviewer name" ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:isRelatedToTargetOntologyInstance :reviewer_shape .
+
+:field_session_room a obop:Field,
+        owl:NamedIndividual ;
+    obop:belongsTo :session_block ;
+    obop:belongsToVisual :session_row_2 ;
+    obop:containsDatatype <http://example.org/generated/conference/room> ;
+    obop:hasLabel "Room" ;
+    obop:hasPositionNumber "1"^^xsd:int ;
+    obop:isRelatedToTargetOntologyInstance :session_shape .
+
+:field_session_session_date a obop:Field,
+        owl:NamedIndividual ;
+    obop:belongsTo :session_block ;
+    obop:belongsToVisual :session_row_2 ;
+    obop:containsDatatype <http://example.org/generated/conference/sessionDate> ;
+    obop:hasLabel "Session date" ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:isRelatedToTargetOntologyInstance :session_shape .
+
+:field_session_session_title a obop:Field,
+        owl:NamedIndividual ;
+    obop:belongsTo :session_block ;
+    obop:belongsToVisual :session_vlayout ;
+    obop:containsDatatype <http://example.org/generated/conference/sessionTitle> ;
+    obop:hasLabel "Session title" ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:isRelatedToTargetOntologyInstance :session_shape .
+
+:field_track_chair_name a obop:Field,
+        owl:NamedIndividual ;
+    obop:belongsTo :track_block ;
+    obop:belongsToVisual :track_row_3 ;
+    obop:containsDatatype <http://example.org/generated/conference/chairName> ;
+    obop:hasLabel "Chair name" ;
+    obop:hasPositionNumber "1"^^xsd:int ;
+    obop:isRelatedToTargetOntologyInstance :track_shape .
+
+:field_track_track_title a obop:Field,
+        owl:NamedIndividual ;
+    obop:belongsTo :track_block ;
+    obop:belongsToVisual :track_row_3 ;
+    obop:containsDatatype <http://example.org/generated/conference/trackTitle> ;
+    obop:hasLabel "Track title" ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:isRelatedToTargetOntologyInstance :track_shape .
+
+:final_validation_action a obop:SHACLGraphValidation,
+        owl:NamedIndividual ;
+    obop:hasInitiator "onClick",
+        "onEnter" .
+
+:gen_action_author a obop:GenerateJSONForm,
+        owl:NamedIndividual ;
+    obop:actionInBlock :author_block .
+
+:gen_action_conference a obop:GenerateJSONForm,
+        owl:NamedIndividual ;
+    obop:actionInBlock :conference_block .
+
+:gen_action_paper a obop:GenerateJSONForm,
+        owl:NamedIndividual ;
+    obop:actionInBlock :paper_block .
+
+:gen_action_review a obop:GenerateJSONForm,
+        owl:NamedIndividual ;
+    obop:actionInBlock :review_block .
+
+:gen_action_reviewer a obop:GenerateJSONForm,
+        owl:NamedIndividual ;
+    obop:actionInBlock :reviewer_block .
+
+:gen_action_session a obop:GenerateJSONForm,
+        owl:NamedIndividual ;
+    obop:actionInBlock :session_block .
+
+:gen_action_track a obop:GenerateJSONForm,
+        owl:NamedIndividual ;
+    obop:actionInBlock :track_block .
+
+:loop_again_cond_author a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :add_another_action_author .
+
+:loop_again_cond_conference a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :add_another_action_conference .
+
+:loop_again_cond_paper a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :add_another_action_paper .
+
+:loop_again_cond_reviewer a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :add_another_action_reviewer .
+
+:loop_again_cond_session a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :add_another_action_session .
+
+:loop_again_cond_track a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :add_another_action_track .
+
+:loop_continue_cond_author a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :continue_action .
+
+:loop_continue_cond_conference a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :continue_action .
+
+:loop_continue_cond_paper a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :continue_action .
+
+:loop_continue_cond_reviewer a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :continue_action .
+
+:loop_continue_cond_session a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :continue_action .
+
+:loop_continue_cond_track a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :continue_action .
+
+:paper_row_1 a obop:HorizontalLayout,
+        owl:NamedIndividual ;
+    obop:belongsToVisual :paper_vlayout ;
+    obop:hasPositionNumber "2"^^xsd:int .
+
+:start a owl:NamedIndividual,
+        bbo:ProcessStartEvent ;
+    bbo:has_container :app_process .
+
+:start_author a owl:NamedIndividual,
+        bbo:SubProcessStartEvent ;
+    bbo:has_container :insert_author .
+
+:start_conference a owl:NamedIndividual,
+        bbo:SubProcessStartEvent ;
+    bbo:has_container :insert_conference .
+
+:start_paper a owl:NamedIndividual,
+        bbo:SubProcessStartEvent ;
+    bbo:has_container :insert_paper .
+
+:start_review a owl:NamedIndividual,
+        bbo:SubProcessStartEvent ;
+    bbo:has_container :insert_review .
+
+:start_reviewer a owl:NamedIndividual,
+        bbo:SubProcessStartEvent ;
+    bbo:has_container :insert_reviewer .
+
+:start_session a owl:NamedIndividual,
+        bbo:SubProcessStartEvent ;
+    bbo:has_container :insert_session .
+
+:start_track a owl:NamedIndividual,
+        bbo:SubProcessStartEvent ;
+    bbo:has_container :insert_track .
+
+:submit_cond_author a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :submit_action_author .
+
+:submit_cond_conference a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :submit_action_conference .
+
+:submit_cond_paper a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :submit_action_paper .
+
+:submit_cond_review a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :submit_action_review .
+
+:submit_cond_reviewer a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :submit_action_reviewer .
+
+:submit_cond_session a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :submit_action_session .
+
+:submit_cond_track a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:selectedAction :submit_action_track .
+
+:val_fail_cond_author a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:engineDecision obop:FormValidationViolation .
+
+:val_fail_cond_conference a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:engineDecision obop:FormValidationViolation .
+
+:val_fail_cond_paper a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:engineDecision obop:FormValidationViolation .
+
+:val_fail_cond_review a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:engineDecision obop:FormValidationViolation .
+
+:val_fail_cond_reviewer a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:engineDecision obop:FormValidationViolation .
+
+:val_fail_cond_session a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:engineDecision obop:FormValidationViolation .
+
+:val_fail_cond_track a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:engineDecision obop:FormValidationViolation .
+
+:val_ok_cond_author a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:engineDecision obop:FormValidationConforms .
+
+:val_ok_cond_conference a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:engineDecision obop:FormValidationConforms .
+
+:val_ok_cond_paper a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:engineDecision obop:FormValidationConforms .
+
+:val_ok_cond_review a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:engineDecision obop:FormValidationConforms .
+
+:val_ok_cond_reviewer a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:engineDecision obop:FormValidationConforms .
+
+:val_ok_cond_session a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:engineDecision obop:FormValidationConforms .
+
+:val_ok_cond_track a owl:NamedIndividual,
+        bbo:ConditionExpression ;
+    obop:engineDecision obop:FormValidationConforms .
+
+:validate_action_author a obop:SHACLFormValidation,
+        owl:NamedIndividual ;
+    obop:actionInBlock :author_block .
+
+:validate_action_conference a obop:SHACLFormValidation,
+        owl:NamedIndividual ;
+    obop:actionInBlock :conference_block .
+
+:validate_action_paper a obop:SHACLFormValidation,
+        owl:NamedIndividual ;
+    obop:actionInBlock :paper_block .
+
+:validate_action_review a obop:SHACLFormValidation,
+        owl:NamedIndividual ;
+    obop:actionInBlock :review_block .
+
+:validate_action_reviewer a obop:SHACLFormValidation,
+        owl:NamedIndividual ;
+    obop:actionInBlock :reviewer_block .
+
+:validate_action_session a obop:SHACLFormValidation,
+        owl:NamedIndividual ;
+    obop:actionInBlock :session_block .
+
+:validate_action_track a obop:SHACLFormValidation,
+        owl:NamedIndividual ;
+    obop:actionInBlock :track_block .
+
+:abort_author a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :cancel_action_author ;
+    bbo:has_container :insert_author .
+
+:abort_conference a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :cancel_action_conference ;
+    bbo:has_container :insert_conference .
+
+:abort_paper a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :cancel_action_paper ;
+    bbo:has_container :insert_paper .
+
+:abort_review a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :cancel_action_review ;
+    bbo:has_container :insert_review .
+
+:abort_reviewer a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :cancel_action_reviewer ;
+    bbo:has_container :insert_reviewer .
+
+:abort_session a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :cancel_action_session ;
+    bbo:has_container :insert_session .
+
+:abort_track a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :cancel_action_track ;
+    bbo:has_container :insert_track .
+
+:add_another_action_author a obop:Action,
+        owl:NamedIndividual ;
+    obop:hasInitiator "onClick" ;
+    obop:hasLabel "Add another Author" ;
+    rdfs:comment "Loop back to enter one more Author." .
+
+:add_another_action_conference a obop:Action,
+        owl:NamedIndividual ;
+    obop:hasInitiator "onClick" ;
+    obop:hasLabel "Add another Conference" ;
+    rdfs:comment "Loop back to enter one more Conference." .
+
+:add_another_action_paper a obop:Action,
+        owl:NamedIndividual ;
+    obop:hasInitiator "onClick" ;
+    obop:hasLabel "Add another Paper" ;
+    rdfs:comment "Loop back to enter one more Paper." .
+
+:add_another_action_reviewer a obop:Action,
+        owl:NamedIndividual ;
+    obop:hasInitiator "onClick" ;
+    obop:hasLabel "Add another Reviewer" ;
+    rdfs:comment "Loop back to enter one more Reviewer." .
+
+:add_another_action_session a obop:Action,
+        owl:NamedIndividual ;
+    obop:hasInitiator "onClick" ;
+    obop:hasLabel "Add another Session" ;
+    rdfs:comment "Loop back to enter one more Session." .
+
+:add_another_action_track a obop:Action,
+        owl:NamedIndividual ;
+    obop:hasInitiator "onClick" ;
+    obop:hasLabel "Add another Track" ;
+    rdfs:comment "Loop back to enter one more Track." .
+
+:author_hlayout a obop:HorizontalLayout,
+        owl:NamedIndividual ;
+    obop:belongsToVisual :author_vlayout ;
+    obop:hasPositionNumber "4"^^xsd:int .
+
+:author_row_4 a obop:HorizontalLayout,
+        owl:NamedIndividual ;
+    obop:belongsToVisual :author_vlayout ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+<http://example.org/generated/conference/Review> a owl:Class ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:allValuesFrom <http://example.org/generated/conference/Paper> ;
+            owl:onProperty <http://example.org/generated/conference/reviews> ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:integer ;
+            owl:onProperty <http://example.org/generated/conference/score> ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom <http://example.org/generated/conference/Reviewer> ;
+            owl:onProperty <http://example.org/generated/conference/writtenBy> ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty <http://example.org/generated/conference/reviewText> ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:dateTime ;
+            owl:onProperty <http://example.org/generated/conference/reviewDate> ] .
+
+:conference_hlayout a obop:HorizontalLayout,
+        owl:NamedIndividual ;
+    obop:belongsToVisual :conference_vlayout ;
+    obop:hasPositionNumber "4"^^xsd:int .
+
+:conference_row_0 a obop:HorizontalLayout,
+        owl:NamedIndividual ;
+    obop:belongsToVisual :conference_vlayout ;
+    obop:hasPositionNumber "2"^^xsd:int .
+
+:confirmation_author a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :confirm_action_author ;
+    bbo:has_container :insert_author .
+
+:confirmation_conference a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :confirm_action_conference ;
+    bbo:has_container :insert_conference .
+
+:confirmation_paper a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :confirm_action_paper ;
+    bbo:has_container :insert_paper .
+
+:confirmation_review a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :confirm_action_review ;
+    bbo:has_container :insert_review .
+
+:confirmation_reviewer a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :confirm_action_reviewer ;
+    bbo:has_container :insert_reviewer .
+
+:confirmation_session a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :confirm_action_session ;
+    bbo:has_container :insert_session .
+
+:confirmation_track a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :confirm_action_track ;
+    bbo:has_container :insert_track .
+
+:final_validation a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :final_validation_action ;
+    rdfs:comment "Validate the whole stored knowledge graph using SHACL shapes." ;
+    bbo:has_container :app_process .
+
+:generate_form_review a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :gen_action_review ;
+    bbo:has_container :insert_review .
+
+:make_connection_paper_author a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :connection_action_paper_author ;
+    rdfs:comment "Save the object properties linking the paper instance to the author instance." ;
+    bbo:has_container :insert_author .
+
+:make_connection_paper_session a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :connection_action_paper_session ;
+    rdfs:comment "Save the object properties linking the paper instance to the session instance." ;
+    bbo:has_container :insert_session .
+
+:make_connection_paper_track a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :connection_action_paper_track ;
+    rdfs:comment "Save the object properties linking the paper instance to the track instance." ;
+    bbo:has_container :insert_paper .
+
+:make_connection_review_paper a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :connection_action_review_paper ;
+    rdfs:comment "Save the object properties linking the review instance to the paper instance." ;
+    bbo:has_container :insert_review .
+
+:make_connection_review_reviewer a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :connection_action_review_reviewer ;
+    rdfs:comment "Save the object properties linking the review instance to the reviewer instance." ;
+    bbo:has_container :insert_review .
+
+:make_connection_session_track a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :connection_action_session_track ;
+    rdfs:comment "Save the object properties linking the session instance to the track instance." ;
+    bbo:has_container :insert_session .
+
+:make_connection_track_conference a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :connection_action_track_conference ;
+    rdfs:comment "Save the object properties linking the track instance to the conference instance." ;
+    bbo:has_container :insert_track .
+
+:paper_author_connection a obop:Connection,
+        owl:NamedIndividual ;
+    obop:connectionHasSource :paper_shape ;
+    obop:connectionHasTarget :author_shape ;
+    obop:hasConnector :connector_paper_author_has_author .
+
+:paper_hlayout a obop:HorizontalLayout,
+        owl:NamedIndividual ;
+    obop:belongsToVisual :paper_vlayout ;
+    obop:hasPositionNumber "4"^^xsd:int .
+
+:paper_row_5 a obop:HorizontalLayout,
+        owl:NamedIndividual ;
+    obop:belongsToVisual :paper_vlayout ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:paper_session_connection a obop:Connection,
+        owl:NamedIndividual ;
+    obop:connectionHasSource :paper_shape ;
+    obop:connectionHasTarget :session_shape ;
+    obop:hasConnector :connector_paper_session_presented_in .
+
+:paper_track_connection a obop:Connection,
+        owl:NamedIndividual ;
+    obop:connectionHasSource :paper_shape ;
+    obop:connectionHasTarget :track_shape ;
+    obop:hasConnector :connector_paper_track_submitted_to .
+
+:processing_author a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    bbo:has_container :insert_author .
+
+:processing_conference a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    bbo:has_container :insert_conference .
+
+:processing_paper a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    bbo:has_container :insert_paper .
+
+:processing_review a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    bbo:has_container :insert_review .
+
+:processing_reviewer a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    bbo:has_container :insert_reviewer .
+
+:processing_session a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    bbo:has_container :insert_session .
+
+:processing_track a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    bbo:has_container :insert_track .
+
+:review_hlayout a obop:HorizontalLayout,
+        owl:NamedIndividual ;
+    obop:belongsToVisual :review_vlayout ;
+    obop:hasPositionNumber "5"^^xsd:int .
+
+:review_paper_connection a obop:Connection,
+        owl:NamedIndividual ;
+    obop:connectionHasSource :review_shape ;
+    obop:connectionHasTarget :paper_shape ;
+    obop:hasConnector :connector_review_paper_reviews .
+
+:review_reviewer_connection a obop:Connection,
+        owl:NamedIndividual ;
+    obop:connectionHasSource :review_shape ;
+    obop:connectionHasTarget :reviewer_shape ;
+    obop:hasConnector :connector_review_reviewer_written_by .
+
+:reviewer_hlayout a obop:HorizontalLayout,
+        owl:NamedIndividual ;
+    obop:belongsToVisual :reviewer_vlayout ;
+    obop:hasPositionNumber "3"^^xsd:int .
+
+:save_author a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :submit_action_author ;
+    bbo:has_container :insert_author .
+
+:save_conference a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :submit_action_conference ;
+    bbo:has_container :insert_conference .
+
+:save_paper a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :submit_action_paper ;
+    bbo:has_container :insert_paper .
+
+:save_review a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :submit_action_review ;
+    bbo:has_container :insert_review .
+
+:save_reviewer a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :submit_action_reviewer ;
+    bbo:has_container :insert_reviewer .
+
+:save_session a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :submit_action_session ;
+    bbo:has_container :insert_session .
+
+:save_track a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :submit_action_track ;
+    bbo:has_container :insert_track .
+
+:session_hlayout a obop:HorizontalLayout,
+        owl:NamedIndividual ;
+    obop:belongsToVisual :session_vlayout ;
+    obop:hasPositionNumber "5"^^xsd:int .
+
+:session_row_2 a obop:HorizontalLayout,
+        owl:NamedIndividual ;
+    obop:belongsToVisual :session_vlayout ;
+    obop:hasPositionNumber "1"^^xsd:int .
+
+:session_track_connection a obop:Connection,
+        owl:NamedIndividual ;
+    obop:connectionHasSource :session_shape ;
+    obop:connectionHasTarget :track_shape ;
+    obop:hasConnector :connector_session_track_part_of_track .
+
+:track_conference_connection a obop:Connection,
+        owl:NamedIndividual ;
+    obop:connectionHasSource :track_shape ;
+    obop:connectionHasTarget :conference_shape ;
+    obop:hasConnector :connector_track_conference_is_track_of .
+
+:track_hlayout a obop:HorizontalLayout,
+        owl:NamedIndividual ;
+    obop:belongsToVisual :track_vlayout ;
+    obop:hasPositionNumber "3"^^xsd:int .
+
+:track_row_3 a obop:HorizontalLayout,
+        owl:NamedIndividual ;
+    obop:belongsToVisual :track_vlayout ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:user_gets_notification_author a owl:NamedIndividual,
+        bbo:UserTask ;
+    bbo:has_container :insert_author .
+
+:user_gets_notification_conference a owl:NamedIndividual,
+        bbo:UserTask ;
+    bbo:has_container :insert_conference .
+
+:user_gets_notification_paper a owl:NamedIndividual,
+        bbo:UserTask ;
+    bbo:has_container :insert_paper .
+
+:user_gets_notification_review a owl:NamedIndividual,
+        bbo:UserTask ;
+    bbo:has_container :insert_review .
+
+:user_gets_notification_reviewer a owl:NamedIndividual,
+        bbo:UserTask ;
+    bbo:has_container :insert_reviewer .
+
+:user_gets_notification_session a owl:NamedIndividual,
+        bbo:UserTask ;
+    bbo:has_container :insert_session .
+
+:user_gets_notification_track a owl:NamedIndividual,
+        bbo:UserTask ;
+    bbo:has_container :insert_track .
+
+:user_receives_validation a owl:NamedIndividual,
+        bbo:UserTask ;
+    rdfs:comment "User receives the validation results." ;
+    bbo:has_container :app_process .
+
+:validate_form_author a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :validate_action_author ;
+    rdfs:comment "Validate the entered Author data against its field shapes." ;
+    bbo:has_container :insert_author .
+
+:validate_form_conference a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :validate_action_conference ;
+    rdfs:comment "Validate the entered Conference data against its field shapes." ;
+    bbo:has_container :insert_conference .
+
+:validate_form_paper a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :validate_action_paper ;
+    rdfs:comment "Validate the entered Paper data against its field shapes." ;
+    bbo:has_container :insert_paper .
+
+:validate_form_review a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :validate_action_review ;
+    rdfs:comment "Validate the entered Review data against its field shapes." ;
+    bbo:has_container :insert_review .
+
+:validate_form_reviewer a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :validate_action_reviewer ;
+    rdfs:comment "Validate the entered Reviewer data against its field shapes." ;
+    bbo:has_container :insert_reviewer .
+
+:validate_form_session a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :validate_action_session ;
+    rdfs:comment "Validate the entered Session data against its field shapes." ;
+    bbo:has_container :insert_session .
+
+:validate_form_track a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :validate_action_track ;
+    rdfs:comment "Validate the entered Track data against its field shapes." ;
+    bbo:has_container :insert_track .
+
+:cancel_action_author a obop:CancelBlockAction,
+        owl:NamedIndividual ;
+    obop:actionInBlock :author_block ;
+    obop:hasInitiator "onClick" ;
+    obop:hasLabel "Cancel" .
+
+:cancel_action_conference a obop:CancelBlockAction,
+        owl:NamedIndividual ;
+    obop:actionInBlock :conference_block ;
+    obop:hasInitiator "onClick" ;
+    obop:hasLabel "Cancel" .
+
+:cancel_action_paper a obop:CancelBlockAction,
+        owl:NamedIndividual ;
+    obop:actionInBlock :paper_block ;
+    obop:hasInitiator "onClick" ;
+    obop:hasLabel "Cancel" .
+
+:cancel_action_review a obop:CancelBlockAction,
+        owl:NamedIndividual ;
+    obop:actionInBlock :review_block ;
+    obop:hasInitiator "onClick" ;
+    obop:hasLabel "Cancel" .
+
+:cancel_action_reviewer a obop:CancelBlockAction,
+        owl:NamedIndividual ;
+    obop:actionInBlock :reviewer_block ;
+    obop:hasInitiator "onClick" ;
+    obop:hasLabel "Cancel" .
+
+:cancel_action_session a obop:CancelBlockAction,
+        owl:NamedIndividual ;
+    obop:actionInBlock :session_block ;
+    obop:hasInitiator "onClick" ;
+    obop:hasLabel "Cancel" .
+
+:cancel_action_track a obop:CancelBlockAction,
+        owl:NamedIndividual ;
+    obop:actionInBlock :track_block ;
+    obop:hasInitiator "onClick" ;
+    obop:hasLabel "Cancel" .
+
+<http://example.org/generated/conference/Conference> a owl:Class ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:allValuesFrom xsd:dateTime ;
+            owl:onProperty <http://schema.org/startDate> ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty <http://example.org/generated/conference/acronym> ],
+        [ a owl:Restriction ;
+            owl:minQualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+            owl:onDataRange xsd:string ;
+            owl:onProperty <http://schema.org/name> ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty <http://schema.org/name> ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:dateTime ;
+            owl:onProperty <http://schema.org/endDate> ] .
+
+<http://example.org/generated/conference/Paper> a owl:Class ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty <http://example.org/generated/conference/abstract> ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom <http://example.org/generated/conference/Session> ;
+            owl:onProperty <http://example.org/generated/conference/presentedIn> ],
+        [ a owl:Restriction ;
+            owl:minQualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+            owl:onDataRange xsd:string ;
+            owl:onProperty <http://example.org/generated/conference/paperTitle> ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty <http://example.org/generated/conference/paperTitle> ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom <http://example.org/generated/conference/Author> ;
+            owl:onProperty <http://example.org/generated/conference/hasAuthor> ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom <http://example.org/generated/conference/Track> ;
+            owl:onProperty <http://example.org/generated/conference/submittedTo> ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:dateTime ;
+            owl:onProperty <http://example.org/generated/conference/submissionDate> ] .
+
+<http://example.org/generated/conference/Session> a owl:Class ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty <http://example.org/generated/conference/room> ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:dateTime ;
+            owl:onProperty <http://example.org/generated/conference/sessionDate> ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty <http://example.org/generated/conference/sessionTitle> ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom <http://example.org/generated/conference/Track> ;
+            owl:onProperty <http://example.org/generated/conference/partOfTrack> ] .
+
+<http://example.org/generated/conference/abstract> a owl:DatatypeProperty .
+
+<http://example.org/generated/conference/acronym> a owl:DatatypeProperty .
+
+<http://example.org/generated/conference/chairName> a owl:DatatypeProperty .
+
+<http://example.org/generated/conference/expertise> a owl:DatatypeProperty .
+
+<http://example.org/generated/conference/hasAuthor> a owl:ObjectProperty .
+
+<http://example.org/generated/conference/isTrackOf> a owl:ObjectProperty .
+
+<http://example.org/generated/conference/partOfTrack> a owl:ObjectProperty .
+
+<http://example.org/generated/conference/presentedIn> a owl:ObjectProperty .
+
+<http://example.org/generated/conference/reviewDate> a owl:DatatypeProperty .
+
+<http://example.org/generated/conference/reviewText> a owl:DatatypeProperty .
+
+<http://example.org/generated/conference/reviewerName> a owl:DatatypeProperty .
+
+<http://example.org/generated/conference/reviews> a owl:ObjectProperty .
+
+<http://example.org/generated/conference/room> a owl:DatatypeProperty .
+
+<http://example.org/generated/conference/score> a owl:DatatypeProperty .
+
+<http://example.org/generated/conference/sessionDate> a owl:DatatypeProperty .
+
+<http://example.org/generated/conference/sessionTitle> a owl:DatatypeProperty .
+
+<http://example.org/generated/conference/submissionDate> a owl:DatatypeProperty .
+
+<http://example.org/generated/conference/submittedTo> a owl:ObjectProperty .
+
+<http://example.org/generated/conference/writtenBy> a owl:ObjectProperty .
+
+:gateway_author a owl:NamedIndividual,
+        bbo:ExclusiveGateway ;
+    bbo:has_container :insert_author .
+
+:gateway_conference a owl:NamedIndividual,
+        bbo:ExclusiveGateway ;
+    bbo:has_container :insert_conference .
+
+:gateway_paper a owl:NamedIndividual,
+        bbo:ExclusiveGateway ;
+    bbo:has_container :insert_paper .
+
+:gateway_review a owl:NamedIndividual,
+        bbo:ExclusiveGateway ;
+    bbo:has_container :insert_review .
+
+:gateway_reviewer a owl:NamedIndividual,
+        bbo:ExclusiveGateway ;
+    bbo:has_container :insert_reviewer .
+
+:gateway_session a owl:NamedIndividual,
+        bbo:ExclusiveGateway ;
+    bbo:has_container :insert_session .
+
+:gateway_track a owl:NamedIndividual,
+        bbo:ExclusiveGateway ;
+    bbo:has_container :insert_track .
+
+:generate_form_author a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :gen_action_author ;
+    bbo:has_container :insert_author .
+
+:generate_form_conference a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :gen_action_conference ;
+    bbo:has_container :insert_conference .
+
+:generate_form_paper a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :gen_action_paper ;
+    bbo:has_container :insert_paper .
+
+:generate_form_reviewer a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :gen_action_reviewer ;
+    bbo:has_container :insert_reviewer .
+
+:generate_form_session a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :gen_action_session ;
+    bbo:has_container :insert_session .
+
+:generate_form_track a owl:NamedIndividual,
+        bbo:ScriptTask ;
+    obop:executesAction :gen_action_track ;
+    bbo:has_container :insert_track .
+
+:loop_gateway_author a owl:NamedIndividual,
+        bbo:ExclusiveGateway ;
+    bbo:has_container :insert_author .
+
+:loop_gateway_conference a owl:NamedIndividual,
+        bbo:ExclusiveGateway ;
+    bbo:has_container :insert_conference .
+
+:loop_gateway_paper a owl:NamedIndividual,
+        bbo:ExclusiveGateway ;
+    bbo:has_container :insert_paper .
+
+:loop_gateway_reviewer a owl:NamedIndividual,
+        bbo:ExclusiveGateway ;
+    bbo:has_container :insert_reviewer .
+
+:loop_gateway_session a owl:NamedIndividual,
+        bbo:ExclusiveGateway ;
+    bbo:has_container :insert_session .
+
+:loop_gateway_track a owl:NamedIndividual,
+        bbo:ExclusiveGateway ;
+    bbo:has_container :insert_track .
+
+:review_notification_layout a obop:VerticalLayout,
+        owl:NamedIndividual ;
+    obop:belongsTo :review_notification_block ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:submit_action_author a obop:SubmitBlockAction,
+        owl:NamedIndividual ;
+    obop:actionInBlock :author_block ;
+    obop:hasInitiator "onClick",
+        "onEnter" ;
+    obop:hasLabel "Submit" .
+
+:submit_action_conference a obop:SubmitBlockAction,
+        owl:NamedIndividual ;
+    obop:actionInBlock :conference_block ;
+    obop:hasInitiator "onClick",
+        "onEnter" ;
+    obop:hasLabel "Submit" .
+
+:submit_action_paper a obop:SubmitBlockAction,
+        owl:NamedIndividual ;
+    obop:actionInBlock :paper_block ;
+    obop:hasInitiator "onClick",
+        "onEnter" ;
+    obop:hasLabel "Submit" .
+
+:submit_action_review a obop:SubmitBlockAction,
+        owl:NamedIndividual ;
+    obop:actionInBlock :review_block ;
+    obop:hasInitiator "onClick",
+        "onEnter" ;
+    obop:hasLabel "Submit" .
+
+:submit_action_reviewer a obop:SubmitBlockAction,
+        owl:NamedIndividual ;
+    obop:actionInBlock :reviewer_block ;
+    obop:hasInitiator "onClick",
+        "onEnter" ;
+    obop:hasLabel "Submit" .
+
+:submit_action_session a obop:SubmitBlockAction,
+        owl:NamedIndividual ;
+    obop:actionInBlock :session_block ;
+    obop:hasInitiator "onClick",
+        "onEnter" ;
+    obop:hasLabel "Submit" .
+
+:submit_action_track a obop:SubmitBlockAction,
+        owl:NamedIndividual ;
+    obop:actionInBlock :track_block ;
+    obop:hasInitiator "onClick",
+        "onEnter" ;
+    obop:hasLabel "Submit" .
+
+:user_enters_author a owl:NamedIndividual,
+        bbo:UserTask ;
+    bbo:has_container :insert_author .
+
+:user_enters_conference a owl:NamedIndividual,
+        bbo:UserTask ;
+    bbo:has_container :insert_conference .
+
+:user_enters_paper a owl:NamedIndividual,
+        bbo:UserTask ;
+    bbo:has_container :insert_paper .
+
+:user_enters_review a owl:NamedIndividual,
+        bbo:UserTask ;
+    bbo:has_container :insert_review .
+
+:user_enters_reviewer a owl:NamedIndividual,
+        bbo:UserTask ;
+    bbo:has_container :insert_reviewer .
+
+:user_enters_session a owl:NamedIndividual,
+        bbo:UserTask ;
+    bbo:has_container :insert_session .
+
+:user_enters_track a owl:NamedIndividual,
+        bbo:UserTask ;
+    bbo:has_container :insert_track .
+
+:validation_gateway_author a owl:NamedIndividual,
+        bbo:ExclusiveGateway ;
+    bbo:has_container :insert_author .
+
+:validation_gateway_conference a owl:NamedIndividual,
+        bbo:ExclusiveGateway ;
+    bbo:has_container :insert_conference .
+
+:validation_gateway_paper a owl:NamedIndividual,
+        bbo:ExclusiveGateway ;
+    bbo:has_container :insert_paper .
+
+:validation_gateway_review a owl:NamedIndividual,
+        bbo:ExclusiveGateway ;
+    bbo:has_container :insert_review .
+
+:validation_gateway_reviewer a owl:NamedIndividual,
+        bbo:ExclusiveGateway ;
+    bbo:has_container :insert_reviewer .
+
+:validation_gateway_session a owl:NamedIndividual,
+        bbo:ExclusiveGateway ;
+    bbo:has_container :insert_session .
+
+:validation_gateway_track a owl:NamedIndividual,
+        bbo:ExclusiveGateway ;
+    bbo:has_container :insert_track .
+
+<http://schema.org/email> a owl:DatatypeProperty .
+
+<http://schema.org/endDate> a owl:DatatypeProperty .
+
+<http://schema.org/startDate> a owl:DatatypeProperty .
+
+foaf:name a owl:DatatypeProperty .
+
+:author_notification_layout a obop:VerticalLayout,
+        owl:NamedIndividual ;
+    obop:belongsTo :author_notification_block ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+<http://example.org/generated/conference/Author> a owl:Class ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty <http://schema.org/email> ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty <http://example.org/generated/conference/affiliation> ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty foaf:name ] .
+
+<http://example.org/generated/conference/Reviewer> a owl:Class ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty <http://example.org/generated/conference/reviewerName> ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty <http://example.org/generated/conference/affiliation> ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty <http://example.org/generated/conference/expertise> ] .
+
+<http://example.org/generated/conference/Track> a owl:Class ;
+    rdfs:subClassOf [ a owl:Restriction ;
+            owl:minQualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+            owl:onDataRange xsd:string ;
+            owl:onProperty <http://example.org/generated/conference/trackTitle> ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom <http://example.org/generated/conference/Conference> ;
+            owl:onProperty <http://example.org/generated/conference/isTrackOf> ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty <http://example.org/generated/conference/chairName> ],
+        [ a owl:Restriction ;
+            owl:allValuesFrom xsd:string ;
+            owl:onProperty <http://example.org/generated/conference/trackTitle> ] .
+
+<http://example.org/generated/conference/paperTitle> a owl:DatatypeProperty .
+
+<http://example.org/generated/conference/trackTitle> a owl:DatatypeProperty .
+
+:conference_notification_layout a obop:VerticalLayout,
+        owl:NamedIndividual ;
+    obop:belongsTo :conference_notification_block ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:paper_notification_layout a obop:VerticalLayout,
+        owl:NamedIndividual ;
+    obop:belongsTo :paper_notification_block ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:review_notification_block a obop:Block,
+        owl:NamedIndividual ;
+    rdfs:label "Review saved - Notification"^^rdf:PlainLiteral ;
+    obop:hasMainLayout :review_notification_layout ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:reviewer_notification_layout a obop:VerticalLayout,
+        owl:NamedIndividual ;
+    obop:belongsTo :reviewer_notification_block ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:session_notification_layout a obop:VerticalLayout,
+        owl:NamedIndividual ;
+    obop:belongsTo :session_notification_block ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:track_notification_layout a obop:VerticalLayout,
+        owl:NamedIndividual ;
+    obop:belongsTo :track_notification_block ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:track_vlayout a obop:VerticalLayout,
+        owl:NamedIndividual ;
+    obop:belongsTo :track_block ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+<http://schema.org/name> a owl:DatatypeProperty .
+
+:author_notification_block a obop:Block,
+        owl:NamedIndividual ;
+    rdfs:label "Author saved - Notification"^^rdf:PlainLiteral ;
+    obop:hasMainLayout :author_notification_layout ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:author_shape a owl:NamedIndividual,
+        shacl:NodeShape ;
+    obop:modelBelongsTo :author_block ;
+    shacl:property [ obop:specifiedBy :field_author_name ;
+            shacl:datatype xsd:string ;
+            shacl:name "Full name" ;
+            shacl:order 0 ;
+            shacl:path foaf:name ],
+        [ obop:specifiedBy :field_author_affiliation ;
+            shacl:datatype xsd:string ;
+            shacl:name "Affiliation" ;
+            shacl:order 1 ;
+            shacl:path <http://example.org/generated/conference/affiliation> ],
+        [ obop:specifiedBy :field_author_email ;
+            shacl:datatype xsd:string ;
+            shacl:name "Email" ;
+            shacl:order 2 ;
+            shacl:path <http://schema.org/email> ] ;
+    shacl:targetClass <http://example.org/generated/conference/Author> .
+
+:author_vlayout a obop:VerticalLayout,
+        owl:NamedIndividual ;
+    obop:belongsTo :author_block ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:conference_notification_block a obop:Block,
+        owl:NamedIndividual ;
+    rdfs:label "Conference saved - Notification"^^rdf:PlainLiteral ;
+    obop:hasMainLayout :conference_notification_layout ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:conference_vlayout a obop:VerticalLayout,
+        owl:NamedIndividual ;
+    obop:belongsTo :conference_block ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:paper_notification_block a obop:Block,
+        owl:NamedIndividual ;
+    rdfs:label "Paper saved - Notification"^^rdf:PlainLiteral ;
+    obop:hasMainLayout :paper_notification_layout ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:paper_vlayout a obop:VerticalLayout,
+        owl:NamedIndividual ;
+    obop:belongsTo :paper_block ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:review_shape a owl:NamedIndividual,
+        shacl:NodeShape ;
+    obop:modelBelongsTo :review_block ;
+    shacl:property [ shacl:node :reviewer_shape ;
+            shacl:path <http://example.org/generated/conference/writtenBy> ],
+        [ obop:specifiedBy :field_review_review_date ;
+            shacl:datatype xsd:dateTime ;
+            shacl:name "Review date" ;
+            shacl:order 2 ;
+            shacl:path <http://example.org/generated/conference/reviewDate> ],
+        [ shacl:node :paper_shape ;
+            shacl:path <http://example.org/generated/conference/reviews> ],
+        [ obop:specifiedBy :field_review_review_text ;
+            shacl:datatype xsd:string ;
+            shacl:name "Review text" ;
+            shacl:order 1 ;
+            shacl:path <http://example.org/generated/conference/reviewText> ],
+        [ obop:specifiedBy :field_review_score ;
+            shacl:datatype xsd:integer ;
+            shacl:name "Score" ;
+            shacl:order 0 ;
+            shacl:path <http://example.org/generated/conference/score> ] ;
+    shacl:targetClass <http://example.org/generated/conference/Review> .
+
+:reviewer_notification_block a obop:Block,
+        owl:NamedIndividual ;
+    rdfs:label "Reviewer saved - Notification"^^rdf:PlainLiteral ;
+    obop:hasMainLayout :reviewer_notification_layout ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:reviewer_shape a owl:NamedIndividual,
+        shacl:NodeShape ;
+    obop:modelBelongsTo :reviewer_block ;
+    shacl:property [ obop:specifiedBy :field_reviewer_reviewer_name ;
+            shacl:datatype xsd:string ;
+            shacl:name "Reviewer name" ;
+            shacl:order 0 ;
+            shacl:path <http://example.org/generated/conference/reviewerName> ],
+        [ obop:specifiedBy :field_reviewer_expertise ;
+            shacl:datatype xsd:string ;
+            shacl:name "Expertise" ;
+            shacl:order 2 ;
+            shacl:path <http://example.org/generated/conference/expertise> ],
+        [ obop:specifiedBy :field_reviewer_affiliation ;
+            shacl:datatype xsd:string ;
+            shacl:name "Affiliation" ;
+            shacl:order 1 ;
+            shacl:path <http://example.org/generated/conference/affiliation> ] ;
+    shacl:targetClass <http://example.org/generated/conference/Reviewer> .
+
+:reviewer_vlayout a obop:VerticalLayout,
+        owl:NamedIndividual ;
+    obop:belongsTo :reviewer_block ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:session_notification_block a obop:Block,
+        owl:NamedIndividual ;
+    rdfs:label "Session saved - Notification"^^rdf:PlainLiteral ;
+    obop:hasMainLayout :session_notification_layout ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:track_notification_block a obop:Block,
+        owl:NamedIndividual ;
+    rdfs:label "Track saved - Notification"^^rdf:PlainLiteral ;
+    obop:hasMainLayout :track_notification_layout ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:conference_shape a owl:NamedIndividual,
+        shacl:NodeShape ;
+    obop:modelBelongsTo :conference_block ;
+    shacl:property [ obop:specifiedBy :field_conference_start_date ;
+            shacl:datatype xsd:dateTime ;
+            shacl:name "Start date" ;
+            shacl:order 2 ;
+            shacl:path <http://schema.org/startDate> ],
+        [ obop:specifiedBy :field_conference_name ;
+            shacl:datatype xsd:string ;
+            shacl:minCount 1 ;
+            shacl:name "Conference title" ;
+            shacl:order 0 ;
+            shacl:path <http://schema.org/name> ],
+        [ obop:specifiedBy :field_conference_acronym ;
+            shacl:datatype xsd:string ;
+            shacl:name "Acronym" ;
+            shacl:order 1 ;
+            shacl:path <http://example.org/generated/conference/acronym> ],
+        [ obop:specifiedBy :field_conference_end_date ;
+            shacl:datatype xsd:dateTime ;
+            shacl:name "End date" ;
+            shacl:order 3 ;
+            shacl:path <http://schema.org/endDate> ] ;
+    shacl:targetClass <http://example.org/generated/conference/Conference> .
+
+:session_shape a owl:NamedIndividual,
+        shacl:NodeShape ;
+    obop:modelBelongsTo :session_block ;
+    shacl:property [ obop:specifiedBy :field_session_room ;
+            shacl:datatype xsd:string ;
+            shacl:name "Room" ;
+            shacl:order 2 ;
+            shacl:path <http://example.org/generated/conference/room> ],
+        [ obop:specifiedBy :field_session_session_title ;
+            shacl:datatype xsd:string ;
+            shacl:name "Session title" ;
+            shacl:order 0 ;
+            shacl:path <http://example.org/generated/conference/sessionTitle> ],
+        [ obop:specifiedBy :field_session_session_date ;
+            shacl:datatype xsd:dateTime ;
+            shacl:name "Session date" ;
+            shacl:order 1 ;
+            shacl:path <http://example.org/generated/conference/sessionDate> ],
+        [ shacl:node :track_shape ;
+            shacl:path <http://example.org/generated/conference/partOfTrack> ] ;
+    shacl:targetClass <http://example.org/generated/conference/Session> .
+
+:session_vlayout a obop:VerticalLayout,
+        owl:NamedIndividual ;
+    obop:belongsTo :session_block ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+<http://example.org/generated/conference/affiliation> a owl:DatatypeProperty .
+
+:review_vlayout a obop:VerticalLayout,
+        owl:NamedIndividual ;
+    obop:belongsTo :review_block ;
+    obop:hasPositionNumber "0"^^xsd:int .
+
+:track_shape a owl:NamedIndividual,
+        shacl:NodeShape ;
+    obop:modelBelongsTo :track_block ;
+    shacl:property [ shacl:node :conference_shape ;
+            shacl:path <http://example.org/generated/conference/isTrackOf> ],
+        [ obop:specifiedBy :field_track_track_title ;
+            shacl:datatype xsd:string ;
+            shacl:minCount 1 ;
+            shacl:name "Track title" ;
+            shacl:order 0 ;
+            shacl:path <http://example.org/generated/conference/trackTitle> ],
+        [ obop:specifiedBy :field_track_chair_name ;
+            shacl:datatype xsd:string ;
+            shacl:name "Chair name" ;
+            shacl:order 1 ;
+            shacl:path <http://example.org/generated/conference/chairName> ] ;
+    shacl:targetClass <http://example.org/generated/conference/Track> .
+
+:paper_shape a owl:NamedIndividual,
+        shacl:NodeShape ;
+    obop:modelBelongsTo :paper_block ;
+    shacl:property [ shacl:node :session_shape ;
+            shacl:path <http://example.org/generated/conference/presentedIn> ],
+        [ obop:specifiedBy :field_paper_paper_title ;
+            shacl:datatype xsd:string ;
+            shacl:minCount 1 ;
+            shacl:name "Paper title" ;
+            shacl:order 0 ;
+            shacl:path <http://example.org/generated/conference/paperTitle> ],
+        [ shacl:node :track_shape ;
+            shacl:path <http://example.org/generated/conference/submittedTo> ],
+        [ obop:specifiedBy :field_paper_submission_date ;
+            shacl:datatype xsd:dateTime ;
+            shacl:name "Submission date" ;
+            shacl:order 2 ;
+            shacl:path <http://example.org/generated/conference/submissionDate> ],
+        [ shacl:node :author_shape ;
+            shacl:path <http://example.org/generated/conference/hasAuthor> ],
+        [ obop:specifiedBy :field_paper_abstract ;
+            shacl:datatype xsd:string ;
+            shacl:name "Abstract" ;
+            shacl:order 1 ;
+            shacl:path <http://example.org/generated/conference/abstract> ] ;
+    shacl:targetClass <http://example.org/generated/conference/Paper> .
+
+:reviewer_block a obop:Block,
+        owl:NamedIndividual ;
+    rdfs:label "Reviewer data"^^rdf:PlainLiteral ;
+    obop:hasMainLayout :reviewer_vlayout ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:targetClass <http://example.org/generated/conference/Reviewer> .
+
+:track_block a obop:Block,
+        owl:NamedIndividual ;
+    rdfs:label "Track data"^^rdf:PlainLiteral ;
+    obop:hasMainLayout :track_vlayout ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:targetClass <http://example.org/generated/conference/Track> .
+
+:author_block a obop:Block,
+        owl:NamedIndividual ;
+    rdfs:label "Author data"^^rdf:PlainLiteral ;
+    obop:hasMainLayout :author_vlayout ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:targetClass <http://example.org/generated/conference/Author> .
+
+:conference_block a obop:Block,
+        owl:NamedIndividual ;
+    rdfs:label "Conference data"^^rdf:PlainLiteral ;
+    obop:hasMainLayout :conference_vlayout ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:targetClass <http://example.org/generated/conference/Conference> .
+
+:paper_block a obop:Block,
+        owl:NamedIndividual ;
+    rdfs:label "Paper data"^^rdf:PlainLiteral ;
+    obop:hasMainLayout :paper_vlayout ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:targetClass <http://example.org/generated/conference/Paper> .
+
+:continue_action a obop:Action,
+        owl:NamedIndividual ;
+    obop:hasInitiator "onClick" ;
+    obop:hasLabel "Continue" ;
+    rdfs:comment "Advance the workflow from a notification screen to the next step." .
+
+:review_block a obop:Block,
+        owl:NamedIndividual ;
+    rdfs:label "Review data"^^rdf:PlainLiteral ;
+    obop:hasMainLayout :review_vlayout ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:targetClass <http://example.org/generated/conference/Review> .
+
+:session_block a obop:Block,
+        owl:NamedIndividual ;
+    rdfs:label "Session data"^^rdf:PlainLiteral ;
+    obop:hasMainLayout :session_vlayout ;
+    obop:hasPositionNumber "0"^^xsd:int ;
+    obop:targetClass <http://example.org/generated/conference/Session> .
+
+:app_process a owl:NamedIndividual,
+        bbo:Process .
+
+:insert_conference a owl:NamedIndividual,
+        bbo:SubProcess ;
+    rdfs:comment "Insert Conference data." ;
+    bbo:has_container :app_process .
+
+:insert_reviewer a owl:NamedIndividual,
+        bbo:SubProcess ;
+    rdfs:comment "Insert Reviewer data." ;
+    bbo:has_container :app_process .
+
+:insert_review a owl:NamedIndividual,
+        bbo:SubProcess ;
+    rdfs:comment "Insert Review data." ;
+    bbo:has_container :app_process .
+
+:insert_author a owl:NamedIndividual,
+        bbo:SubProcess ;
+    rdfs:comment "Insert Author data." ;
+    bbo:has_container :app_process .
+
+:insert_paper a owl:NamedIndividual,
+        bbo:SubProcess ;
+    rdfs:comment "Insert Paper data." ;
+    bbo:has_container :app_process .
+
+:insert_track a owl:NamedIndividual,
+        bbo:SubProcess ;
+    rdfs:comment "Insert Track data." ;
+    bbo:has_container :app_process .
+
+:insert_session a owl:NamedIndividual,
+        bbo:SubProcess ;
+    rdfs:comment "Insert Session data." ;
+    bbo:has_container :app_process .
+
+[] a owl:AllDifferent ;
+    owl:distinctMembers ( :abort_author :abort_conference :abort_paper :abort_review :abort_reviewer :abort_session :abort_track :add_another_action_author :add_another_action_conference :add_another_action_paper :add_another_action_reviewer :add_another_action_session :add_another_action_track :add_another_btn_author :add_another_btn_conference :add_another_btn_paper :add_another_btn_reviewer :add_another_btn_session :add_another_btn_track :app_model :app_process :author_block :author_hlayout :author_notification_block :author_notification_label :author_notification_layout :author_row_4 :author_shape :author_vlayout :cancel_action_author :cancel_action_conference :cancel_action_paper :cancel_action_review :cancel_action_reviewer :cancel_action_session :cancel_action_track :cancel_btn_author :cancel_btn_conference :cancel_btn_paper :cancel_btn_review :cancel_btn_reviewer :cancel_btn_session :cancel_btn_track :cancel_cond_author :cancel_cond_conference :cancel_cond_paper :cancel_cond_review :cancel_cond_reviewer :cancel_cond_session :cancel_cond_track :cancel_end_author :cancel_end_conference :cancel_end_paper :cancel_end_review :cancel_end_reviewer :cancel_end_session :cancel_end_track :conference_block :conference_hlayout :conference_notification_block :conference_notification_label :conference_notification_layout :conference_row_0 :conference_shape :conference_vlayout :confirm_action_author :confirm_action_conference :confirm_action_paper :confirm_action_review :confirm_action_reviewer :confirm_action_session :confirm_action_track :confirmation_author :confirmation_conference :confirmation_paper :confirmation_review :confirmation_reviewer :confirmation_session :confirmation_track :connection_action_paper_author :connection_action_paper_session :connection_action_paper_track :connection_action_review_paper :connection_action_review_reviewer :connection_action_session_track :connection_action_track_conference :connector_paper_author_has_author :connector_paper_session_presented_in :connector_paper_track_submitted_to :connector_review_paper_reviews :connector_review_reviewer_written_by :connector_session_track_part_of_track :connector_track_conference_is_track_of :continue_action :continue_btn_author :continue_btn_conference :continue_btn_paper :continue_btn_review :continue_btn_reviewer :continue_btn_session :continue_btn_track :end_author :end_conference :end_event :end_paper :end_review :end_reviewer :end_session :end_track :field_author_affiliation :field_author_email :field_author_name :field_conference_acronym :field_conference_end_date :field_conference_name :field_conference_start_date :field_paper_abstract :field_paper_paper_title :field_paper_submission_date :field_review_review_date :field_review_review_text :field_review_score :field_reviewer_affiliation :field_reviewer_expertise :field_reviewer_reviewer_name :field_session_room :field_session_session_date :field_session_session_title :field_track_chair_name :field_track_track_title :final_validation :final_validation_action :flow_author_1 :flow_author_2 :flow_author_3 :flow_author_4 :flow_author_5 :flow_author_5_conn_0 :flow_author_6 :flow_author_7 :flow_author_abort_end :flow_author_cancel :flow_author_loop_again :flow_author_loop_end :flow_author_submit :flow_author_val_fail :flow_author_val_ok :flow_author_validate :flow_conference_1 :flow_conference_2 :flow_conference_3 :flow_conference_4 :flow_conference_5 :flow_conference_6 :flow_conference_7 :flow_conference_abort_end :flow_conference_cancel :flow_conference_loop_again :flow_conference_loop_end :flow_conference_submit :flow_conference_val_fail :flow_conference_val_ok :flow_conference_validate :flow_main_0 :flow_main_1 :flow_main_2 :flow_main_3 :flow_main_4 :flow_main_5 :flow_main_6 :flow_main_end :flow_main_final :flow_main_urv :flow_paper_1 :flow_paper_2 :flow_paper_3 :flow_paper_4 :flow_paper_5 :flow_paper_5_conn_0 :flow_paper_6 :flow_paper_7 :flow_paper_abort_end :flow_paper_cancel :flow_paper_loop_again :flow_paper_loop_end :flow_paper_submit :flow_paper_val_fail :flow_paper_val_ok :flow_paper_validate :flow_review_1 :flow_review_2 :flow_review_3 :flow_review_4 :flow_review_5 :flow_review_5_conn_0 :flow_review_5_conn_1 :flow_review_6 :flow_review_7 :flow_review_abort_end :flow_review_cancel :flow_review_submit :flow_review_val_fail :flow_review_val_ok :flow_review_validate :flow_reviewer_1 :flow_reviewer_2 :flow_reviewer_3 :flow_reviewer_4 :flow_reviewer_5 :flow_reviewer_6 :flow_reviewer_7 :flow_reviewer_abort_end :flow_reviewer_cancel :flow_reviewer_loop_again :flow_reviewer_loop_end :flow_reviewer_submit :flow_reviewer_val_fail :flow_reviewer_val_ok :flow_reviewer_validate :flow_session_1 :flow_session_2 :flow_session_3 :flow_session_4 :flow_session_5 :flow_session_5_conn_0 :flow_session_5_conn_1 :flow_session_6 :flow_session_7 :flow_session_abort_end :flow_session_cancel :flow_session_loop_again :flow_session_loop_end :flow_session_submit :flow_session_val_fail :flow_session_val_ok :flow_session_validate :flow_track_1 :flow_track_2 :flow_track_3 :flow_track_4 :flow_track_5 :flow_track_5_conn_0 :flow_track_6 :flow_track_7 :flow_track_abort_end :flow_track_cancel :flow_track_loop_again :flow_track_loop_end :flow_track_submit :flow_track_val_fail :flow_track_val_ok :flow_track_validate :gateway_author :gateway_conference :gateway_paper :gateway_review :gateway_reviewer :gateway_session :gateway_track :gen_action_author :gen_action_conference :gen_action_paper :gen_action_review :gen_action_reviewer :gen_action_session :gen_action_track :generate_form_author :generate_form_conference :generate_form_paper :generate_form_review :generate_form_reviewer :generate_form_session :generate_form_track :insert_author :insert_conference :insert_paper :insert_review :insert_reviewer :insert_session :insert_track :loop_again_cond_author :loop_again_cond_conference :loop_again_cond_paper :loop_again_cond_reviewer :loop_again_cond_session :loop_again_cond_track :loop_continue_cond_author :loop_continue_cond_conference :loop_continue_cond_paper :loop_continue_cond_reviewer :loop_continue_cond_session :loop_continue_cond_track :loop_gateway_author :loop_gateway_conference :loop_gateway_paper :loop_gateway_reviewer :loop_gateway_session :loop_gateway_track :make_connection_paper_author :make_connection_paper_session :make_connection_paper_track :make_connection_review_paper :make_connection_review_reviewer :make_connection_session_track :make_connection_track_conference :paper_author_connection :paper_block :paper_hlayout :paper_notification_block :paper_notification_label :paper_notification_layout :paper_row_1 :paper_row_5 :paper_session_connection :paper_shape :paper_track_connection :paper_vlayout :picker_author_paper_author :picker_paper_paper_track :picker_review_review_paper :picker_review_review_reviewer :picker_session_paper_session :picker_session_session_track :picker_track_track_conference :processing_author :processing_conference :processing_paper :processing_review :processing_reviewer :processing_session :processing_track :review_block :review_hlayout :review_notification_block :review_notification_label :review_notification_layout :review_paper_connection :review_reviewer_connection :review_shape :review_vlayout :reviewer_block :reviewer_hlayout :reviewer_notification_block :reviewer_notification_label :reviewer_notification_layout :reviewer_shape :reviewer_vlayout :save_author :save_conference :save_paper :save_review :save_reviewer :save_session :save_track :session_block :session_hlayout :session_notification_block :session_notification_label :session_notification_layout :session_row_2 :session_shape :session_track_connection :session_vlayout :start :start_author :start_conference :start_paper :start_review :start_reviewer :start_session :start_track :submit_action_author :submit_action_conference :submit_action_paper :submit_action_review :submit_action_reviewer :submit_action_session :submit_action_track :submit_btn_author :submit_btn_conference :submit_btn_paper :submit_btn_review :submit_btn_reviewer :submit_btn_session :submit_btn_track :submit_cond_author :submit_cond_conference :submit_cond_paper :submit_cond_review :submit_cond_reviewer :submit_cond_session :submit_cond_track :track_block :track_conference_connection :track_hlayout :track_notification_block :track_notification_label :track_notification_layout :track_row_3 :track_shape :track_vlayout :user_enters_author :user_enters_conference :user_enters_paper :user_enters_review :user_enters_reviewer :user_enters_session :user_enters_track :user_gets_notification_author :user_gets_notification_conference :user_gets_notification_paper :user_gets_notification_review :user_gets_notification_reviewer :user_gets_notification_session :user_gets_notification_track :user_receives_validation :val_fail_cond_author :val_fail_cond_conference :val_fail_cond_paper :val_fail_cond_review :val_fail_cond_reviewer :val_fail_cond_session :val_fail_cond_track :val_ok_cond_author :val_ok_cond_conference :val_ok_cond_paper :val_ok_cond_review :val_ok_cond_reviewer :val_ok_cond_session :val_ok_cond_track :validate_action_author :validate_action_conference :validate_action_paper :validate_action_review :validate_action_reviewer :validate_action_session :validate_action_track :validate_form_author :validate_form_conference :validate_form_paper :validate_form_review :validate_form_reviewer :validate_form_session :validate_form_track :validation_gateway_author :validation_gateway_conference :validation_gateway_paper :validation_gateway_review :validation_gateway_reviewer :validation_gateway_session :validation_gateway_track ) .
+
